@@ -1,6 +1,9 @@
 *.py[cod]
 __pycache__
-
+# Emacs backup files
+.#*
+#vim tags file
+tags
 # C extensions
 *.so
 
