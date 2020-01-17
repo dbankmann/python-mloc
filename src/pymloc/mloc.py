@@ -23,6 +23,10 @@ class MultiLevelOptimalControl(object):
         assert self.levels > 0
         self.solvers = solvers
         assert len(solvers) == self.levels
+        if self.levels == 2:
+            self.is_bilevel = True
+        else:
+            self.is_bilevel = False
 
 
 

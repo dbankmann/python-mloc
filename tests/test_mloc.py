@@ -6,14 +6,16 @@ from pymloc.solver.solver import NullSolver
 @pytest.mark.incremental
 class TestCreationOptimization(object):
 
-    @pytest.mark.run(order=1)
-    def test_creation_optimizations(self):
+    @pytest.fixture
+    def mloc_object(self):
         optimizations = [NullOptimization(), NullOptimization()]
         solvers = [NullSolver(), NullSolver()]
-        self.mloc = MultiLevelOptimalControl(optimizations, solvers)
-        print("hi")
+        mloc = MultiLevelOptimalControl(optimizations, solvers)
+        return mloc
 
-    @pytest.mark.run(order=2)
-    def test_creation_bilevel(self):
-        assert self.mloc.is_bilevel
-        print("hi2")
+    def test_mloc_object(self, mloc_object):
+        pass
+
+    def test_creation_bilevel(self, mloc_object):
+        assert mloc_object.levels == 2
+        assert mloc_object.is_bilevel
