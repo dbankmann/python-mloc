@@ -1,0 +1,3 @@
+
+class LocalOptimizationObject(object):
+      pass
