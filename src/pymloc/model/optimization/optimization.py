@@ -1,23 +1,28 @@
-class OptimizationProblem(object):
+from .constraints.constraint import Constraint
+from .objectives.objective import Objective
+from ..variables.variables import Variables
+
+class OptimizationObject(object):
     """
     Class for defining optimization problems.
 
-
-    Parameters
-    ----------
-    np: number of (upper level) parameters
-    nn: number of states
-    nm: number of inputs
-
     """
-    def __init__(self, nn: int, nm: int, np: int):
-        pass
+    def __init__(self, objective_obj: Objective, constraint_obj: Constraint, variables_obj: Variables):
+        if not isinstance(objective_obj, Objective):
+            raise TypeError
+        if not isinstance(constraint_obj, Constraint):
+            raise TypeError
+        if not isinstance(variables_obj, Variables):
+            raise TypeError
+        self.objective_object = objective_obj
+        self.constraint_object = constraint_obj
+
 
     def residual(self):
         raise NotImplementedError
 
 
 
-class NullOptimization(OptimizationProblem):
+class NullOptimization(OptimizationObject):
     def __init__(self):
-        super().__init__(nn=0, nm=0, np=0)
+        pass
