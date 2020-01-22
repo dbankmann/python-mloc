@@ -1,0 +1,45 @@
+from .variables import Variables
+from .time_function import StateVariables, InputVariables, OutputVariables
+from abc import ABC
+
+
+class VariablesContainer(ABC):
+    _variables = []
+
+    @property
+    def variables(self):
+        return self._variables
+
+    def merge(self, *args):
+        for variables in args:
+            if isinstance(variables, Variables):
+                self._variables.append(variables)
+            else:
+                raise TypeError(
+                    "{} must be a subclass of Variables".format(variables))
+
+
+class InputOutputStateVariables(VariablesContainer):
+    def __init__(self, n_states, m_inputs, p_outputs):
+        self._n_states = n_states
+        self._m_inputs = m_inputs
+        self._p_outputs = p_outputs
+        self.states = StateVariables(n_states)
+        self.inputs = InputVariables(m_inputs)
+        self.outputs = OutputVariables(p_outputs)
+        self.merge(self.states, self.inputs, self.outputs)
+
+    def _update_dimension(self):
+        self._dimension = self._n_states + self._m_inputs + self.p_outputs
+
+    @property
+    def n_states(self):
+        return self._n_states
+
+    @property
+    def m_inputs(self):
+        return self._m_inputs
+
+    @property
+    def p_outputs(self):
+        return self._p_outputs

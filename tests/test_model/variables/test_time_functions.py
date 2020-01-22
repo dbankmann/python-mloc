@@ -1,13 +1,20 @@
-from pymloc.model.variables.time_function import StateVariables
+from pymloc.model.variables.time_function import StateVariables, OutputVariables, InputVariables
 import pytest
 
 
-class TestFiniteDimensionalTimeVariables(object):
+class Variables():
+    def test_dimension(self):
+        assert self.variables.dimension == 4
+        assert self.variables.dimension != 5
 
-    @pytest.fixture
-    def fdt_variables(self):
-        return StateVariables(dimension=4)
 
-    def test_dimension(self, fdt_variables):
-        assert fdt_variables.dimension == 4
-        assert fdt_variables.dimension != 5
+class TestStateVariables(Variables):
+    variables = StateVariables(4)
+
+
+class TestOutputVariables(Variables):
+    variables = OutputVariables(4)
+
+
+class TestInputVariables(Variables):
+    variables = InputVariables(4)

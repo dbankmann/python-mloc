@@ -1,13 +1,10 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class Variables(ABC):
-
+    def __init__(self, dimension):
+        self._dimension = dimension
 
     @property
-    def vars(self):
-        return self._vars
-
-
-    def add_variables(self, variables):
-        pass
+    def dimension(self):
+        return self._dimension
