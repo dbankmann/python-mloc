@@ -24,9 +24,9 @@ class InputOutputStateVariables(VariablesContainer):
         self._n_states = n_states
         self._m_inputs = m_inputs
         self._p_outputs = p_outputs
-        self.states = StateVariables(n_states)
-        self.inputs = InputVariables(m_inputs)
-        self.outputs = OutputVariables(p_outputs)
+        self._states = StateVariables(n_states)
+        self._inputs = InputVariables(m_inputs)
+        self._outputs = OutputVariables(p_outputs)
         self.merge(self.states, self.inputs, self.outputs)
 
     def _update_dimension(self):
@@ -43,3 +43,15 @@ class InputOutputStateVariables(VariablesContainer):
     @property
     def p_outputs(self):
         return self._p_outputs
+
+    @property
+    def states(self):
+        return self._states
+
+    @property
+    def inputs(self):
+        return self._inputs
+
+    @property
+    def outputs(self):
+        return self._outputs
