@@ -1,4 +1,18 @@
+from pymloc.model.optimization.constraints.constraint import Constraint
+from pymloc.model.optimization.objectives.objective import Objective
+from pymloc.model.optimization.optimization import OptimizationObject
+from pymloc.model.variables.container import InputOutputStateVariables
+
 import pytest
+
+
+@pytest.fixture
+def opt():
+    variables = InputOutputStateVariables(2, 4, 5)
+    constraint = Constraint(*3 * (variables, ))
+    objective = Objective(*3 * (variables, ))
+    return OptimizationObject(objective, constraint, variables, variables,
+                              variables), variables, constraint, objective
 
 
 def pytest_runtest_makereport(item, call):
@@ -12,4 +26,5 @@ def pytest_runtest_setup(item):
     if "incremental" in item.keywords:
         previousfailed = getattr(item.parent, "_previousfailed", None)
         if previousfailed is not None:
-            pytest.xfail("previous test failed ({})".format(previousfailed.name))
+            pytest.xfail("previous test failed ({})".format(
+                previousfailed.name))

@@ -1,28 +1,25 @@
-from pymloc.model.optimization.constraints.constraint import Constraint
-from pymloc.model.optimization.objectives.objective import Objective
 from pymloc.model.optimization.optimization import OptimizationObject
-from pymloc.model.variables.time_function import StateVariables
+from ..test_multilevelobject import MultiLevelObject
 import pytest
 
 
-class TestOptimizationObject(object):
-    @pytest.fixture
-    def opt(self):
-        constraint = Constraint()
-        objective = Objective()
-        variables = StateVariables(1)
-        return OptimizationObject(objective, constraint, variables)
+
+class TestOptimizationObject(MultiLevelObject):
+    @pytest.fixture(autouse=True)
+    def set_ml_object(self, opt):
+        self.ml_object = opt[0]
 
     def test_contraint_function(self, opt):
-        opt.constraint_object
+        opt[0].constraint_object
 
-    def test_opt_types(self):
-        constraint = Constraint()
-        objective = Objective()
-        variable = StateVariables(1)
+    def test_opt_types(self, opt):
+        variables, constraint, objective = opt[1:]
         with pytest.raises(TypeError):
-            OptimizationObject(constraint, constraint, constraint)
+            OptimizationObject(constraint, constraint, constraint, variables,
+                               variables)
         with pytest.raises(TypeError):
-            OptimizationObject(objective, objective, objective)
+            OptimizationObject(objective, objective, objective, variables,
+                               variables)
         with pytest.raises(TypeError):
-            OptimizationObject(objective, objective, variable)
+            OptimizationObject(objective, objective, variables, variables,
+                               constraint)
