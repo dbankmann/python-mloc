@@ -7,14 +7,18 @@ class Variables():
         assert self.variables.dimension == 4
         assert self.variables.dimension != 5
 
+class TimeVariables(Variables):
+    def test_time_domain(self):
+        assert self.variables.time_domain == [0., 1.]
 
-class TestStateVariables(Variables):
+
+class TestStateVariables(TimeVariables):
     variables = StateVariables(4)
 
 
-class TestOutputVariables(Variables):
+class TestOutputVariables(TimeVariables):
     variables = OutputVariables(4)
 
 
-class TestInputVariables(Variables):
+class TestInputVariables(TimeVariables):
     variables = InputVariables(4)
