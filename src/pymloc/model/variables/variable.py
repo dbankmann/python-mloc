@@ -11,7 +11,11 @@ class TimeVariable(Variable, ABC):
 
 class Input(TimeVariable):
     pass
+
+
 class Output(TimeVariable):
     pass
+
+
 class State(TimeVariable):
     pass

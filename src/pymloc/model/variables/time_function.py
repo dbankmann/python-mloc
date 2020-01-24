@@ -13,18 +13,16 @@ class TimeVariables(Variables, ABC):
         return self._time_domain
 
 
-
 class StateVariables(TimeVariables):
-    def __init__(self, dimension, time_domain=[0.,1.]):
+    def __init__(self, dimension, time_domain=[0., 1.]):
         super().__init__(dimension, time_domain)
 
 
-
 class InputVariables(TimeVariables):
-    def __init__(self, dimension, time_domain=[0.,1.]):
+    def __init__(self, dimension, time_domain=[0., 1.]):
         super().__init__(dimension, time_domain)
 
 
 class OutputVariables(TimeVariables):
-    def __init__(self, dimension, time_domain=[0.,1.]):
+    def __init__(self, dimension, time_domain=[0., 1.]):
         super().__init__(dimension, time_domain)

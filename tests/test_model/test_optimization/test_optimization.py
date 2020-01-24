@@ -3,7 +3,6 @@ from ..test_multilevelobject import MultiLevelObject
 import pytest
 
 
-
 class TestOptimizationObject(MultiLevelObject):
     @pytest.fixture(autouse=True)
     def set_ml_object(self, opt):

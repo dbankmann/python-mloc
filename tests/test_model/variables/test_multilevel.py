@@ -2,8 +2,8 @@ from pymloc.model.variables.multilevel import MultiLevelVariables
 from pymloc.model.variables.time_function import StateVariables
 import pytest
 
-class TestMultiLevelVariables(object):
 
+class TestMultiLevelVariables(object):
     @pytest.fixture
     def mlvars(self):
         return MultiLevelVariables()

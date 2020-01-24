@@ -3,9 +3,9 @@ from pymloc.mloc import MultiLevelOptimalControl
 from pymloc.model.optimization.optimization import NullOptimization
 from pymloc.solver.solver import NullSolver
 
+
 @pytest.mark.incremental
 class TestCreationOptimization(object):
-
     @pytest.fixture
     def mloc_object(self):
         optimizations = [NullOptimization(), NullOptimization()]
