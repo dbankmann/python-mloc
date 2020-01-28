@@ -1,7 +1,15 @@
-from ..multilevel_object import MultiLevelObject
+from ..multilevel_object import MultiLevelObject, local_object_factory
 from .local_constraint import LocalConstraint
 
 
 class Constraint(MultiLevelObject):
-    def get_localized_object(self):
-        return LocalConstraint()
+    pass
+
+
+class AutomaticLocalConstraint(LocalConstraint):
+    def __init__(self, global_constraint, *args, **kwargs):
+        self._global_constraint = global_constraint
+        super().__init__(*args, **kwargs)
+
+
+local_object_factory.register_localizer(Constraint, AutomaticLocalConstraint)

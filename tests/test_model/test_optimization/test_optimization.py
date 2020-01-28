@@ -1,4 +1,5 @@
 from pymloc.model.optimization.optimization import OptimizationObject
+from pymloc.model.optimization.local_optimization import LocalOptimizationObject
 from ..test_multilevelobject import MultiLevelObject
 import pytest
 
@@ -22,3 +23,9 @@ class TestOptimizationObject(MultiLevelObject):
         with pytest.raises(TypeError):
             OptimizationObject(objective, objective, variables, variables,
                                constraint)
+
+    def test_localize(self, opt):
+        opt_object = opt[0]
+        local_opt_object = opt_object.get_localized_object()
+
+        assert isinstance(local_opt_object, LocalOptimizationObject)

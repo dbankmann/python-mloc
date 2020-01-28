@@ -2,6 +2,7 @@ from .multilevel_object import MultiLevelObject
 from .constraints.constraint import Constraint
 from .objectives.objective import Objective
 from ..variables.container import VariablesContainer
+from .local_optimization import LocalOptimizationObject
 
 
 class OptimizationObject(MultiLevelObject):
@@ -39,8 +40,10 @@ class OptimizationObject(MultiLevelObject):
     def get_localized_object(self):
         '''Method that generically initializes a LocalOptimizationObject.
         Should be overloaded for improved performance'''
-        loc_constraint = self.constraint.get_localized_object()
-        loc_objective = self.objective.get_localized_object()
+        loc_objective = self.objective_object.get_localized_object()
+        loc_constraint = self.constraint_object.get_localized_object()
+        return LocalOptimizationObject(loc_objective, loc_constraint,
+                                       self.local_level_variables)
 
 
 class NullOptimization(OptimizationObject):
