@@ -1,9 +1,13 @@
+from ...solvers.solvers import solver_container_factory
+from ...solvers.solver import NullSolver
+from ..solvable import Solvable
 from .constraints.local_constraint import LocalConstraint
 from .objectives.local_objective import LocalObjective
 from ..variables.container import VariablesContainer
+from abc import ABC, abstractmethod
 
 
-class LocalOptimizationObject(object):
+class LocalOptimizationObject(Solvable, ABC):
     """
     Class for defining local optimization problems.
     """
@@ -20,6 +24,7 @@ class LocalOptimizationObject(object):
         self._loc_objective_object = loc_objective_obj
         self._loc_constraint_object = loc_constraint_obj
         self._variables = variables_obj
+        super().__init__()
 
     @property
     def loc_objective_object(self):
@@ -33,10 +38,12 @@ class LocalOptimizationObject(object):
     def variables(self):
         return self._variables
 
-    def residual(self):
-        raise NotImplementedError
-
 
 class LocalNullOptimization(LocalOptimizationObject):
-    def __init__(self):
-        pass
+    def residual(self):
+        return 0.
+
+
+solver_container_factory.register_solver(LocalNullOptimization,
+                                         NullSolver,
+                                         default=True)

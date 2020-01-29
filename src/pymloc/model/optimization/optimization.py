@@ -1,4 +1,4 @@
-from .multilevel_object import MultiLevelObject
+from .multilevel_object import MultiLevelObject, local_object_factory
 from .constraints.constraint import Constraint
 from .objectives.objective import Objective
 from ..variables.container import VariablesContainer
@@ -34,17 +34,6 @@ class OptimizationObject(MultiLevelObject):
     def constraint_object(self):
         return self._constraint_object
 
-    def residual(self):
-        raise NotImplementedError
-
-    def get_localized_object(self):
-        '''Method that generically initializes a LocalOptimizationObject.
-        Should be overloaded for improved performance'''
-        loc_objective = self.objective_object.get_localized_object()
-        loc_constraint = self.constraint_object.get_localized_object()
-        return LocalOptimizationObject(loc_objective, loc_constraint,
-                                       self.local_level_variables)
-
 
 class NullOptimization(OptimizationObject):
     def __init__(self):
@@ -52,3 +41,21 @@ class NullOptimization(OptimizationObject):
 
     def get_localized_object(self):
         pass
+
+
+class AutomaticLocalOptimizationObject(LocalOptimizationObject):
+    __auto_generated = True
+
+    def __init__(self, global_optimization, *args, **kwargs):
+        self._global_optimization = global_optimization
+        loc_objective = global_optimization.objective_object.get_localized_object(
+        )
+        loc_constraint = global_optimization.constraint_object.get_localized_object(
+        )
+        loc_vars = global_optimization.local_level_variables
+        super().__init__(loc_objective, loc_constraint, loc_vars, *args,
+                         **kwargs)
+
+
+local_object_factory.register_localizer(OptimizationObject,
+                                        AutomaticLocalOptimizationObject)
