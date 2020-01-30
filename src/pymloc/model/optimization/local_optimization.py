@@ -1,4 +1,4 @@
-from ...solvers.solvers import solver_container_factory
+from ..solvable import solver_container_factory
 from ...solvers.solver import NullSolver
 from ..solvable import Solvable
 from .constraints.local_constraint import LocalConstraint
@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 
 class LocalOptimizationObject(Solvable, ABC):
     """
-    Class for defining local optimization problems.
+    Abstract class for defining local optimization problems.
     """
     def __init__(self, loc_objective_obj: LocalObjective,
                  loc_constraint_obj: LocalConstraint,
@@ -24,6 +24,7 @@ class LocalOptimizationObject(Solvable, ABC):
         self._loc_objective_object = loc_objective_obj
         self._loc_constraint_object = loc_constraint_obj
         self._variables = variables_obj
+        self.__get_class()
         super().__init__()
 
     @property
@@ -37,6 +38,12 @@ class LocalOptimizationObject(Solvable, ABC):
     @property
     def variables(self):
         return self._variables
+
+    def __get_class(self):
+        if self._auto_generated:
+            self._class = self._global_optimization._local_object_class
+        else:
+            self._class = self.__class__
 
 
 class LocalNullOptimization(LocalOptimizationObject):

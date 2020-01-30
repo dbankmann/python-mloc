@@ -2,10 +2,10 @@ from .multilevel_object import MultiLevelObject, local_object_factory
 from .constraints.constraint import Constraint
 from .objectives.objective import Objective
 from ..variables.container import VariablesContainer
-from .local_optimization import LocalOptimizationObject
+from .local_optimization import LocalOptimizationObject, LocalNullOptimization
+from abc import ABC
 
-
-class OptimizationObject(MultiLevelObject):
+class OptimizationObject(MultiLevelObject, ABC):
     """
     Class for defining optimization problems.
 
@@ -36,15 +36,10 @@ class OptimizationObject(MultiLevelObject):
 
 
 class NullOptimization(OptimizationObject):
-    def __init__(self):
-        pass
-
-    def get_localized_object(self):
-        pass
-
+    _local_object_class = LocalNullOptimization
 
 class AutomaticLocalOptimizationObject(LocalOptimizationObject):
-    __auto_generated = True
+    _auto_generated = True
 
     def __init__(self, global_optimization, *args, **kwargs):
         self._global_optimization = global_optimization
@@ -57,5 +52,5 @@ class AutomaticLocalOptimizationObject(LocalOptimizationObject):
                          **kwargs)
 
 
-local_object_factory.register_localizer(OptimizationObject,
+local_object_factory.register_localizer(NullOptimization,
                                         AutomaticLocalOptimizationObject)

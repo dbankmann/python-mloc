@@ -7,8 +7,8 @@ from pymloc.solvers.solver import NullSolver
 @pytest.mark.incremental
 class TestCreationOptimization(object):
     @pytest.fixture
-    def mloc_object(self):
-        optimizations = [NullOptimization(), NullOptimization()]
+    def mloc_object(self, opt):
+        optimizations = [opt[0], opt[0]]
         solvers = [NullSolver(optimizations[0]), NullSolver(optimizations[0])]
         mloc = MultiLevelOptimalControl(optimizations, solvers)
         return mloc
