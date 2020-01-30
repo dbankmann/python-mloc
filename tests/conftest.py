@@ -12,14 +12,17 @@ def local_opt():
     variables = InputOutputStateVariables(2, 4, 5)
     constraint = LocalConstraint()
     objective = LocalObjective()
-    return LocalNullOptimization(objective, constraint, variables), variables, constraint, objective
+    return LocalNullOptimization(objective, constraint,
+                                 variables), variables, constraint, objective
+
+
 @pytest.fixture
 def opt():
     variables = InputOutputStateVariables(2, 4, 5)
     constraint = Constraint(*3 * (variables, ))
     objective = Objective(*3 * (variables, ))
     return NullOptimization(objective, constraint, variables, variables,
-                              variables), variables, constraint, objective
+                            variables), variables, constraint, objective
 
 
 def pytest_runtest_makereport(item, call):

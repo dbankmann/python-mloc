@@ -5,6 +5,7 @@ from ..variables.container import VariablesContainer
 from .local_optimization import LocalOptimizationObject, LocalNullOptimization
 from abc import ABC
 
+
 class OptimizationObject(MultiLevelObject, ABC):
     """
     Class for defining optimization problems.
@@ -37,6 +38,7 @@ class OptimizationObject(MultiLevelObject, ABC):
 
 class NullOptimization(OptimizationObject):
     _local_object_class = LocalNullOptimization
+
 
 class AutomaticLocalOptimizationObject(LocalOptimizationObject):
     _auto_generated = True

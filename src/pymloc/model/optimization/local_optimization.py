@@ -1,5 +1,3 @@
-from ..solvable import solver_container_factory
-from ...solvers.solver import NullSolver
 from ..solvable import Solvable
 from .constraints.local_constraint import LocalConstraint
 from .objectives.local_objective import LocalObjective
@@ -49,8 +47,3 @@ class LocalOptimizationObject(Solvable, ABC):
 class LocalNullOptimization(LocalOptimizationObject):
     def residual(self):
         return 0.
-
-
-solver_container_factory.register_solver(LocalNullOptimization,
-                                         NullSolver,
-                                         default=True)

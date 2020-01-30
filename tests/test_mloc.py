@@ -1,7 +1,7 @@
 import pytest
 from pymloc.mloc import MultiLevelOptimalControl
 from pymloc.model.optimization.optimization import NullOptimization
-from pymloc.solvers.solver import NullSolver
+from pymloc.solvers import NullSolver
 
 
 @pytest.mark.incremental

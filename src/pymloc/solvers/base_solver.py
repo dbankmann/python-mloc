@@ -14,8 +14,3 @@ class BaseSolver(ABC):
 
     def output(self):
         raise NotImplementedError
-
-
-class NullSolver(BaseSolver):
-    def run(self, *args, **kwargs):
-        pass
