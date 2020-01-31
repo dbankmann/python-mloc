@@ -1,16 +1,34 @@
 from .variables import Variables
 
 from abc import ABC, abstractmethod
+import numpy as np
 
 
 class TimeVariables(Variables, ABC):
     def __init__(self, dimension, time_domain):
         self._time_domain = time_domain
+        self._current_time = time_domain[0]
         super().__init__(dimension)
 
     @property
     def time_domain(self):
         return self._time_domain
+
+    @property
+    def current_values(self):
+        return self._current_values
+
+    @current_values.setter
+    def current_values(self, value):
+        self._current_values = value
+
+    @property
+    def current_time(self):
+        return self._current_time
+
+    @current_time.setter
+    def current_time(self, value):
+        self._current_time = value
 
 
 class StateVariables(TimeVariables):
@@ -26,3 +44,15 @@ class InputVariables(TimeVariables):
 class OutputVariables(TimeVariables):
     def __init__(self, dimension, time_domain=[0., 1.]):
         super().__init__(dimension, time_domain)
+
+
+class Time(TimeVariables):
+    def __init__(self, t_0, t_f):
+        super().__init__(dimension=1, time_domain=[t_0, t_f])
+
+    @property
+    def current_values(self):
+        return self._current_values[0]
+
+    def get_random_values(self):
+        return np.random.random(1)[0]

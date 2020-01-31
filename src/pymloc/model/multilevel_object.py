@@ -9,6 +9,9 @@ class MultiLevelObject(ABC):
         self._higher_level_variables = higher_level_variables
         self._lower_level_variables = lower_level_variables
         self._local_level_variables = local_level_variables
+        for container in lower_level_variables, higher_level_variables, local_level_variables:
+            if not isinstance(container, VariablesContainer):
+                raise TypeError(container)
 
     @property
     def lower_level_variables(self):

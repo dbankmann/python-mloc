@@ -16,12 +16,12 @@ class OptimizationObject(MultiLevelObject, ABC):
                  higher_level_variables: VariablesContainer,
                  local_level_variables: VariablesContainer):
         if not isinstance(objective_obj, Objective):
-            raise TypeError
+            raise TypeError(objective_obj)
         if not isinstance(constraint_obj, Constraint):
-            raise TypeError
+            raise TypeError(constraint_obj)
         for variable_container in higher_level_variables, lower_level_variables, local_level_variables:
             if not isinstance(variable_container, VariablesContainer):
-                raise TypeError
+                raise TypeError(variable_container)
         self._objective_object = objective_obj
         self._constraint_object = constraint_obj
         super().__init__(lower_level_variables, higher_level_variables,

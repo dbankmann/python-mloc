@@ -4,6 +4,3 @@ __version__ = '0.0.1'
 from . import model
 from . import solver_container
 from . import solvers
-
-from .model import variables as variables
-from .model import optimization as optimization
