@@ -1,10 +1,25 @@
+import pytest
+
+from pymloc.model.domains import RNDomain
 from pymloc.model.optimization.constraints.constraint import Constraint
+from pymloc.model.optimization.local_optimization import LocalConstraint
+from pymloc.model.optimization.local_optimization import LocalNullOptimization
+from pymloc.model.optimization.local_optimization import LocalObjective
 from pymloc.model.optimization.objectives.objective import Objective
 from pymloc.model.optimization.optimization import NullOptimization
-from pymloc.model.optimization.local_optimization import LocalNullOptimization, LocalConstraint, LocalObjective
+from pymloc.model.variables import InputStateVariables
+from pymloc.model.variables import NullVariables
+from pymloc.model.variables import ParameterContainer
 from pymloc.model.variables.container import InputOutputStateVariables
 
-import pytest
+
+@pytest.fixture
+def variables():
+    domain = RNDomain(1)
+    parameters = ParameterContainer(1, domain)
+    state_input = InputStateVariables(n_states=2, m_inputs=1)
+    null_vars = NullVariables()
+    return null_vars, parameters, state_input
 
 
 @pytest.fixture

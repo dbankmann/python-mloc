@@ -1,0 +1,48 @@
+from pymloc.model.control_system.dae import LinearParameterControlSystem
+import pytest
+import numpy as np
+
+
+@pytest.fixture
+def e():
+    def e(p, x, t):
+        return np.identity(2)
+
+    return e
+
+
+@pytest.fixture
+def a():
+    def a(p, x, t):
+        return -np.diag((3., 1.))
+
+    return a
+
+
+@pytest.fixture
+def b():
+    def b(p, x, t):
+        return np.identity(2)
+
+    return b
+
+
+@pytest.fixture
+def c():
+    def c(p, x, t):
+        return np.identity(2)
+
+    return c
+
+
+@pytest.fixture
+def d():
+    def d(p, x, t):
+        return np.identity(2)
+
+    return d
+
+
+class TestDAEControlSystem:
+    def test_init(self, variables, e, a, b, c, d):
+        LinearParameterControlSystem(*variables, e, a, b, c, d)

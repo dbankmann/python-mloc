@@ -1,13 +1,8 @@
 import pytest
 
 from pymloc.model.optimization.parameter_optimal_control import ParameterDependentOptimalControl, PDOCConstraint, PDOCObjective
-from pymloc.model.variables import ParameterContainer
-from pymloc.model.variables import InputStateVariables
-from pymloc.model.variables import NullVariables
-from pymloc.model.domains import RNDomain
 
 import numpy as np
-
 
 @pytest.fixture
 def q():
@@ -32,14 +27,6 @@ def r():
 
     return r
 
-
-@pytest.fixture
-def variables():
-    domain = RNDomain(1)
-    parameters = ParameterContainer(1, domain)
-    state_input = InputStateVariables(n_states=2, m_inputs=1)
-    null_vars = NullVariables()
-    return null_vars, parameters, state_input
 
 
 @pytest.fixture
