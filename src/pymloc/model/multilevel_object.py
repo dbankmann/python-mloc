@@ -1,4 +1,4 @@
-from ..variables.container import VariablesContainer
+from .variables.container import VariablesContainer
 from abc import ABC, abstractmethod
 
 

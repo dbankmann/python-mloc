@@ -1,5 +1,5 @@
 from pymloc.model.variables.container import VariablesContainer
-from pymloc.model.optimization.multilevel_object import local_object_factory
+from pymloc.model.multilevel_object import local_object_factory
 import pytest
 
 

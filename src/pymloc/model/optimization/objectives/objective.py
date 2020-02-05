@@ -1,4 +1,4 @@
-from ..multilevel_object import MultiLevelObject, local_object_factory
+from ...multilevel_object import MultiLevelObject, local_object_factory
 from .local_objective import LocalObjective
 
 

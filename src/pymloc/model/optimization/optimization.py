@@ -1,4 +1,4 @@
-from .multilevel_object import MultiLevelObject, local_object_factory
+from ..multilevel_object import MultiLevelObject, local_object_factory
 from .constraints.constraint import Constraint
 from .objectives.objective import Objective
 from ..variables.container import VariablesContainer
