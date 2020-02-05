@@ -4,6 +4,7 @@ from pymloc.model.optimization.parameter_optimal_control import ParameterDepende
 
 import numpy as np
 
+
 @pytest.fixture
 def q():
     def q(p, x, t):
@@ -26,7 +27,6 @@ def r():
         return np.array([[1.]])
 
     return r
-
 
 
 @pytest.fixture

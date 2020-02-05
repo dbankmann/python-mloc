@@ -1,26 +1,38 @@
 from ..multilevel_object import MultiLevelObject
+from ..dynamical_system.dae import LinearParameterDAE
+import numpy as np
 
 
-class ParameterControlSystem(MultiLevelObject):
-    def __init__(self,
-                 lower_level_variables,
-                 higher_level_variables,
-                 local_level_variables,
-                 residual=None):
-        super().__init__(lower_level_variables, higher_level_variables,
-                         local_level_variables)
-        if residual is not None:
-            self.residual = residual
-
-
-class LinearParameterControlSystem(ParameterControlSystem):
-    def __init__(self, ll_vars, hl_vars, loc_vars, e, a, b, c, d):
-        super().__init__(ll_vars, hl_vars, loc_vars)
+class LinearParameterControlSystem(LinearParameterDAE):
+    def __init__(self, ll_vars, hl_vars, loc_vars, e, a, b, c, d, f):
         self._e = e
         self._a = a
         self._b = b
         self._c = c
         self._d = d
+        cal_e, cal_a, cal_f = self._get_cal_coeffs(e, a, b, c, d, f)
+        super().__init__(ll_vars, hl_vars, loc_vars, cal_e, cal_a, cal_f)
+
+    def _get_cal_coeffs(self, e, a, b, c, d, f):
+        def cal_e(ll_vars, loc_vars):
+            znm = np.zeros()
+            np.linalg.block([
+                e,
+            ])
+
+        def cal_a(ll_vars, loc_vars):
+            znm = np.zeros()
+            np.linalg.block([
+                e,
+            ])
+
+        def cal_f(ll_vars, loc_vars):
+            znm = np.zeros()
+            np.linalg.block([
+                e,
+            ])
+
+        return cal_e, cal_a, cal_f
 
     @property
     def e(self):

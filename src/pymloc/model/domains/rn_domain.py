@@ -9,7 +9,9 @@ class Domain(ABC):
         try:
             for value in variable.current_values:
                 assert self._in_domain_assertion(value)
+            return True
         except AssertionError:
+            #TODO: Can be softened to only raise a warning
             raise ValueError("Variable value out of domain")
 
     @abstractmethod

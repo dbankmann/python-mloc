@@ -43,6 +43,14 @@ def d():
     return d
 
 
+@pytest.fixture
+def f():
+    def f(p, t):
+        return np.zeros((2, 1))
+
+    return f
+
+
 class TestDAEControlSystem:
-    def test_init(self, variables, e, a, b, c, d):
-        LinearParameterControlSystem(*variables, e, a, b, c, d)
+    def test_init(self, variables, e, a, b, c, d, f):
+        LinearParameterControlSystem(*variables, e, a, b, c, d, f)
