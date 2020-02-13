@@ -1,6 +1,9 @@
 from ..model import solvable
 from . import SolverContainer
+
 import inspect
+import logging
+logger = logging.getLogger()
 
 
 class SolverContainerFactory:
@@ -47,7 +50,7 @@ class SolverContainerFactory:
         problem = self._get_problem_class(problem_instance)
         solver_container = self._solvers.get(problem)
         if solver_container is None:
-            raise ValueError(
+            logger.error(
                 "No registered solvers for problem: {}".format(problem))
         return solver_container
 

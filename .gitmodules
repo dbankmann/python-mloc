@@ -1,0 +1,3 @@
+[submodule "submodules/pygelda"]
+	path = submodules/pygelda
+	url = git@gitlab.tubit.tu-berlin.de:bankmann91/pygelda.git

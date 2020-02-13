@@ -11,6 +11,47 @@ from pymloc.model.variables import InputStateVariables
 from pymloc.model.variables import NullVariables
 from pymloc.model.variables import ParameterContainer
 from pymloc.model.variables.container import InputOutputStateVariables
+from pymloc.model.dynamical_system.dae import LinearDAE, LinearParameterDAE
+from pymloc.model.dynamical_system.initial_value_problem import InitialValueProblem
+from pymloc.model.variables.time_function import Time, StateVariables
+import numpy as np
+
+
+@pytest.fixture
+def initial_value_problem(linear_dae):
+    initial_value = np.array([1., 2.])
+    time_interval = Time(0., 1.)
+    return InitialValueProblem(initial_value, time_interval, linear_dae)
+
+
+@pytest.fixture
+def e_lin():
+    def e(t):
+        return np.identity(2)
+
+    return e
+
+
+@pytest.fixture
+def a_lin():
+    def a(t):
+        return -np.diag((3., 1.))
+
+    return a
+
+
+@pytest.fixture
+def f_lin():
+    def f(t):
+        return np.zeros((2, ))
+
+    return f
+
+
+@pytest.fixture
+def linear_dae(variables, e_lin, a_lin, f_lin):
+    states = StateVariables(2)
+    return LinearDAE(states, e_lin, a_lin, f_lin, 2)
 
 
 @pytest.fixture

@@ -1,4 +1,8 @@
-from ..multilevel_object import MultiLevelObject, local_object_factory
+import numpy as np
+
+from ...model.variables.time_function import StateVariables
+from ..multilevel_object import MultiLevelObject
+from ..multilevel_object import local_object_factory
 
 
 class ParameterDAE(MultiLevelObject):
@@ -37,9 +41,23 @@ class LinearParameterDAE(ParameterDAE):
 
 
 class DAE:
-    def __init__(self, variables):
+    def __init__(self, variables, n):
+        if not isinstance(variables, StateVariables):
+            raise TypeError(variables)
         self._variables = variables
+        self._nm = variables.dimension
+        self._nn = n
         self._index = None
+        self._current_t = None
+        self._current_rank = None
+
+    @property
+    def nm(self):
+        return self._nm
+
+    @property
+    def nn(self):
+        return self._nn
 
     @property
     def index(self):
@@ -47,11 +65,44 @@ class DAE:
 
 
 class LinearDAE(DAE):
-    def __init__(self, variables, e, a, f):
-        super().__init__(variables)
-        self._cal_e = e
-        self._cal_a = a
-        self._cal_f = f
+    def __init__(self, variables, e, a, f, n):
+        super().__init__(variables, n)
+        self._e = e
+        self._a = a
+        self._f = f
+
+    @property
+    def e(self):
+        return self._e
+
+    @property
+    def a(self):
+        return self._a
+
+    @property
+    def f(self):
+        return self._f
+
+    def _compute_projection(self, t):
+        if self._current_t is None or self._current_t != t:
+            self._current_t = t
+            e = self.e(t)
+            n = self.nn
+            zzprime, sigma, ttprime_h = np.linalg.svd(e)
+            rank = np.linalg.matrix_rank(e)
+            if self._current_rank is not None and rank != self._current_rank:
+                raise ValueError(
+                    "Rank change in parameters detected. Not supported and may lead to wrong results."
+                )
+            self._current_rank = rank
+            self._current_t2 = ttprime_h[:, :rank]
+            self._current_t2prime = ttprime_h[:, rank:]
+            self._current_z1 = zzprime[:, :rank]
+            self._current_z1prime = zzprime[:, rank:]
+
+    def get_t2(self, t):
+        self._compute_projection(t)
+        return self._current_t2
 
 
 class AutomaticLinearDAE(LinearDAE):

@@ -48,6 +48,8 @@ class OutputVariables(TimeVariables):
 
 class Time(TimeVariables):
     def __init__(self, t_0, t_f):
+        self.t_0 = t_0
+        self.t_f = t_f
         super().__init__(dimension=1, time_domain=[t_0, t_f])
 
     @property

@@ -44,7 +44,7 @@ class AutomaticLocalOptimizationObject(LocalOptimizationObject):
     _auto_generated = True
 
     def __init__(self, global_optimization, *args, **kwargs):
-        self._global_optimization = global_optimization
+        self._global_object = global_optimization
         loc_objective = global_optimization.objective_object.get_localized_object(
         )
         loc_constraint = global_optimization.constraint_object.get_localized_object(

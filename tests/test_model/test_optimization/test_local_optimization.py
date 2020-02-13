@@ -23,7 +23,7 @@ class TestLocalOptimizationObject(object):
         loc_opt.set_default_solver()
 
     def test_solve(self, loc_opt):
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             loc_opt.solve()
 
     def test_solve2(self, loc_opt):
