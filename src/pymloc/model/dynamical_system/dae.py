@@ -70,6 +70,7 @@ class LinearDAE(DAE):
         self._e = e
         self._a = a
         self._f = f
+        self._rank = None
 
     @property
     def e(self):
@@ -83,6 +84,10 @@ class LinearDAE(DAE):
     def f(self):
         return self._f
 
+    @property
+    def rank(self):
+        return self._rank
+
     def _compute_projection(self, t):
         if self._current_t is None or self._current_t != t:
             self._current_t = t
@@ -94,7 +99,7 @@ class LinearDAE(DAE):
                 raise ValueError(
                     "Rank change in parameters detected. Not supported and may lead to wrong results."
                 )
-            self._current_rank = rank
+            self._rank = rank
             self._current_t2 = ttprime_h[:, :rank]
             self._current_t2prime = ttprime_h[:, rank:]
             self._current_z1 = zzprime[:, :rank]

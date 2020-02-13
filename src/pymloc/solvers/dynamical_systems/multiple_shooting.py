@@ -12,9 +12,9 @@ class MultipleShooting(BaseSolver):
         self._bvp = bvp
         self._shooting_nodes = shooting_nodes
         self._n_shooting_nodes = len(shooting_nodes)
-        self._bvp_nodes = bvp.boundary_values
+        self._boundary_values = bvp.boundary_values
+        self._bvp_nodes = bvp.time_points
         self._check_shooting_nodes()
-        self._bvp_timepoints = bvp.time_points
         self._intervals = zip(self._shooting_nodes, self._shooting_nodes[1:])
         self._final_time = self._shooting_nodes[-1]
         self._inner_nodes = shooting_nodes[1:-1]
@@ -22,6 +22,7 @@ class MultipleShooting(BaseSolver):
         self._dynamical_system = bvp.dynamical_system
         self._ivp_solver = ivp_solver
         self._nn = self._dynamical_system.nn
+        self._rank = self._dynamical_system.rank
         super().__init__(stepsize)
 
     def _check_shooting_nodes(self):
@@ -42,9 +43,12 @@ class MultipleShooting(BaseSolver):
         t2s = self._compute_t2()
         flows = self._compute_flows()
         gis = self._compute_gis()
-        jis = self._compute_ji()
-        bc = self._compute_boundary_coefficients()
-        idnd = np.identity(self.nnd)
+        jis = self._compute_jis()
+        bc = self._boundary_values
+        dim = self._rank * self._nnodes
+        shooting_matrix = np.zeros((dim, dim))
+        import ipdb; ipdb.set_trace()
+        diag = np.linalg.block_diag(gis.reshape())
         upper_diag = np.block(
             [np.zeros(), linalg.block_diag([idnd] * self.nnodes)])
         pass
@@ -56,10 +60,10 @@ class MultipleShooting(BaseSolver):
 
     def _compute_flows(self):
         n = self._nn
-        flows = np.zeros((n, n, self._n_shooting_nodes - 1))
+        flows = np.zeros((self._n_shooting_nodes - 1,n, n))
         #TODO: Paralellize
         for i, (t_i, t_ip1) in enumerate(self._intervals):
-            flows[:, :, i] = self._compute_flow(t_i, t_ip1)
+            flows[i, :, :] = self._compute_flow(t_i, t_ip1)
         return flows
 
     def _compute_flow(self, t_i, t_ip1):
@@ -70,17 +74,24 @@ class MultipleShooting(BaseSolver):
             flow[:, i] = self._ivp_solver.run(t_i, t_ip1, unit_vector)[:, -1]
         return flow
 
-    def _compute_gi(self):
-        for i, node in enumerate(self.nodes):
-            pass
+    def _compute_gis(self, t2, t2tilde, flows):
+        t2_1 = t2[1:,:,:]
+        t2_e = t2[:-1,:,:]
+        gis = np.einsum('rji,rjk,rkl->ril', t2_1, flows, t2_e)
+        return gis
+
+    def _compute_jis(self):
+        #TODO: only works in the linear case
+        rank = self._dynamical_system.rank
+        return np.identity(rank)
 
     def _compute_t2(self):
-        t2s = [
+        t2s = np.array([
             self._dynamical_system.get_t2(node)
             for node in self._shooting_nodes
-        ]
+        ])
         return t2s
 
     def _compute_inner_t2_tilde(self, t2s):
-        t2_tilde_inner = t2s[1:-1]  #only works in linear case
+        t2_tilde_inner = t2s[1:-1:,:,:]  #only works in linear case
         return t2_tilde_inner
