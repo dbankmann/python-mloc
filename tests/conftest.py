@@ -1,6 +1,11 @@
+import numpy as np
 import pytest
 
 from pymloc.model.domains import RNDomain
+from pymloc.model.dynamical_system.dae import LinearParameterDAE
+from pymloc.model.dynamical_system.flow_problem import LinearFlow
+from pymloc.model.dynamical_system.initial_value_problem import InitialValueProblem
+from pymloc.model.dynamical_system.representations import LinearFlowRepresenation
 from pymloc.model.optimization.constraints.constraint import Constraint
 from pymloc.model.optimization.local_optimization import LocalConstraint
 from pymloc.model.optimization.local_optimization import LocalNullOptimization
@@ -11,10 +16,15 @@ from pymloc.model.variables import InputStateVariables
 from pymloc.model.variables import NullVariables
 from pymloc.model.variables import ParameterContainer
 from pymloc.model.variables.container import InputOutputStateVariables
-from pymloc.model.dynamical_system.dae import LinearDAE, LinearParameterDAE
-from pymloc.model.dynamical_system.initial_value_problem import InitialValueProblem
-from pymloc.model.variables.time_function import Time, StateVariables
-import numpy as np
+from pymloc.model.variables.time_function import StateVariables
+from pymloc.model.variables.time_function import Time
+
+
+@pytest.fixture
+def flow_problem(linear_dae):
+    time_interval = Time(0., 1.)
+    flowprob = LinearFlow(time_interval, linear_dae)
+    return flowprob
 
 
 @pytest.fixture
@@ -51,7 +61,7 @@ def f_lin():
 @pytest.fixture
 def linear_dae(variables, e_lin, a_lin, f_lin):
     states = StateVariables(2)
-    return LinearDAE(states, e_lin, a_lin, f_lin, 2)
+    return LinearFlowRepresenation(states, e_lin, a_lin, f_lin, 2)
 
 
 @pytest.fixture

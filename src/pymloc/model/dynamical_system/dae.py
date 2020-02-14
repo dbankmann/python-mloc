@@ -65,24 +65,18 @@ class DAE:
 
 
 class LinearDAE(DAE):
-    def __init__(self, variables, e, a, f, n):
+    def __init__(self, variables, e, a, f, n, der_e=None):
         super().__init__(variables, n)
         self._e = e
         self._a = a
         self._f = f
         self._rank = None
-
-    @property
-    def e(self):
-        return self._e
-
-    @property
-    def a(self):
-        return self._a
-
-    @property
-    def f(self):
-        return self._f
+        self._current_t = dict()
+        #TODO: Make more general!
+        self.init_rank()
+        if der_e is None:
+            der_e = lambda t: self._der_e_numerical(t)
+        self._der_e = der_e
 
     @property
     def rank(self):
@@ -90,26 +84,127 @@ class LinearDAE(DAE):
             raise ValueError("Rank has to be initialized first.")
         return self._rank
 
-    def _compute_projection(self, t):
-        if self._current_t is None or self._current_t != t:
-            self._current_t = t
+    def init_rank(self):
+        #TODO: Choose meaningful timepoint
+        self._compute_rank(0.)
+
+    def _compute_rank(self, t):
+        e = self.e(t)
+        rank = np.linalg.matrix_rank(e)
+        if self._current_rank is not None and rank != self._current_rank:
+            raise ValueError(
+                "Rank change in parameters detected. Not supported and may lead to wrong results."
+            )
+        self._rank = rank
+
+    def der_e(self, t):
+        return self._der_e(t)
+
+    def _der_e_numerical(self, t):
+        #Use tools like jax
+        n = self._nn
+        h = 10e-5
+        e_h = self.e(t + h)
+        e = self.e(t)
+        return (e_h - e) / h
+
+    def _check_current_time(self, t, method):
+        if self._current_t.get(method) is None or self._current_t[method] != t:
+            self._current_t[method] = t
+            return True
+        else:
+            return False
+
+    def e(self, t):
+        self._recompute_coefficients(t)
+        return self._current_e
+
+    def a(self, t):
+        self._recompute_coefficients(t)
+        return self._current_a
+
+    def f(self, t):
+        self._recompute_coefficients(t)
+        return self._current_f
+
+    def eplus(self, t):
+        self._recompute_quantities(t)
+        return self._current_eplus
+
+    def t2(self, t):
+        self._recompute_quantities(t)
+        return self._current_ttprime_h[:, :self.rank]
+
+    def t2prime(self, t):
+        self._recompute_quantities(t)
+        return self._current_ttprime_h[:, self.rank:]
+
+    def z1(self, t):
+        self._recompute_quantities(t)
+        return self._current_zzprime[:, :self.rank]
+
+    def z1prime(self, t):
+        self._recompute_quantities(t)
+        return self._current_zzprime[:, self.rank:]
+
+    def ehat_1(self, t):
+        self._recompute_quantities(t)
+        return self._current_ehat[:self.rank, :]
+
+    def ehat_2(self, t):
+        self._recompute_quantities(t)
+        return self._current_ehat[self.rank:, :]
+
+    def ahat_1(self, t):
+        self._recompute_quantities(t)
+        return self._current_ahat[:self.rank, :]
+
+    def ahat_2(self, t):
+        self._recompute_quantities(t)
+        return self._current_ahat[self.rank:, :]
+
+    def fhat_1(self, t):
+        self._recompute_quantities(t)
+        return self._current_fhat[:self.rank, :]
+
+    def fhat_2(self, t):
+        self._recompute_quantities(t)
+        return self._current_fhat[self.rank:, :]
+
+    def _recompute_coefficients(self, t):
+        if self._check_current_time(t, "coefficients"):
+            e = self._e(t)
+            a = self._a(t)
+            f = self._f(t)
+            self._current_e = e
+            self._current_a = a
+            self._current_f = f
+
+    def _recompute_quantities(self, t):
+        if self._check_current_time(t, "quantities"):
             e = self.e(t)
+            a = self.a(t)
+            f = self.f(t)
             n = self.nn
             zzprime, sigma, ttprime_h = np.linalg.svd(e)
-            rank = np.linalg.matrix_rank(e)
-            if self._current_rank is not None and rank != self._current_rank:
-                raise ValueError(
-                    "Rank change in parameters detected. Not supported and may lead to wrong results."
-                )
-            self._rank = rank
-            self._current_t2 = ttprime_h[:, :rank]
-            self._current_t2prime = ttprime_h[:, rank:]
-            self._current_z1 = zzprime[:, :rank]
-            self._current_z1prime = zzprime[:, rank:]
-
-    def get_t2(self, t):
-        self._compute_projection(t)
-        return self._current_t2
+            self._current_eplus = ttprime_h.T @ np.linalg.solve(
+                np.diag(sigma), zzprime.T)
+            rank = self.rank
+            self._current_ttprime_h = ttprime_h
+            self._current_zzprime = zzprime
+            ehat_1 = self.z1(t).T @ e
+            self._current_ehat = np.zeros((n, n))
+            self._current_ehat[:rank, :] = ehat_1
+            ahat_1 = self.z1(t).T @ a
+            ahat_2 = self.z1prime(t).T @ a
+            self._current_ahat = np.zeros((n, n))
+            self._current_ahat[:rank, :] = ahat_1
+            self._current_ahat[rank:, :] = ahat_2
+            fhat_1 = self.z1(t).T @ f
+            fhat_2 = self.z1prime(t).T @ f
+            self._current_fhat = np.zeros((n, ))
+            self._current_fhat[:rank] = fhat_1
+            self._current_fhat[rank:] = fhat_2
 
 
 class AutomaticLinearDAE(LinearDAE):

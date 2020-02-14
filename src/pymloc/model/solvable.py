@@ -1,7 +1,9 @@
-from ..solver_container import solver_container_factory
-from abc import ABC
 import inspect
 import logging
+from abc import ABC
+
+from ..solver_container import solver_container_factory
+
 logger = logging.getLogger()
 
 
