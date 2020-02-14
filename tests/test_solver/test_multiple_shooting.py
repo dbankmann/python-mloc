@@ -31,32 +31,35 @@ def t2s(ms_object):
     return ms_object._compute_t2()
 
 
-@pytest.fixture
-def inner_t2s(ms_object, t2s):
-    return ms_object._compute_inner_t2_tilde(t2s)
-
-
 class TestMultipleShooting:
     def test_flow_matrix(self, ms_object, flows):
-        scipy_flow = scipy.linalg.expm(0.5*ms_object._dynamical_system._a(0))
+        scipy_flow = scipy.linalg.expm(0.5 * ms_object._dynamical_system._a(0))
         assert np.allclose(flows[0, :, :], scipy_flow)
 
     def test_compute_t2(self, ms_object, t2s):
         nnodes = ms_object._n_shooting_nodes
-        rank = ms_object._dynamical_system._current_rank
+        rank = ms_object._dynamical_system.rank
         nn = ms_object._nn
         assert t2s.shape == (nnodes, nn, rank)
 
-    def test_compute_inner_t2(self, ms_object, t2s, inner_t2s):
-        t2s = ms_object._compute_t2()
-        rank = ms_object._dynamical_system._current_rank
-        nn = ms_object._nn
-        nnodes = ms_object._n_shooting_nodes
-        assert inner_t2s.shape == (nnodes - 2, nn, rank)
-
-    def test_compute_gi(self, ms_object, t2s, inner_t2s, flows):
-        gis = ms_object._compute_gi(t2s, inner_t2s, flows)
+    def test_compute_gis(self, ms_object, t2s, flows):
+        gis = ms_object._compute_gis(t2s, flows)
 
         nflows = flows.shape[0]
-        rank = ms_object._dynamical_system._current_rank
+        rank = ms_object._dynamical_system.rank
         assert gis.shape == (nflows, rank, rank)
+
+    def test_compute_jis(self, ms_object, flows):
+        #rank initialization
+        ms_object._compute_t2()
+        jis = ms_object._compute_jis()
+        rank = ms_object._dynamical_system.rank
+        nflows = ms_object._n_shooting_nodes
+        assert jis.shape == (nflows, rank, rank)
+
+    def test_build_shooting_matrix(self, ms_object):
+        shooting_matrix = ms_object._build_shooting_matrix()
+        rank = ms_object._dynamical_system.rank
+        nflows = ms_object._n_shooting_nodes
+        nn = ms_object._nn
+        assert shooting_matrix.shape == (nflows * rank + nn, nflows * rank)

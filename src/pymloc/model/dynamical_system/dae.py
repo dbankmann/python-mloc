@@ -86,6 +86,8 @@ class LinearDAE(DAE):
 
     @property
     def rank(self):
+        if self._rank is None:
+            raise ValueError("Rank has to be initialized first.")
         return self._rank
 
     def _compute_projection(self, t):
