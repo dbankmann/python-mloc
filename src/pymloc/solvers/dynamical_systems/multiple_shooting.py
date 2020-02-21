@@ -1,8 +1,10 @@
 import numpy as np
 import scipy.linalg as linalg
+
 from pygelda.pygelda import Gelda
 
-from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
+from ...model.dynamical_system.boundary_value_problem import \
+    MultipleBoundaryValueProblem
 from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
 
@@ -30,6 +32,7 @@ class MultipleShooting(BaseSolver):
         self._set_t2s()
         self._set_d_as()
         self._flows = self._get_homogeneous_flows()
+        self._shooting_values = self._get_shooting_values()
 
     def _get_homogeneous_flows(self):
         time_interval = self._bvp.time_interval
@@ -46,13 +49,15 @@ class MultipleShooting(BaseSolver):
         indices = np.array([], dtype=int)
         for i, node in enumerate(self._shooting_nodes):
             if node in self._bvp_nodes:
-                shooting_values[..., i] = self._boundary_values[j]
+                shooting_values[..., i] = self._boundary_values[..., j]
                 indices = np.append(indices, [i])
                 j += 1
         projected_values = np.einsum('ijr,jkr->ikr', shooting_values,
                                      self._t2s)
         self._boundary_indices = indices
-        return projected_values.reshape(n * self._n_shooting_nodes, n).T
+        return projected_values.reshape(n,
+                                        n * self._n_shooting_nodes,
+                                        order='F')
 
     def _check_shooting_nodes(self):
         for node in self._bvp_nodes:
@@ -73,14 +78,13 @@ class MultipleShooting(BaseSolver):
         shooting_matrix = np.zeros((dim, dim), order='F')
         #TODO: Inefficient, probably needs low level implementation
         diag = linalg.block_diag(*(gis[..., i] for i in range(gis.shape[0])))
-        shooting_matrix[:diag.shape[0], :diag.shape[1]] = diag
+        shooting_matrix[:diag.shape[0], :diag.shape[1]] = -diag
         for i in range(self._n_shooting_nodes)[:-1]:
             size = self._dynamical_system.rank * i
             sizep1 = self._dynamical_system.rank * (i + 1)
             sizep2 = self._dynamical_system.rank * (i + 2)
-            shooting_matrix[size:sizep1, sizep1:sizep2] = jis[i, ...]
-        shooting_values = self._get_shooting_values()
-        shooting_matrix[sizep1:, :] = shooting_values
+            shooting_matrix[size:sizep1, sizep1:sizep2] = jis[..., i]
+        shooting_matrix[sizep1:, :] = self._shooting_values
         return shooting_matrix
 
     def _get_mesh(self, stepsize):
@@ -108,9 +112,8 @@ class MultipleShooting(BaseSolver):
             t2s[:, :, i] = self._dynamical_system.t2(node)
         self._t2s = t2s
 
-    def _newton_step(self, current_node_states):
+    def _newton_step(self, current_node_states, rhs):
         shooting_matrix = self._get_shooting_matrix()
-        rhs = self._get_newton_rhs(current_node_states)
         shape = current_node_states.shape
         next_nodes = current_node_states - np.linalg.solve(
             shooting_matrix, rhs).reshape(*shape, order='F')
@@ -119,7 +122,7 @@ class MultipleShooting(BaseSolver):
     def _get_newton_rhs(self, current_node_states):
         boundary_node_states = current_node_states[:, self._boundary_indices]
         bound_res = self._bvp.boundary_residual(boundary_node_states)
-        diffs = current_node_states[..., :1] - np.einsum(
+        diffs = current_node_states[..., 1:] - np.einsum(
             'ijr,ir->jr', self._flows, current_node_states[..., :-1])
         res_b = np.einsum('ijr,ir->jr', self._t2s[..., 1:], diffs)
         res_b = res_b.reshape(res_b.size)
@@ -141,9 +144,10 @@ class MultipleShooting(BaseSolver):
         projected_values = np.einsum('ijr,jr->ir', self._t2s, initial_guess)
 
         for i in range(self.max_iter):
-            #TODO: Residual check
-            projected_values = self._newton_step(projected_values)
-
+            residual = self._get_newton_rhs(projected_values)
+            if not self.abort(residual):
+                projected_values = self._newton_step(projected_values,
+                                                     residual)
         x_d = np.einsum('ijr,ir->jr', self._t2s, projected_values)
         full_values = x_d + np.einsum('ijr,jr->ir', self._das, x_d)
         return full_values

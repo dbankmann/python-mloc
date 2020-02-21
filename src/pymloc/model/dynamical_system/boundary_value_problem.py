@@ -12,7 +12,7 @@ class MultipleBoundaryValueProblem(Solvable, ABC):
         if len(timepoints) != self._nnodes:
             raise ValueError(
                 "Timepoints and boundary values need to have same size.")
-        self._boundary_values = np.array(boundary_values)
+        self._boundary_values = self._set_bvs(boundary_values)
         self._timepoints = timepoints
         self._inner_nodes = boundary_values[1:-1]
         self._inhomogeinity = inhomogeinity
@@ -21,12 +21,15 @@ class MultipleBoundaryValueProblem(Solvable, ABC):
         self.nm = dynamical_system.nm
         super().__init__()
 
+    def _set_bvs(self, bvs):
+        return np.array(list(bv.T for bv in bvs)).T
+
     @property
     def dynamical_system(self):
         return self._dynamical_system
 
     def boundary_residual(self, node_values):
-        residual = np.einsum('ijk,ik', self._boundary_values,
+        residual = np.einsum('ijk,jk->i', self._boundary_values,
                              node_values) - self._inhomogeinity
         return residual
 

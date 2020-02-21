@@ -4,20 +4,22 @@ import pytest
 from pymloc.model.domains import RNDomain
 from pymloc.model.dynamical_system.dae import LinearParameterDAE
 from pymloc.model.dynamical_system.flow_problem import LinearFlow
-from pymloc.model.dynamical_system.initial_value_problem import InitialValueProblem
-from pymloc.model.dynamical_system.representations import LinearFlowRepresenation
+from pymloc.model.dynamical_system.initial_value_problem import \
+    InitialValueProblem
+from pymloc.model.dynamical_system.representations import \
+    LinearFlowRepresenation
 from pymloc.model.optimization.constraints.constraint import Constraint
-from pymloc.model.optimization.local_optimization import LocalConstraint
-from pymloc.model.optimization.local_optimization import LocalNullOptimization
-from pymloc.model.optimization.local_optimization import LocalObjective
+from pymloc.model.optimization.local_optimization import (LocalConstraint,
+                                                          LocalNullOptimization,
+                                                          LocalObjective)
 from pymloc.model.optimization.objectives.objective import Objective
 from pymloc.model.optimization.optimization import NullOptimization
-from pymloc.model.variables import InputStateVariables
-from pymloc.model.variables import NullVariables
-from pymloc.model.variables import ParameterContainer
+from pymloc.model.variables import (InputStateVariables, NullVariables,
+                                    ParameterContainer)
 from pymloc.model.variables.container import InputOutputStateVariables
-from pymloc.model.variables.time_function import StateVariables
-from pymloc.model.variables.time_function import Time
+from pymloc.model.variables.time_function import StateVariables, Time
+
+np.set_printoptions(precision=4)
 
 
 @pytest.fixture

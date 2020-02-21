@@ -25,4 +25,4 @@ class TestBoundaryValueProblem:
         residual = bvp.boundary_residual(node_values)
         assert np.allclose(
             residual,
-            np.array([10. + 0., 200. + -10.]) - np.array([1., 3.]))
+            np.array([10. + 0., 2000. + -10.]) - np.array([1., 3.]))

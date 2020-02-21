@@ -53,10 +53,18 @@ class TestMultipleShooting:
         nflows = ms_object._n_shooting_nodes
         nn = ms_object._nn
         assert shooting_matrix.shape == (nflows * rank, nflows * rank)
+        correct_result = np.array([[-0.22312958, 0., 1., 0., 0., 0.],
+                                   [0., -0.60653091, 0., 1., 0., 0.],
+                                   [0., 0., -0.22312958, 0., 1., 0.],
+                                   [0., 0., 0., -0.60653091, 0., 1.],
+                                   [1., 0., 0., 0., 0., 0.],
+                                   [0., 1., 0., 0., 0., 0.]])
+        assert np.allclose(shooting_matrix, correct_result)
 
     def test_newton_step(self, ms_object):
         initial_guess = ms_object._get_initial_guess()
-        ms_object._newton_step(initial_guess)
+        rhs = ms_object._get_newton_rhs(initial_guess)
+        ms_object._newton_step(initial_guess, rhs)
 
     def test_get_newton_rhs(self, ms_object):
         ms_object._get_shooting_values()
@@ -66,3 +74,10 @@ class TestMultipleShooting:
 
     def test_run(self, ms_object):
         erg = ms_object.run()
+        scipy_flow = scipy.linalg.expm(0.5 * ms_object._dynamical_system._a(0))
+        iv = ms_object._bvp.initial_value
+        comp = np.block([iv, scipy_flow @ iv,
+                         scipy_flow @ scipy_flow @ iv]).reshape(2,
+                                                                3,
+                                                                order='F')
+        assert np.allclose(erg, comp)
