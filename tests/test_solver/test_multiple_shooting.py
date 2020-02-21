@@ -21,6 +21,21 @@ def ms_object(initial_value_problem, flow_problem):
     return ms_object
 
 
+@pytest.fixture
+def ms_object_dae(initial_value_problem_dae, flow_problem_dae):
+    stepsize = 1e-3
+    interval = initial_value_problem_dae.time_interval
+    t0 = interval.t_0
+    tf = interval.t_f
+    shooting_nodes = np.linspace(t0, tf, 3)
+    ms_object_dae = MultipleShooting(initial_value_problem_dae,
+                                     flow_problem_dae,
+                                     shooting_nodes,
+                                     stepsize=stepsize)
+    ms_object_dae._init_solver()
+    return ms_object_dae
+
+
 class TestMultipleShooting:
     def test_flow_matrix(self, ms_object):
         scipy_flow = scipy.linalg.expm(0.5 * ms_object._dynamical_system._a(0))
@@ -33,7 +48,7 @@ class TestMultipleShooting:
         assert ms_object._t2s.shape == (nn, rank, nnodes)
 
     def test_compute_gis(self, ms_object):
-        gis = ms_object._compute_gis()
+        gis = ms_object._gis
 
         nflows = ms_object._flows.shape[0]
         rank = ms_object._dynamical_system.rank
@@ -81,3 +96,6 @@ class TestMultipleShooting:
                                                                 3,
                                                                 order='F')
         assert np.allclose(erg, comp)
+
+    def test_run_dae(self, ms_object_dae):
+        erg = ms_object_dae.run()

@@ -1,8 +1,7 @@
 import numpy as np
 
 from ...model.variables.time_function import StateVariables
-from ..multilevel_object import MultiLevelObject
-from ..multilevel_object import local_object_factory
+from ..multilevel_object import MultiLevelObject, local_object_factory
 
 
 class ParameterDAE(MultiLevelObject):
@@ -187,17 +186,18 @@ class LinearDAE(DAE):
             f = self.f(t)
             n = self.nn
             zzprime, sigma, ttprime_h = np.linalg.svd(e)
-            self._current_eplus = ttprime_h.T @ np.linalg.solve(
-                np.diag(sigma), zzprime.T)
             rank = self.rank
             self._current_ttprime_h = ttprime_h
             self._current_zzprime = zzprime
+            self._current_eplus = self.t2(t) @ np.linalg.solve(
+                np.diag(sigma[:rank]),
+                self.z1(t).T)
             ehat_1 = self.z1(t).T @ e
-            self._current_ehat = np.zeros((n, n))
+            self._current_ehat = np.zeros((n, n), order='F')
             self._current_ehat[:rank, :] = ehat_1
             ahat_1 = self.z1(t).T @ a
             ahat_2 = self.z1prime(t).T @ a
-            self._current_ahat = np.zeros((n, n))
+            self._current_ahat = np.zeros((n, n), order='F')
             self._current_ahat[:rank, :] = ahat_1
             self._current_ahat[rank:, :] = ahat_2
             fhat_1 = self.z1(t).T @ f

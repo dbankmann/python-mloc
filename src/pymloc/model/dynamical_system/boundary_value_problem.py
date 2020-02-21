@@ -6,8 +6,12 @@ from ..solvable import Solvable
 
 
 class MultipleBoundaryValueProblem(Solvable, ABC):
-    def __init__(self, timepoints, boundary_values, inhomogeinity,
-                 dynamical_system):
+    def __init__(self,
+                 timepoints,
+                 boundary_values,
+                 inhomogeinity,
+                 dynamical_system,
+                 z_gamma=None):
         self._nnodes = len(boundary_values)
         if len(timepoints) != self._nnodes:
             raise ValueError(
@@ -19,7 +23,19 @@ class MultipleBoundaryValueProblem(Solvable, ABC):
         self._dynamical_system = dynamical_system
         self.nn = dynamical_system.nn
         self.nm = dynamical_system.nm
+        self._z_gamma = self._set_z_gamma(z_gamma)
         super().__init__()
+
+    def _set_z_gamma(self, z_gamma):
+        if z_gamma is None:
+            rank = self.dynamical_system.rank
+            z_gamma = np.zeros((rank, self.nn), order='F')
+            z_gamma[:rank, :rank] = np.identity(rank)
+        return z_gamma
+
+    @property
+    def z_gamma(self):
+        return self._z_gamma
 
     def _set_bvs(self, bvs):
         return np.array(list(bv.T for bv in bvs)).T
@@ -29,8 +45,10 @@ class MultipleBoundaryValueProblem(Solvable, ABC):
         return self._dynamical_system
 
     def boundary_residual(self, node_values):
-        residual = np.einsum('ijk,jk->i', self._boundary_values,
-                             node_values) - self._inhomogeinity
+        #TODO: Make more efficient (save intermediate products)
+        residual = np.einsum('hi,ijk,jk->h', self._z_gamma,
+                             self._boundary_values,
+                             node_values) - self._z_gamma @ self._inhomogeinity
         return residual
 
 

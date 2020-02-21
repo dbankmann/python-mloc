@@ -23,6 +23,58 @@ np.set_printoptions(precision=4)
 
 
 @pytest.fixture
+def linear_real_dae(variables, e_lin_dae, a_lin_dae, f_lin_dae):
+    states = StateVariables(3)
+    return LinearFlowRepresenation(states, e_lin_dae, a_lin_dae, f_lin_dae, 3)
+
+
+@pytest.fixture
+def flow_problem_dae(linear_real_dae):
+    time_interval = Time(0., 1.)
+    flowprob = LinearFlow(time_interval, linear_real_dae)
+    return flowprob
+
+
+@pytest.fixture
+def initial_value_problem_dae(linear_real_dae):
+    initial_value = np.array([1., 2., 0.])
+    time_interval = Time(0., 1.)
+    return InitialValueProblem(initial_value, time_interval, linear_real_dae)
+
+
+@pytest.fixture
+def e_lin_dae():
+    def e(t):
+        return np.array([[t, 1., t], [t + 1., 1., 2.],
+                         [2 * t + 1., 2., t + 2.]])
+
+    return e
+
+
+@pytest.fixture
+def a_lin_dae():
+    def a(t):
+        return -np.diag((3., 1., 10.))
+
+    return a
+
+
+@pytest.fixture
+def f_lin_dae():
+    def f(t):
+        return np.array([t, t**2, -t])
+
+    return f
+
+
+#ODE
+@pytest.fixture
+def linear_dae(variables, e_lin, a_lin, f_lin):
+    states = StateVariables(2)
+    return LinearFlowRepresenation(states, e_lin, a_lin, f_lin, 2)
+
+
+@pytest.fixture
 def flow_problem(linear_dae):
     time_interval = Time(0., 1.)
     flowprob = LinearFlow(time_interval, linear_dae)
