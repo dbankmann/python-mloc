@@ -19,7 +19,3 @@ class TestSolverContainerFactory:
         solver = NullSolver
         opt = LocalNullOptimization
         solver_container_factory.register_solver(solver, opt)
-
-    @pytest.mark.xfail(reason="Not Implemented")
-    def test_solver_subproblem_creation(self):
-        assert False

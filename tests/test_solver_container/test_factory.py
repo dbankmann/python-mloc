@@ -1,6 +1,8 @@
-from pymloc.solver_container import solver_container_factory
-from pymloc.model.optimization.local_optimization import LocalNullOptimization
 import pytest
+
+from pymloc.model.optimization.local_optimization import LocalNullOptimization
+from pymloc.solver_container import solver_container_factory
+from pymloc.solvers.dynamical_systems.multiple_shooting import MultipleShooting
 
 
 class TestSolverContainerFactory:
@@ -14,6 +16,5 @@ class TestSolverContainerFactory:
         opt = LocalNullOptimization
         solver_container_factory.register_solver(solver, opt)
 
-    @pytest.mark.xfail(reason="Not Implemented")
-    def test_solver_subproblem_creation(self):
-        assert False
+    def test_solver_subproblem_creation(self, initial_value_problem_dae):
+        assert MultipleShooting in initial_value_problem_dae._available_solvers.solvers

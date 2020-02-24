@@ -1,7 +1,9 @@
-from .variables import Variables
+from abc import ABC
+from abc import abstractmethod
 
-from abc import ABC, abstractmethod
 import numpy as np
+
+from .variables import Variables
 
 
 class TimeVariables(Variables, ABC):
@@ -51,10 +53,6 @@ class Time(TimeVariables):
         self.t_0 = t_0
         self.t_f = t_f
         super().__init__(dimension=1, time_domain=[t_0, t_f])
-
-    @property
-    def current_values(self):
-        return self._current_values[0]
 
     def get_random_values(self):
         return np.random.random(1)[0]

@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 from scipy.integrate import ode
 from scipy.integrate import trapz
@@ -5,6 +7,8 @@ from scipy.integrate import trapz
 from ...model.dynamical_system.flow_problem import LinearFlow
 from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
+
+logger = logging.getLogger(__name__)
 
 
 class DAEFlow(BaseSolver):
@@ -34,8 +38,8 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
 
     def run(self, x0):
         hom_flow = self.get_homogeneous_flows()
-        t0 = self.time_interval[0]
-        tf = self.time_interval[-1]
+        t0 = self.time_interval.t_0
+        tf = self.time_interval.t_f
         fds = np.zeros((hom_flow.shape[1:]), order='F')
         for i, t in enumerate(self.time_interval):
             fds[:, i] = self.model.flow_dae.f_d(t)
@@ -62,6 +66,8 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
         flows = np.zeros((n, n, nflows), order='F')
         #TODO: Paralellize
         for i, (t_i, t_ip1) in enumerate(intervals):
+            logger.info("Computing solution in the interval ({}, {})".format(
+                t_i, t_ip1))
             flows[:, :, i] = self.homogeneous_flow(t_i, t_ip1)
         self._homogeneous_flows = flows
 
@@ -77,8 +83,9 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
             return self.model.flow_dae.d_d(t)
 
         h = self.stepsize
-        integrator = ode(f, jac)
+        integrator = ode(f, jac).set_integrator('vode', method='bdf')
         for i, unit_vector in enumerate(np.identity(n)):
+            logger.info("Compute solution for {}-th unit vector".format(i))
             integrator.set_initial_value(unit_vector, t0)
             flow[:, i] = integrator.integrate(tf)
         return flow

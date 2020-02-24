@@ -1,50 +1,14 @@
 import numpy as np
 
-from ...model.variables.time_function import StateVariables
-from ..multilevel_object import MultiLevelObject, local_object_factory
-
-
-class ParameterDAE(MultiLevelObject):
-    def __init__(self,
-                 lower_level_variables,
-                 higher_level_variables,
-                 local_level_variables,
-                 residual=None):
-        super().__init__(lower_level_variables, higher_level_variables,
-                         local_level_variables)
-        if residual is not None:
-            self.residual = residual
-
-
-class LinearParameterDAE(ParameterDAE):
-    def __init__(self, ll_vars, hl_vars, loc_vars, e, a, f):
-        super().__init__(ll_vars, hl_vars, loc_vars)
-        self._e = e
-        self._a = a
-        self._f = f
-
-    @property
-    def e(self):
-        return self._e
-
-    @property
-    def a(self):
-        return self._a
-
-    def residual(self, hl_vars, loc_vars, ll_vars):
-        p, = hl_vars.current_value
-        xdot, x, t = loc_vars.current_value
-        e = self.e(p, x, t)
-        a = self.a(p, x, t)
-        return e @ xdot - a @ x
+from ...model.variables.container import StateVariablesContainer
 
 
 class DAE:
     def __init__(self, variables, n):
-        if not isinstance(variables, StateVariables):
+        if not isinstance(variables, StateVariablesContainer):
             raise TypeError(variables)
-        self._variables = variables
-        self._nm = variables.dimension
+        self._variables = variables.variables[0]
+        self._nm = self._variables.dimension
         self._nn = n
         self._index = None
         self._current_t = None
@@ -187,7 +151,7 @@ class LinearDAE(DAE):
             n = self.nn
             zzprime, sigma, ttprime_h = np.linalg.svd(e)
             rank = self.rank
-            self._current_ttprime_h = ttprime_h
+            self._current_ttprime_h = ttprime_h.T
             self._current_zzprime = zzprime
             self._current_eplus = self.t2(t) @ np.linalg.solve(
                 np.diag(sigma[:rank]),
@@ -205,13 +169,3 @@ class LinearDAE(DAE):
             self._current_fhat = np.zeros((n, ))
             self._current_fhat[:rank] = fhat_1
             self._current_fhat[rank:] = fhat_2
-
-
-class AutomaticLinearDAE(LinearDAE):
-    def __init__(self, parameter_dae, *args, **kwargs):
-        self._parameter_dae = parameter_dae
-        variables = parameter_dae.local_level_variables
-        super().__init__(variables, *args, **kwargs)
-
-
-local_object_factory.register_localizer(LinearParameterDAE, AutomaticLinearDAE)

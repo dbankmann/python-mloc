@@ -3,6 +3,7 @@ from abc import ABC
 import numpy as np
 
 from ..solvable import Solvable
+from ..variables.time_function import Time
 
 
 class MultipleBoundaryValues:
@@ -10,14 +11,15 @@ class MultipleBoundaryValues:
         self._nnodes = len(boundary_values)
         self._boundary_values = self._set_bvs(boundary_values)
         self._inner_nodes = boundary_values[1:-1]
+        #TODO: Check size of inhomogeinity according to state dimension (vector or matrix)
         self._inhomogeinity = inhomogeinity
         self._z_gamma = z_gamma
 
     def residual(self, node_values):
         #TODO: Make more efficient (save intermediate products)
-        residual = np.einsum('hi,ijk,jk->h', self._z_gamma,
-                             self._boundary_values,
-                             node_values) - self._z_gamma @ self._inhomogeinity
+        residual = np.einsum(
+            'hi,hjk,jk->i', self._z_gamma, self._boundary_values,
+            node_values) - self._z_gamma.T @ self._inhomogeinity
         return residual
 
     @property
@@ -38,7 +40,7 @@ class MultipleBoundaryValues:
 
     def set_z_gamma(self, rank, n):
         if self.z_gamma is None:
-            z_gamma = np.zeros((rank, n), order='F')
+            z_gamma = np.zeros((n, rank), order='F')
             z_gamma[:rank, :rank] = np.identity(rank)
         self._z_gamma = z_gamma
 
@@ -58,6 +60,9 @@ class BoundaryValues(MultipleBoundaryValues):
 
 class MultipleBoundaryValueProblem(Solvable, ABC):
     def __init__(self, time_intervals, dynamical_system, boundary_values):
+        self._initial_time = time_intervals[0].t_0
+        self._final_time = time_intervals[-1].t_f
+        self._time_interval = Time(self._initial_time, self._final_time)
         self._time_intervals = time_intervals
         self._dynamical_system = dynamical_system
         self.nn = dynamical_system.nn
@@ -99,15 +104,6 @@ class MultipleBoundaryValueProblem(Solvable, ABC):
     def nodes(self):
         return self._nodes
 
-
-class BoundaryValueProblem(MultipleBoundaryValueProblem):
-    def __init__(self, time_interval, dynamical_system,
-                 boundary_values: BoundaryValues):
-        self._time_interval = time_interval
-        self._initial_time = time_interval.t_0
-        self._final_time = time_interval.t_f
-        super().__init__((time_interval, ), dynamical_system, boundary_values)
-
     @property
     def initial_time(self):
         return self._initial_time
@@ -119,3 +115,9 @@ class BoundaryValueProblem(MultipleBoundaryValueProblem):
     @property
     def time_interval(self):
         return self._time_interval
+
+
+class BoundaryValueProblem(MultipleBoundaryValueProblem):
+    def __init__(self, time_interval, dynamical_system,
+                 boundary_values: BoundaryValues):
+        super().__init__((time_interval, ), dynamical_system, boundary_values)

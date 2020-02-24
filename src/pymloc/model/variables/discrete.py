@@ -8,7 +8,11 @@ class Parameters(Variables):
 
     @property
     def current_values(self):
-        return self._current_values
+        vals = self._current_values
+        if vals is not None and vals.size == 1:
+            return vals[0]
+        else:
+            return vals
 
     @current_values.setter
     def current_values(self, value):

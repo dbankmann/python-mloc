@@ -1,7 +1,11 @@
-from .variables import Variables
-from .time_function import StateVariables, InputVariables, OutputVariables, Time
-from .discrete import Parameters
 from abc import ABC
+
+from .discrete import Parameters
+from .time_function import InputVariables
+from .time_function import OutputVariables
+from .time_function import StateVariables
+from .time_function import Time
+from .variables import Variables
 
 
 class VariablesContainer(ABC):
@@ -24,6 +28,22 @@ class VariablesContainer(ABC):
     def current_values(self):
         vals = [var.current_values for var in self.variables]
         return vals
+
+    def get_random_values(self):
+        vals = (var.get_random_values() for var in self.variables)
+        return vals
+
+
+class UniqueVariablesContainer(VariablesContainer, ABC):
+    @property
+    def current_values(self):
+        vals = self.variables[0].current_values
+        return vals
+
+    @current_values.setter
+    def current_values(self, value):
+        var = self.variables[0]
+        var.current_values = value
 
     def get_random_values(self):
         vals = (var.get_random_values() for var in self.variables)
@@ -77,13 +97,22 @@ class InputOutputStateVariables(VariablesContainer):
 class InputStateVariables(InputOutputStateVariables):
     def __init__(self, n_states, m_inputs):
         super().__init__(n_states, m_inputs, 0)
-        self._outputs = self._states
+        self._outputs = None
 
     def _merge(self):
         self.merge(self.states, self.inputs, self.time)
 
 
-class ParameterContainer(VariablesContainer):
+class StateVariablesContainer(InputStateVariables):
+    def __init__(self, n_states):
+        super().__init__(n_states, 0)
+        self._inputs = None
+
+    def _merge(self):
+        self.merge(self.states, self.inputs, self.time)
+
+
+class ParameterContainer(UniqueVariablesContainer):
     def __init__(self, p_parameters, domain):
         super().__init__()
         self._parameters = Parameters(p_parameters, domain)

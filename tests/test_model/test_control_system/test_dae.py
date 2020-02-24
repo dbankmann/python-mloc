@@ -1,6 +1,7 @@
-from pymloc.model.control_system.dae import LinearParameterControlSystem
-import pytest
 import numpy as np
+import pytest
+
+from pymloc.model.control_system.dae import LinearParameterControlSystem
 
 
 @pytest.fixture
@@ -53,4 +54,4 @@ def f():
 
 class TestDAEControlSystem:
     def test_init(self, variables, e, a, b, c, d, f):
-        LinearParameterControlSystem(*variables, e, a, b, c, d, f)
+        LinearParameterControlSystem(*variables, e, a, b, c, d, f, 2)

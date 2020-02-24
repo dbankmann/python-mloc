@@ -52,7 +52,7 @@ class MultipleShooting(BaseSolver):
                 indices = np.append(indices, [i])
                 j += 1
         z_gamma = self._bvp.boundary_values.z_gamma
-        projected_values = np.einsum('ai, ijr,jkr->akr', z_gamma,
+        projected_values = np.einsum('ai, ajr,jkr->ikr', z_gamma,
                                      shooting_values, self._t2s)
         self._boundary_indices = indices
         return projected_values.reshape(rank,
@@ -160,3 +160,8 @@ class MultipleShooting(BaseSolver):
         for i, node in enumerate(self._shooting_nodes):
             das[:, :, i] = self._dynamical_system.d_a(node)
         self._das = das
+
+
+solver_container_factory.register_solver(MultipleBoundaryValueProblem,
+                                         MultipleShooting,
+                                         default=True)

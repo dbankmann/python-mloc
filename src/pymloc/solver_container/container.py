@@ -6,7 +6,7 @@ class SolverContainer:
 
     def add_solver(self, solver, default=False):
         self._solvers.append(solver)
-        if default:
+        if default or not hasattr(self, "_default_solver"):
             self.default_solver = solver
 
     @property
@@ -23,7 +23,7 @@ class SolverContainer:
 
     @default_solver.setter
     def default_solver(self, solver):
-        if not solver in self.solvers:
+        if solver not in self.solvers:
             raise ValueError(
                 "{} object should be a registered solver".format(solver))
         self._default_solver = solver

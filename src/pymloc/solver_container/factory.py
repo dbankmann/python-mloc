@@ -1,8 +1,9 @@
+import inspect
+import logging
+
 from ..model import solvable
 from . import SolverContainer
 
-import inspect
-import logging
 logger = logging.getLogger()
 
 
@@ -41,7 +42,6 @@ class SolverContainerFactory:
         else:
             solver_container.add_solver(solver, default)
         #Also register solvers for all problem subclasses.
-
         for subclass in problem.__subclasses__():
             self.register_solver(subclass, solver)
 

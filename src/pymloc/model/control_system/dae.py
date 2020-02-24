@@ -1,17 +1,18 @@
-from ..multilevel_object import MultiLevelObject
-from ..dynamical_system.dae import LinearParameterDAE
 import numpy as np
+
+from ..dynamical_system.parameter_dae import LinearParameterDAE
+from ..multilevel_object import MultiLevelObject
 
 
 class LinearParameterControlSystem(LinearParameterDAE):
-    def __init__(self, ll_vars, hl_vars, loc_vars, e, a, b, c, d, f):
+    def __init__(self, ll_vars, hl_vars, loc_vars, e, a, b, c, d, f, nn):
         self._e = e
         self._a = a
         self._b = b
         self._c = c
         self._d = d
         cal_e, cal_a, cal_f = self._get_cal_coeffs(e, a, b, c, d, f)
-        super().__init__(ll_vars, hl_vars, loc_vars, cal_e, cal_a, cal_f)
+        super().__init__(ll_vars, hl_vars, loc_vars, cal_e, cal_a, cal_f, nn)
 
     def _get_cal_coeffs(self, e, a, b, c, d, f):
         def cal_e(ll_vars, loc_vars):
