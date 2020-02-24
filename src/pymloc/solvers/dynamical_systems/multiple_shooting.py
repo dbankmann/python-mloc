@@ -1,10 +1,8 @@
 import numpy as np
 import scipy.linalg as linalg
-
 from pygelda.pygelda import Gelda
 
-from ...model.dynamical_system.boundary_value_problem import \
-    MultipleBoundaryValueProblem
+from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
 from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
 
@@ -16,13 +14,12 @@ class MultipleShooting(BaseSolver):
         self._bvp = bvp
         self._shooting_nodes = shooting_nodes
         self._n_shooting_nodes = len(shooting_nodes)
-        self._boundary_values = bvp.boundary_values
-        self._bvp_nodes = bvp.time_points
+        self._boundary_values = bvp.boundary_values.boundary_values
+        self._bvp_nodes = bvp.nodes
         self._check_shooting_nodes()
         self._intervals = zip(self._shooting_nodes, self._shooting_nodes[1:])
         self._final_time = self._shooting_nodes[-1]
         self._inner_nodes = shooting_nodes[1:-1]
-        self._inhomogeinity = bvp.inhomogeinity
         self._dynamical_system = bvp.dynamical_system
         self._nn = self._dynamical_system.nn
         self._flow_problem = flow_problem
@@ -54,7 +51,7 @@ class MultipleShooting(BaseSolver):
                 shooting_values[..., i] = self._boundary_values[..., j]
                 indices = np.append(indices, [i])
                 j += 1
-        z_gamma = self._bvp.z_gamma
+        z_gamma = self._bvp.boundary_values.z_gamma
         projected_values = np.einsum('ai, ijr,jkr->akr', z_gamma,
                                      shooting_values, self._t2s)
         self._boundary_indices = indices
@@ -125,7 +122,7 @@ class MultipleShooting(BaseSolver):
     def _get_newton_rhs(self, current_node_states):
         current_x_d = self._get_x_d(current_node_states)
         boundary_node_states = current_x_d[:, self._boundary_indices]
-        bound_res = self._bvp.boundary_residual(boundary_node_states)
+        bound_res = self._bvp.boundary_values.residual(boundary_node_states)
         diffs = current_node_states[..., 1:] - np.einsum(
             'ijr,ir->jr', self._gis, current_node_states[..., :-1])
         res_b = diffs.reshape(diffs.size)
