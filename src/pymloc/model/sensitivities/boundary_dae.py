@@ -34,3 +34,21 @@ class BVPSensitivities(Solvable):
         small_new_gammas = linalg.null_space(temp)
         gamma_check_0 = z_gamma @ small_new_gammas[:rank, :].T @ t20.T
         gamma_check_f = z_gamma @ small_new_gammas[rank:, :].T @ t2f.T
+
+    def _get_adjoint_dae_coeffs(self, localized_bvp):
+        dyn = localized_bvp.dynamical_system
+
+        def e_check(t):
+            return -dyn.e(t).T
+
+        def a_check(t):
+            return dyn.a(t).T + dyn.e_dot(t).T
+
+        return e_check, a_check
+
+    def _get_xi_small_inverse_part(self, small_gammas):
+        #TODO: QR
+        return np.solve(small_gammas @ small_gammas.T, small_gammas)
+
+    def _get_capital_f_tilde(self):
+        pass
