@@ -34,10 +34,13 @@ class MultipleShooting(BaseSolver):
 
     def _get_homogeneous_flows(self):
         time_interval = self._bvp.time_interval
+        time_interval.grid = self._shooting_nodes
         stepsize = 1. / (self._n_shooting_nodes - 1)
         flow_solver = solver_container_factory.get_solver_container(
             self._flow_problem).default_solver(self._flow_problem,
                                                time_interval, stepsize)
+        flow_solver.abs_tol = 1e-10
+        flow_solver.rel_tol = 1e-12
         return flow_solver.get_homogeneous_flows()
 
     def _get_shooting_values(self):
@@ -77,7 +80,7 @@ class MultipleShooting(BaseSolver):
         dim = self._dynamical_system.rank * self._n_shooting_nodes
         shooting_matrix = np.zeros((dim, dim), order='F')
         #TODO: Inefficient, probably needs low level implementation
-        diag = linalg.block_diag(*(gis[..., i] for i in range(gis.shape[0])))
+        diag = linalg.block_diag(*(gis[..., i] for i in range(gis.shape[-1])))
         shooting_matrix[:diag.shape[0], :diag.shape[1]] = -diag
         for i in range(self._n_shooting_nodes)[:-1]:
             size = self._dynamical_system.rank * i
@@ -114,22 +117,27 @@ class MultipleShooting(BaseSolver):
 
     def _newton_step(self, current_node_states, rhs):
         shooting_matrix = self._get_shooting_matrix()
-        shape = current_node_states.shape
+        *shapefirst, shapem2, shapem1 = current_node_states.shape
         next_nodes = current_node_states - np.linalg.solve(
-            shooting_matrix, rhs).reshape(*shape, order='F')
+            shooting_matrix, rhs).reshape(
+                (*shapefirst, shapem1, shapem2), order='F').swapaxes(
+                    -2, -1)  #is this correct? Not for 2d!
+        import ipdb
+        ipdb.set_trace()
         return next_nodes
 
     def _get_newton_rhs(self, current_node_states):
         current_x_d = self._get_x_d(current_node_states)
-        boundary_node_states = current_x_d[:, self._boundary_indices]
+        boundary_node_states = current_x_d[..., self._boundary_indices]
         bound_res = self._bvp.boundary_values.residual(boundary_node_states)
         diffs = current_node_states[..., 1:] - np.einsum(
-            'ijr,ir->jr', self._gis, current_node_states[..., :-1])
-        res_b = diffs.reshape(diffs.size)
-        return np.hstack((res_b, bound_res))
+            'ijr,i...r->j...r', self._gis, current_node_states[..., :-1])
+        res_b = np.moveaxis(diffs, -1, 0).reshape(-1, *diffs.shape[1:-1])
+        return np.concatenate((res_b, bound_res), axis=0)
 
     def _get_initial_guess(self, initial_guess=None):
-        shape = (self._nn, self._n_shooting_nodes)
+        shape = self._dynamical_system.variables.shape + (
+            self._n_shooting_nodes, )
         if initial_guess is None:
             initial_guess = np.zeros(shape, order='F')
         elif initial_guess.shape != shape:
@@ -141,19 +149,24 @@ class MultipleShooting(BaseSolver):
     def run(self, initial_guess=None):
         self._init_solver()
         initial_guess = self._get_initial_guess(initial_guess)
-        projected_values = np.einsum('ijr,ir->jr', self._t2s, initial_guess)
+        projected_values = np.einsum('ijr,i...r->j...r', self._t2s,
+                                     initial_guess)
 
+        import ipdb
+        ipdb.set_trace()
         for i in range(self.max_iter):
             residual = self._get_newton_rhs(projected_values)
             if not self.abort(residual):
                 projected_values = self._newton_step(projected_values,
                                                      residual)
         x_d = self._get_x_d(projected_values)
-        full_values = x_d + np.einsum('ijr,jr->ir', self._das, x_d)
+        full_values = x_d + np.einsum('ijr,j...r->i...r', self._das, x_d)
+        import ipdb
+        ipdb.set_trace()
         return full_values
 
     def _get_x_d(self, projected_values):
-        return np.einsum('ijr,jr->ir', self._t2s, projected_values)
+        return np.einsum('ijr,j...r->i...r', self._t2s, projected_values)
 
     def _set_d_as(self):
         das = np.zeros((self._nn, self._nn, self._n_shooting_nodes), order='F')

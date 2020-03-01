@@ -32,6 +32,10 @@ class TimeVariables(Variables, ABC):
     def current_time(self, value):
         self._current_time = value
 
+    @property
+    def shape(self):
+        return np.empty(self.dimension).shape
+
 
 class StateVariables(TimeVariables):
     def __init__(self, dimension, time_domain=[0., 1.]):
@@ -53,6 +57,15 @@ class Time(TimeVariables):
         self.t_0 = t_0
         self.t_f = t_f
         super().__init__(dimension=1, time_domain=[t_0, t_f])
+        self._grid = None
+
+    @property
+    def grid(self):
+        return self._grid
+
+    @grid.setter
+    def grid(self, value):
+        self._grid = value
 
     def get_random_values(self):
         return np.random.random(1)[0]

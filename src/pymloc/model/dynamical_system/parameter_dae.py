@@ -1,6 +1,6 @@
 from ..multilevel_object import MultiLevelObject
 from ..multilevel_object import local_object_factory
-from .representations import LinearFlowRepresenation
+from .representations import LinearFlowRepresentation
 
 
 class ParameterDAE(MultiLevelObject):
@@ -49,8 +49,8 @@ class LinearParameterDAE(ParameterDAE):
         return e @ xdot - a @ x
 
 
-#TODO: Automatic generation should take into consideration appropriate representations. For now LinearFlowRepresenation is general enough.
-class AutomaticLinearDAE(LinearFlowRepresenation):
+#TODO: Automatic generation should take into consideration appropriate representations. For now LinearFlowRepresentation is general enough.
+class AutomaticLinearDAE(LinearFlowRepresentation):
     def __init__(self, parameter_dae):
         self._parameter_dae = parameter_dae
         variables = parameter_dae.local_level_variables

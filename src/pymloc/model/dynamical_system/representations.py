@@ -3,7 +3,7 @@ import numpy as np
 from .dae import LinearDAE
 
 
-class LinearFlowRepresenation(LinearDAE):
+class LinearFlowRepresentation(LinearDAE):
     def __init__(self, variables, e, a, f, n, der_e=None):
         super().__init__(variables, e, a, f, n, der_e)
 

@@ -95,6 +95,8 @@ class TestMultipleShooting:
                          scipy_flow @ scipy_flow @ iv]).reshape(2,
                                                                 3,
                                                                 order='F')
+        import ipdb
+        ipdb.set_trace()
         assert np.allclose(erg, comp)
 
     def test_run_dae(self, ms_object_dae):

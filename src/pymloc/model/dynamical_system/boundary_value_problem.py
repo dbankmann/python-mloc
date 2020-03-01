@@ -18,7 +18,7 @@ class MultipleBoundaryValues:
     def residual(self, node_values):
         #TODO: Make more efficient (save intermediate products)
         residual = np.einsum(
-            'hi,hjk,jk->i', self._z_gamma, self._boundary_values,
+            'hi,hjk,j...k->i...', self._z_gamma, self._boundary_values,
             node_values) - self._z_gamma.T @ self._inhomogeinity
         return residual
 
@@ -42,7 +42,7 @@ class MultipleBoundaryValues:
         if self.z_gamma is None:
             z_gamma = np.zeros((n, rank), order='F')
             z_gamma[:rank, :rank] = np.identity(rank)
-        self._z_gamma = z_gamma
+            self._z_gamma = z_gamma
 
     def _set_bvs(self, bvs):
         return np.array(list(bv.T for bv in bvs)).T
@@ -58,7 +58,7 @@ class BoundaryValues(MultipleBoundaryValues):
         ), inhomogeneity, z_gamma)
 
 
-class MultipleBoundaryValueProblem(Solvable, ABC):
+class MultipleBoundaryValueProblem(Solvable):
     def __init__(self, time_intervals, dynamical_system, boundary_values):
         self._initial_time = time_intervals[0].t_0
         self._final_time = time_intervals[-1].t_f
@@ -94,7 +94,7 @@ class MultipleBoundaryValueProblem(Solvable, ABC):
         for first_i, second_i in zip(tis, tis[1:]):
             tf = first_i.t_f
             t0 = second_i.t_0
-            if not np.close(t0, tf):
+            if not np.allclose(t0, tf):
                 raise ValueError("TimeIntervals must intersect at boundary")
             nodes += (tf, )
         nodes += (tis[-1].t_f, )

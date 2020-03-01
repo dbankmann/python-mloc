@@ -8,7 +8,11 @@ class DAE:
         if not isinstance(variables, StateVariablesContainer):
             raise TypeError(variables)
         self._variables = variables.variables[0]
-        self._nm = self._variables.dimension
+        self._nm = self._variables.shape[0]
+        if n != self._nm:
+            raise ValueError(
+                "Number of variables is {}, but has to equal number of equations, which is {}"
+                .format(self._nm, n))
         self._nn = n
         self._index = None
         self._current_t = None
@@ -25,6 +29,10 @@ class DAE:
     @property
     def index(self):
         return self._index
+
+    @property
+    def variables(self):
+        return self._variables
 
 
 class LinearDAE(DAE):
@@ -166,6 +174,7 @@ class LinearDAE(DAE):
             self._current_ahat[rank:, :] = ahat_2
             fhat_1 = self.z1(t).T @ f
             fhat_2 = self.z1prime(t).T @ f
-            self._current_fhat = np.zeros((n, ))
-            self._current_fhat[:rank] = fhat_1
-            self._current_fhat[rank:] = fhat_2
+            var_shape = self._variables.dimension
+            self._current_fhat = np.zeros(var_shape, order='F')
+            self._current_fhat[:rank, ...] = fhat_1
+            self._current_fhat[rank:, ...] = fhat_2

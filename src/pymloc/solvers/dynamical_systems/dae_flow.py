@@ -57,12 +57,9 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
 
     def _save_homogeneous_flows(self):
         n = self._nn
-        stepsize = self.stepsize
-        t0 = self.time_interval.t_0
-        tf = self.time_interval.t_f
-        time_interval = np.arange(t0, tf + stepsize, stepsize)
-        intervals = zip(time_interval, time_interval[1:])
-        nflows = len(time_interval) - 1
+        time_grid = self.time_interval.grid
+        intervals = zip(time_grid, time_grid[1:])
+        nflows = len(time_grid) - 1
         flows = np.zeros((n, n, nflows), order='F')
         #TODO: Paralellize
         for i, (t_i, t_ip1) in enumerate(intervals):
@@ -83,7 +80,10 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
             return self.model.flow_dae.d_d(t)
 
         h = self.stepsize
-        integrator = ode(f, jac).set_integrator('vode', method='bdf')
+        integrator = ode(f, jac).set_integrator('vode',
+                                                method='bdf',
+                                                atol=self.abs_tol,
+                                                rtol=self.rel_tol)
         for i, unit_vector in enumerate(np.identity(n)):
             logger.info("Compute solution for {}-th unit vector".format(i))
             integrator.set_initial_value(unit_vector, t0)

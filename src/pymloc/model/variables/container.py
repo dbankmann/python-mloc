@@ -1,5 +1,7 @@
 from abc import ABC
 
+import numpy as np
+
 from .discrete import Parameters
 from .time_function import InputVariables
 from .time_function import OutputVariables
@@ -110,6 +112,10 @@ class StateVariablesContainer(InputStateVariables):
 
     def _merge(self):
         self.merge(self.states, self.inputs, self.time)
+
+    @property
+    def shape(self):
+        return np.array(self.dimension).shape
 
 
 class ParameterContainer(UniqueVariablesContainer):

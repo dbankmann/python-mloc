@@ -12,28 +12,11 @@ def bvp_sens_object(linear_param_bvp):
     return BVPSensitivities(linear_param_bvp)
 
 
-@pytest.fixture(params=np.arange(0.1, 2., 0.1))
-def localized_bvp(bvp_sens_object, request):
-    parameters = np.array([request.param])
-    return bvp_sens_object.get_sensitivity_bvp(parameters)
-
-
-@pytest.fixture
-def localized_flow_prob(localized_bvp):
-    time_interval = Time(0., 1.)
-    flowprob = LinearFlow(time_interval, localized_bvp.dynamical_system)
-    return flowprob
-
-
 class TestBVPSensitivities:
     def test_get_sens_bvp(self, bvp_sens_object):
         parameters = np.array([2.])
         assert isinstance(bvp_sens_object.get_sensitivity_bvp(parameters),
                           MultipleBoundaryValueProblem)
-
-    def test_compute_adjoint_boundary_values(self, bvp_sens_object,
-                                             localized_bvp):
-        bvp_sens_object._compute_adjoint_boundary_values(localized_bvp)
 
     def test_solve_localized(self, localized_bvp, localized_flow_prob):
         nodes = np.linspace(0, 1, 5)

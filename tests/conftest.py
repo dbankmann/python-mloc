@@ -6,13 +6,14 @@ from pymloc.model.dynamical_system.flow_problem import LinearFlow
 from pymloc.model.dynamical_system.initial_value_problem import InitialValueProblem
 from pymloc.model.dynamical_system.parameter_dae import LinearParameterDAE
 from pymloc.model.dynamical_system.parameter_ivp import ParameterInitialValueProblem
-from pymloc.model.dynamical_system.representations import LinearFlowRepresenation
+from pymloc.model.dynamical_system.representations import LinearFlowRepresentation
 from pymloc.model.optimization.constraints.constraint import Constraint
 from pymloc.model.optimization.local_optimization import LocalConstraint
 from pymloc.model.optimization.local_optimization import LocalNullOptimization
 from pymloc.model.optimization.local_optimization import LocalObjective
 from pymloc.model.optimization.objectives.objective import Objective
 from pymloc.model.optimization.optimization import NullOptimization
+from pymloc.model.sensitivities.boundary_dae import BVPSensitivities
 from pymloc.model.variables import InputStateVariables
 from pymloc.model.variables import NullVariables
 from pymloc.model.variables import ParameterContainer
@@ -20,8 +21,32 @@ from pymloc.model.variables.container import InputOutputStateVariables
 from pymloc.model.variables.container import StateVariablesContainer
 from pymloc.model.variables.time_function import StateVariables
 from pymloc.model.variables.time_function import Time
+from pymloc.solvers.dynamical_systems.sensitivities import SensitivitiesSolver
 
 np.set_printoptions(precision=4)
+
+
+@pytest.fixture
+def bvp_sens_object(linear_param_bvp):
+    return BVPSensitivities(linear_param_bvp, n_param=1)
+
+
+@pytest.fixture
+def sens_solver(bvp_sens_object):
+    return SensitivitiesSolver(bvp_sens_object, 1e-3)
+
+
+@pytest.fixture(params=np.arange(0.1, 2., 0.1))
+def localized_bvp(bvp_sens_object, request):
+    parameters = np.array([request.param])
+    return bvp_sens_object.get_sensitivity_bvp(parameters)
+
+
+@pytest.fixture
+def localized_flow_prob(localized_bvp):
+    time_interval = Time(0., 1.)
+    flowprob = LinearFlow(time_interval, localized_bvp.dynamical_system)
+    return flowprob
 
 
 #param dae
@@ -86,7 +111,7 @@ def f_lin_param_dae():
 @pytest.fixture
 def linear_real_dae(variables, e_lin_dae, a_lin_dae, f_lin_dae):
     states = StateVariablesContainer(3)
-    return LinearFlowRepresenation(states, e_lin_dae, a_lin_dae, f_lin_dae, 3)
+    return LinearFlowRepresentation(states, e_lin_dae, a_lin_dae, f_lin_dae, 3)
 
 
 @pytest.fixture
@@ -132,7 +157,7 @@ def f_lin_dae():
 @pytest.fixture
 def linear_dae(variables, e_lin, a_lin, f_lin):
     states = StateVariables(2)
-    return LinearFlowRepresenation(states, e_lin, a_lin, f_lin, 2)
+    return LinearFlowRepresentation(states, e_lin, a_lin, f_lin, 2)
 
 
 @pytest.fixture
@@ -176,7 +201,7 @@ def f_lin():
 @pytest.fixture
 def linear_dae(variables, e_lin, a_lin, f_lin):
     states = StateVariablesContainer(2)
-    return LinearFlowRepresenation(states, e_lin, a_lin, f_lin, 2)
+    return LinearFlowRepresentation(states, e_lin, a_lin, f_lin, 2)
 
 
 @pytest.fixture
