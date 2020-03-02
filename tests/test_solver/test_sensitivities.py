@@ -16,3 +16,8 @@ class TestBVPSensitivitiesSolver:
     @pytest.mark.parametrize("tau", np.arange(0.1, 1., 0.1))
     def test_solve_adjoint_dae(self, sens_solver, localized_bvp, tau):
         sol = sens_solver._get_adjoint_solution(localized_bvp, tau)
+
+    @pytest.mark.xfail
+    @pytest.mark.parametrize("tau", np.arange(0.1, 1., 0.1))
+    def test_f_tilde(self, sens_solver, localized_bvp, tau):
+        sens_solver._get_capital_f_tilde(localized_bvp, localized_bvp.solve())

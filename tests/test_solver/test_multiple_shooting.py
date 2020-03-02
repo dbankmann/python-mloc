@@ -95,9 +95,24 @@ class TestMultipleShooting:
                          scipy_flow @ scipy_flow @ iv]).reshape(2,
                                                                 3,
                                                                 order='F')
-        import ipdb
-        ipdb.set_trace()
         assert np.allclose(erg, comp)
 
     def test_run_dae(self, ms_object_dae):
         erg = ms_object_dae.run()
+
+    def test_unstack(self, rand_shape):
+        a = rand_shape
+        b = MultipleShooting._unstack(a)
+        np.testing.assert_equal(a[..., 0], b[:a.shape[0], ...])
+
+    def test_restack(self, rand_shape):
+        b = MultipleShooting._unstack(rand_shape)
+        np.testing.assert_equal(MultipleShooting._restack(b, rand_shape.shape),
+                                rand_shape)
+
+    @pytest.fixture(params=np.arange(100))
+    def rand_shape(self):
+        dim = np.random.randint(2, 9)
+        shape = list(np.random.randint(1, 10, dim))
+        size = np.empty(shape).size
+        return np.arange(size).reshape(shape)

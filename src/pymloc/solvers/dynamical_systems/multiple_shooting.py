@@ -39,8 +39,8 @@ class MultipleShooting(BaseSolver):
         flow_solver = solver_container_factory.get_solver_container(
             self._flow_problem).default_solver(self._flow_problem,
                                                time_interval, stepsize)
-        flow_solver.abs_tol = 1e-10
-        flow_solver.rel_tol = 1e-12
+        flow_solver.abs_tol = 1e-3
+        flow_solver.rel_tol = 1e-6
         return flow_solver.get_homogeneous_flows()
 
     def _get_shooting_values(self):
@@ -117,22 +117,29 @@ class MultipleShooting(BaseSolver):
 
     def _newton_step(self, current_node_states, rhs):
         shooting_matrix = self._get_shooting_matrix()
-        *shapefirst, shapem2, shapem1 = current_node_states.shape
-        next_nodes = current_node_states - np.linalg.solve(
-            shooting_matrix, rhs).reshape(
-                (*shapefirst, shapem1, shapem2), order='F').swapaxes(
-                    -2, -1)  #is this correct? Not for 2d!
-        import ipdb
-        ipdb.set_trace()
+        lin_sys_sol = np.linalg.solve(shooting_matrix, rhs)
+        next_nodes = current_node_states - self._restack(
+            lin_sys_sol, current_node_states.shape)
         return next_nodes
+
+    @staticmethod
+    def _unstack(array):
+        return np.moveaxis(array, -1, 0).reshape(-1, *array.shape[1:-1])
+
+    @staticmethod
+    def _restack(array, shape):
+        *shapefirst, shapem2, shapem1 = shape
+        restacked = np.einsum('ij...->j...i',
+                              array.reshape(shapem1, *shapefirst, shapem2))
+        return restacked
 
     def _get_newton_rhs(self, current_node_states):
         current_x_d = self._get_x_d(current_node_states)
         boundary_node_states = current_x_d[..., self._boundary_indices]
         bound_res = self._bvp.boundary_values.residual(boundary_node_states)
         diffs = current_node_states[..., 1:] - np.einsum(
-            'ijr,i...r->j...r', self._gis, current_node_states[..., :-1])
-        res_b = np.moveaxis(diffs, -1, 0).reshape(-1, *diffs.shape[1:-1])
+            'ijr,j...r->i...r', self._gis, current_node_states[..., :-1])
+        res_b = self._unstack(diffs)
         return np.concatenate((res_b, bound_res), axis=0)
 
     def _get_initial_guess(self, initial_guess=None):
@@ -152,17 +159,13 @@ class MultipleShooting(BaseSolver):
         projected_values = np.einsum('ijr,i...r->j...r', self._t2s,
                                      initial_guess)
 
-        import ipdb
-        ipdb.set_trace()
         for i in range(self.max_iter):
             residual = self._get_newton_rhs(projected_values)
-            if not self.abort(residual):
-                projected_values = self._newton_step(projected_values,
-                                                     residual)
+            if self.abort(residual):
+                break
+            projected_values = self._newton_step(projected_values, residual)
         x_d = self._get_x_d(projected_values)
         full_values = x_d + np.einsum('ijr,j...r->i...r', self._das, x_d)
-        import ipdb
-        ipdb.set_trace()
         return full_values
 
     def _get_x_d(self, projected_values):

@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 import scipy.linalg as linalg
 
 from pymloc.model.dynamical_system.flow_problem import LinearFlow
@@ -53,8 +54,17 @@ class SensitivitiesSolver(BaseSolver):
         #TODO: QR
         return np.solve(small_gammas @ small_gammas.T, small_gammas)
 
-    def _get_capital_f_tilde(self, localized_bvp):
-        solution = localized_bvp.solve()
+    def _get_capital_f_tilde(self, localized_bvp, solution):
+        a_dif = self._dynamical_system.a_theta
+        e_dif = self._dynamical_system.e_theta
+        f_dif = self._dynamical_system.f_theta
+        x_d = localized_bvp.dynamical_system.x_d(solution)
+        x_d_dot = np.einsum('ijk,jlk->ilk', localized_bvp.dynamical_system.d_d,
+                            x_d)
+
+        f_tilde = np.einsum('ijp,j->ip', a_dif, solution) - np.einsum(
+            'ijp,j->ip', e_dif, x_d_dot) + f_dif
+        return f_tilde
 
     def _setup_adjoint_sensitivity_bvp(self, localized_bvp, tau):
         n = self._dynamical_system.nn
@@ -88,8 +98,6 @@ class SensitivitiesSolver(BaseSolver):
              [(sel @ localized_bvp.dynamical_system.cal_projection(tau)).T]])
         z_gamma = localized_bvp.boundary_values.z_gamma
         z_gamma_new = linalg.block_diag(z_gamma, z_gamma)
-        import ipdb
-        ipdb.set_trace()
         boundary_values = MultipleBoundaryValues((bound_0, bound_tau, bound_f),
                                                  gamma, z_gamma_new)
         t1 = Time(t_0, tau)
@@ -117,11 +125,24 @@ class SensitivitiesSolver(BaseSolver):
         flow_problem = LinearFlow(time, adjoint_bvp.dynamical_system)
         return flow_problem
 
-    def run(self, parameters):
-        localized_bvp = self._bvp_param.get_sensitivity_bvp(parameters)
-        localized_bvp.solve()
+    def _compute_sensitivity(self, f_tilde, solution, adjoint_solution):
+        temp1 = np.einsum('ijk, j->ik', self._bvp_param.selector_theta,
+                          solution)
 
-        f_tilde = self._get_capital_f_tilde()
+        temp2 = self._bvp_param.selector @ localized_bvp.d_a(
+            tau) @ self._bvp_param.f_theta
+        temp3 = xi @ self._bvp_param.gamma_theta
+
+        temp4 = scipy.integrate(t0, tf, adjoint_solution.T @ f_tilde)
+
+        return temp1 - temp2 - temp3 - temp4
+
+    def run(self, parameters, tau):
+        localized_bvp = self._bvp_param.get_sensitivity_bvp(parameters)
+        solution = localized_bvp.solve()
+        f_tilde = self._get_capital_f_tilde(localized_bvp, solution)
+        adjoint_solution = self._get_adjoint_solution(localized_bvp, tau)
+        self._compute_sensitivity(f_tilde, adjoint_solution)
 
 
 solver_container_factory.register_solver(BVPSensitivities,
