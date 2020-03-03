@@ -1,6 +1,23 @@
+import jax
+import jax.numpy as np
+
 from ..multilevel_object import MultiLevelObject
 from ..multilevel_object import local_object_factory
 from .representations import LinearFlowRepresentation
+
+
+def jac_jax_reshaped(fun, shape, *args, **kwargs):
+    def fun_raveled(*args_fun, **kwargs_fun):
+        return fun(*args_fun, **kwargs_fun).ravel()
+
+    def jac_reshaped(*points, **kw_points):
+        jac = jax.jacobian(fun_raveled, *args, **kwargs)
+        jac_eval = np.atleast_2d(np.array(jac(*points, **kw_points)))
+        diff_dim = jac_eval.shape[0]
+        return jac_eval.reshape(diff_dim,
+                                *shape).T  #Transpose for column major
+
+    return jac_reshaped
 
 
 class ParameterDAE(MultiLevelObject):
@@ -40,6 +57,18 @@ class LinearParameterDAE(ParameterDAE):
     @property
     def der_e(self):
         return self._der_e
+
+    @property
+    def e_theta(self):
+        return jac_jax_reshaped(self.e, (self.nn, self.nn))
+
+    @property
+    def a_theta(self):
+        return jac_jax_reshaped(self.a, (self.nn, self.nn))
+
+    @property
+    def f_theta(self):
+        return jac_jax_reshaped(self.f, (self.nn, ))
 
     def residual(self, hl_vars, loc_vars, ll_vars):
         p, = hl_vars.current_value

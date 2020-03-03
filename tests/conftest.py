@@ -1,3 +1,4 @@
+import jax.numpy as jnp
 import numpy as np
 import pytest
 
@@ -94,7 +95,8 @@ def e_lin_param_dae():
 @pytest.fixture
 def a_lin_param_dae():
     def a(p, t):
-        return -np.diag((3., p, 10.))
+        return -jnp.array([[3., 0., 0.], [0., p, 0.], [0., 0., 10.]])
+        #return -np.diag((3., p, 10.))
 
     return a
 
