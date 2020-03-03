@@ -17,7 +17,15 @@ class TestBVPSensitivitiesSolver:
     def test_solve_adjoint_dae(self, sens_solver, localized_bvp, tau):
         sol = sens_solver._get_adjoint_solution(localized_bvp, tau)
 
-    @pytest.mark.xfail
     @pytest.mark.parametrize("tau", np.arange(0.1, 1., 0.1))
     def test_f_tilde(self, sens_solver, localized_bvp, tau):
-        sens_solver._get_capital_f_tilde(localized_bvp, localized_bvp.solve())
+        time = localized_bvp.time_interval
+        flow_prob = LinearFlow(time, localized_bvp.dynamical_system)
+        nodes = np.linspace(time.t_0, time.t_f, 5)
+        stepsize = 1e-4
+        localized_bvp.init_solver(flow_prob, nodes, stepsize)
+        import ipdb
+        ipdb.set_trace()
+        sens_solver._get_capital_f_tilde(
+            localized_bvp, localized_bvp.solve(),
+            localized_bvp._localization_parameters[0])

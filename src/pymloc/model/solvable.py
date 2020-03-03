@@ -25,7 +25,8 @@ class Solvable(ABC):
 
     def solve(self):
         try:
-            self._solver_instance.run()
+            solution = self._solver_instance.run()
+            return solution
         except AttributeError:
             raise AttributeError(
                 "There is currently no instantiated solver object for problem {}"

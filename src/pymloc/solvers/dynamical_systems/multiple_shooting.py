@@ -165,8 +165,8 @@ class MultipleShooting(BaseSolver):
                 break
             projected_values = self._newton_step(projected_values, residual)
         x_d = self._get_x_d(projected_values)
-        full_values = x_d + np.einsum('ijr,j...r->i...r', self._das, x_d)
-        return full_values
+        full_node_values = x_d + np.einsum('ijr,j...r->i...r', self._das, x_d)
+        return self._shooting_nodes, full_node_values
 
     def _get_x_d(self, projected_values):
         return np.einsum('ijr,j...r->i...r', self._t2s, projected_values)

@@ -140,6 +140,7 @@ class AutomaticMultipleBoundaryValueProblem(MultipleBoundaryValueProblem):
         if parameters is not None:
             global_object.higher_level_variables.current_values = parameters
         self._global_object = global_object
+        self._localization_parameters = parameters
         timepoints = global_object.time_intervals
         dynamical_system = global_object._dynamical_system.get_localized_object(
         )

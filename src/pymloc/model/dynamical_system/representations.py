@@ -64,6 +64,14 @@ class LinearFlowRepresentation(LinearDAE):
         self._compute_f_d(t)
         return self._current_f_d
 
+    def x_d(self, t, x):
+        self._compute_projection(t)
+        return self._current_projection @ x
+
+    def x_a(self, t, x):
+        self._compute_projection(t)
+        return self._current_proj_compl @ x
+
     def _compute_f_d(self, t):
         self._current_f_d = (self.t2(t) @ np.linalg.solve(
             self.ehat_1(t) @ self.t2(t), self.fhat_1(t)) +

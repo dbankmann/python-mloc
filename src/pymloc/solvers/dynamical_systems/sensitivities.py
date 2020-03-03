@@ -54,16 +54,37 @@ class SensitivitiesSolver(BaseSolver):
         #TODO: QR
         return np.solve(small_gammas @ small_gammas.T, small_gammas)
 
-    def _get_capital_f_tilde(self, localized_bvp, solution):
-        a_dif = self._dynamical_system.a_theta
-        e_dif = self._dynamical_system.e_theta
-        f_dif = self._dynamical_system.f_theta
-        x_d = localized_bvp.dynamical_system.x_d(solution)
-        x_d_dot = np.einsum('ijk,jlk->ilk', localized_bvp.dynamical_system.d_d,
-                            x_d)
+    def _get_capital_f_tilde(self, localized_bvp, solution, parameter):
+        solution_time_dict = {
+            solution[0][i]: solution[1][:, i]
+            for i in range(solution[0].size)
+        }
 
-        f_tilde = np.einsum('ijp,j->ip', a_dif, solution) - np.einsum(
-            'ijp,j->ip', e_dif, x_d_dot) + f_dif
+        def cur_solution(t):
+            return solution_time_dict.get(t)
+
+        def a_dif(t):
+            return self._dynamical_system.a_theta(parameter, t)
+
+        def e_dif(t):
+            return self._dynamical_system.e_theta(parameter, t)
+
+        def f_dif(t):
+            return self._dynamical_system.f_theta(parameter, t)
+
+        def x_d(t):
+            return localized_bvp.dynamical_system.x_d(t, cur_solution(t))
+
+        def x_d_dot(t):
+            return np.einsum('ij,j->i', localized_bvp.dynamical_system.d_d(t),
+                             x_d(t))
+
+        def f_tilde(t):
+            f_tilde = np.einsum(
+                'ijk,j->ik', a_dif(t), cur_solution(t)) - np.einsum(
+                    'ijk,j->ik', e_dif(t), x_d_dot(t)) + f_dif(t)
+            return f_tilde
+
         return f_tilde
 
     def _setup_adjoint_sensitivity_bvp(self, localized_bvp, tau):
@@ -126,6 +147,10 @@ class SensitivitiesSolver(BaseSolver):
         return flow_problem
 
     def _compute_sensitivity(self, f_tilde, solution, adjoint_solution):
+        time = self.time_interval
+        t0 = time.t_0
+        tf = time.t_f
+
         temp1 = np.einsum('ijk, j->ik', self._bvp_param.selector_theta,
                           solution)
 

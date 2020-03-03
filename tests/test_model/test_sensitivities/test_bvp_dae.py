@@ -9,7 +9,7 @@ from pymloc.model.variables.time_function import Time
 
 @pytest.fixture
 def bvp_sens_object(linear_param_bvp):
-    return BVPSensitivities(linear_param_bvp)
+    return BVPSensitivities(linear_param_bvp, 1)
 
 
 class TestBVPSensitivities:
