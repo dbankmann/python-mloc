@@ -29,3 +29,8 @@ class TestBVPSensitivitiesSolver:
         sens_solver._get_capital_f_tilde(
             localized_bvp, localized_bvp.solve(),
             localized_bvp._localization_parameters[0])
+
+    #def test_compute_sensitivity(self, f_tilde, solution, adjoint_solution):
+    @pytest.mark.parametrize("tau", np.arange(0.1, 1., 0.1))
+    def test_run(self, sens_solver, localized_bvp, tau):
+        sens_solver.run(localized_bvp._localization_parameters[0], tau)

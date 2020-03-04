@@ -1,4 +1,5 @@
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 
 import numpy as np
 
@@ -19,3 +20,34 @@ class BaseSolver(ABC):
 
     def abort(self, residual):
         return np.allclose(residual, 0., atol=self.abs_tol, rtol=self.rel_tol)
+
+
+class Solution(ABC):
+    def __init__(self, solution):
+        self._solution = solution
+
+    @property
+    def solution(self):
+        return self._solution
+
+
+class TimeSolution(Solution):
+    def __init__(self, time_grid, solution):
+        super().__init__(solution)
+        self._time_grid = time_grid
+        solution_time_dict = {
+            time_grid[i]: solution[..., i]
+            for i in range(time_grid.size)
+        }
+        self._solution_time_dict = solution_time_dict
+
+    @property
+    def time_grid(self):
+        return self._time_grid
+
+    def __call__(self, t):
+        sol = self._solution_time_dict.get(t)
+        if sol is None:
+            raise ValueError("Time: {} not in time_grid".format(t))
+        else:
+            return sol

@@ -5,6 +5,7 @@ from pygelda.pygelda import Gelda
 from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
 from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
+from ..base_solver import TimeSolution
 
 
 class MultipleShooting(BaseSolver):
@@ -166,7 +167,7 @@ class MultipleShooting(BaseSolver):
             projected_values = self._newton_step(projected_values, residual)
         x_d = self._get_x_d(projected_values)
         full_node_values = x_d + np.einsum('ijr,j...r->i...r', self._das, x_d)
-        return self._shooting_nodes, full_node_values
+        return TimeSolution(self._shooting_nodes, full_node_values)
 
     def _get_x_d(self, projected_values):
         return np.einsum('ijr,j...r->i...r', self._t2s, projected_values)

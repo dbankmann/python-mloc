@@ -53,10 +53,10 @@ def localized_flow_prob(localized_bvp):
 #param dae
 @pytest.fixture
 def linear_param_bvp(linear_param_dae, param_vars):
-    initial_value = lambda p: np.array([p, 2., 1.])
+    initial_value = lambda p: jnp.array([p, 2., 1.])
     t = Time(0., 1.)
     return ParameterInitialValueProblem(*param_vars, initial_value, t,
-                                        linear_param_dae)
+                                        linear_param_dae, 1)
 
 
 @pytest.fixture

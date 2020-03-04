@@ -3,6 +3,7 @@ from ..multilevel_object import local_object_factory
 from ..variables.container import VariablesContainer
 from .boundary_value_problem import MultipleBoundaryValueProblem
 from .boundary_value_problem import MultipleBoundaryValues
+from .parameter_dae import jac_jax_reshaped
 
 
 class ParameterMultipleBoundaryValues(MultiLevelObject):
@@ -12,6 +13,8 @@ class ParameterMultipleBoundaryValues(MultiLevelObject):
                  local_level_variables: VariablesContainer,
                  boundary_values,
                  inhomogeinity,
+                 nn,
+                 n_param=1,
                  z_gamma=None):
         super().__init__(lower_level_variables, higher_level_variables,
                          local_level_variables)
@@ -19,6 +22,9 @@ class ParameterMultipleBoundaryValues(MultiLevelObject):
         self._boundary_values = boundary_values
         self._inhomogeinity = inhomogeinity
         self._z_gamma = z_gamma
+        self._n_param = n_param
+        self._nn = nn
+        self._inhomogeinity_shape = (self._nn, self._n_param)
 
     @property
     def boundary_values(self):
@@ -27,6 +33,10 @@ class ParameterMultipleBoundaryValues(MultiLevelObject):
     @property
     def inhomogeinity(self):
         return self._inhomogeinity
+
+    @property
+    def inhomogeinity_theta(self):
+        return jac_jax_reshaped(self.inhomogeinity, self._inhomogeinity_shape)
 
     @property
     def z_gamma(self):
@@ -101,6 +111,8 @@ class ParameterBoundaryValues(ParameterMultipleBoundaryValues):
                  boundary_0,
                  boundary_f,
                  inhomogeneity,
+                 nn,
+                 n_param=1,
                  z_gamma=None):
         self.boundary_0 = boundary_0
         self.boundary_f = boundary_f
@@ -108,7 +120,7 @@ class ParameterBoundaryValues(ParameterMultipleBoundaryValues):
                          local_level_variables, (
                              boundary_0,
                              boundary_f,
-                         ), inhomogeneity, z_gamma)
+                         ), inhomogeneity, nn, n_param, z_gamma)
 
 
 class AutomaticMultipleBoundaryValues(MultipleBoundaryValues):

@@ -10,7 +10,7 @@ class Parameters(Variables):
     def current_values(self):
         vals = self._current_values
         if vals is not None and vals.size == 1:
-            return vals[0]
+            return vals.item()
         else:
             return vals
 
