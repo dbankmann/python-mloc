@@ -7,8 +7,14 @@ from .parameter_bvp import ParameterBoundaryValues
 
 
 class ParameterInitialValueProblem(ParameterBoundaryValueProblem):
-    def __init__(self, ll_vars, hl_vars, loc_vars, initial_value,
-                 time_interval, dynamical_system):
+    def __init__(self,
+                 ll_vars,
+                 hl_vars,
+                 loc_vars,
+                 initial_value,
+                 time_interval,
+                 dynamical_system,
+                 n_param=1):
         self._initial_value = initial_value
         n = dynamical_system.nn
 
@@ -20,7 +26,7 @@ class ParameterInitialValueProblem(ParameterBoundaryValueProblem):
 
         bound_values = ParameterBoundaryValues(ll_vars, hl_vars, loc_vars,
                                                boundary_0, boundary_f,
-                                               initial_value)
+                                               initial_value, n, n_param)
         super().__init__(ll_vars, hl_vars, loc_vars, time_interval,
                          dynamical_system, bound_values)
 

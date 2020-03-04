@@ -1,3 +1,5 @@
+import logging
+
 import jax
 import jax.numpy as np
 
@@ -5,17 +7,24 @@ from ..multilevel_object import MultiLevelObject
 from ..multilevel_object import local_object_factory
 from .representations import LinearFlowRepresentation
 
+logger = logging.getLogger(__name__)
+
 
 def jac_jax_reshaped(fun, shape, *args, **kwargs):
     def fun_raveled(*args_fun, **kwargs_fun):
         return fun(*args_fun, **kwargs_fun).ravel()
 
     def jac_reshaped(*points, **kw_points):
+        import ipdb
+        ipdb.set_trace()
         jac = jax.jacobian(fun_raveled, *args, **kwargs)
         jac_eval = np.atleast_2d(np.array(jac(*points, **kw_points)))
         diff_dim = jac_eval.shape[0]
-        return jac_eval.reshape(diff_dim,
-                                *shape).T  #Transpose for column major
+        logger.info("Reshaping jacobian with original shape: {}".format(
+            jac_eval.shape))
+        return np.einsum('i...->...i',
+                         jac_eval.reshape(diff_dim,
+                                          *shape))  #Transpose for column major
 
     return jac_reshaped
 
