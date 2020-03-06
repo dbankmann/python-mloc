@@ -5,7 +5,7 @@ import numpy as np
 
 
 class BaseSolver(ABC):
-    def __init__(self, model, abs_tol=1.e-3, rel_tol=1.e-3, max_iter=10):
+    def __init__(self, model=None, abs_tol=1.e-6, rel_tol=1.e-3, max_iter=10):
         self.abs_tol = abs_tol
         self.model = model
         self.rel_tol = rel_tol
