@@ -23,9 +23,9 @@ class Solvable(ABC):
         else:
             self._solver = self._available_solvers.default_solver
 
-    def solve(self):
+    def solve(self, *args, **kwargs):
         try:
-            solution = self._solver_instance.run()
+            solution = self._solver_instance.run(*args, **kwargs)
             return solution
         except AttributeError:
             raise AttributeError(

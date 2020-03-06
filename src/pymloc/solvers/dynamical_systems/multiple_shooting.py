@@ -9,7 +9,8 @@ from ..base_solver import TimeSolution
 
 
 class MultipleShooting(BaseSolver):
-    def __init__(self, bvp, flow_problem, shooting_nodes, stepsize):
+    def __init__(self, bvp, flow_problem, ivp_problem, shooting_nodes,
+                 stepsize):
         if not isinstance(bvp, MultipleBoundaryValueProblem):
             raise TypeError(bvp)
         self._bvp = bvp
@@ -24,14 +25,18 @@ class MultipleShooting(BaseSolver):
         self._dynamical_system = bvp.dynamical_system
         self._nn = self._dynamical_system.nn
         self._flow_problem = flow_problem
-        super().__init__(stepsize)
+        self._ivp_problem = ivp_problem
+        self._stepsize = stepsize
+        super().__init__()
 
-    def _init_solver(self):
+    def _init_solver(self, time_interval):
         self._set_t2s()
         self._set_d_as()
         self._flows = self._get_homogeneous_flows()
         self._set_gis()
         self._shooting_values = self._get_shooting_values()
+        self._time_interval = time_interval
+        self._solution_time_grid = time_interval.time_grid
 
     def _get_homogeneous_flows(self):
         time_interval = self._bvp.time_interval
@@ -40,7 +45,7 @@ class MultipleShooting(BaseSolver):
         flow_solver = solver_container_factory.get_solver_container(
             self._flow_problem).default_solver(self._flow_problem,
                                                time_interval, stepsize)
-        flow_solver.abs_tol = 1e-3
+        flow_solver.abs_tol = 1e-6
         flow_solver.rel_tol = 1e-6
         return flow_solver.get_homogeneous_flows()
 
@@ -154,8 +159,8 @@ class MultipleShooting(BaseSolver):
                     initial_guess.shape, shape))
         return initial_guess
 
-    def run(self, initial_guess=None):
-        self._init_solver()
+    def run(self, time_interval, initial_guess=None):
+        self._init_solver(time_interval)
         initial_guess = self._get_initial_guess(initial_guess)
         projected_values = np.einsum('ijr,i...r->j...r', self._t2s,
                                      initial_guess)
@@ -167,7 +172,34 @@ class MultipleShooting(BaseSolver):
             projected_values = self._newton_step(projected_values, residual)
         x_d = self._get_x_d(projected_values)
         full_node_values = x_d + np.einsum('ijr,j...r->i...r', self._das, x_d)
-        return TimeSolution(self._shooting_nodes, full_node_values)
+        node_solution = TimeSolution(self._shooting_nodes, full_node_values)
+        time_grid_solution = self._get_intermediate_values(node_solution)
+        return time_grid_solution, node_solution
+
+    def _get_intermediate_values(self, node_solution):
+        # this is rather slow, but it's an inherent disadvantage of the shooting approach
+        idx = np.searchsorted(self._solution_time_grid,
+                              node_solution.time_grid)
+        solution = np.zeros((*node_solution.solution.shape[:-1],
+                             self._solution_time_grid.size))
+        self._ivp_problem.init_solver(stepsize=self._stepsize,
+                                      abs_tol=1e-6,
+                                      rel_tol=1e-6)
+        #TODO: Also compute backwards for better stability / difference to node points
+        for i, node in enumerate(node_solution.time_grid[:-1]):
+            loweridx = idx[i]
+            upperidx = idx[i + 1]
+            interval = self._solution_time_grid[loweridx:upperidx + 1]
+            x0 = node_solution(node)
+            t0 = node
+            for j, tf in enumerate(interval):
+                x0 = self._ivp_problem.solve(t0, tf, x0, n_steps=1)(tf)
+                solution[..., loweridx + j] = x0
+                t0 = tf
+
+            solution[..., loweridx + j] = x0
+
+        return TimeSolution(self._solution_time_grid, solution)
 
     def _get_x_d(self, projected_values):
         return np.einsum('ijr,j...r->i...r', self._t2s, projected_values)
