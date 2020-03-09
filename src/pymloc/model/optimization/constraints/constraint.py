@@ -13,3 +13,15 @@ class AutomaticLocalConstraint(LocalConstraint):
 
 
 local_object_factory.register_localizer(Constraint, AutomaticLocalConstraint)
+
+
+class NullConstraint(Constraint):
+    pass
+
+
+class AutomaticLocalNullConstraint(AutomaticLocalConstraint):
+    pass
+
+
+local_object_factory.register_localizer(NullConstraint,
+                                        AutomaticLocalNullConstraint)
