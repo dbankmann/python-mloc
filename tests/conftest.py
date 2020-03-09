@@ -12,7 +12,8 @@ from pymloc.model.optimization.constraints.constraint import Constraint
 from pymloc.model.optimization.local_optimization import LocalConstraint
 from pymloc.model.optimization.local_optimization import LocalNullOptimization
 from pymloc.model.optimization.local_optimization import LocalObjective
-from pymloc.model.optimization.objectives import NonLinearLeastSquares
+from pymloc.model.optimization.nonlinear_leastsquares import NonLinearLeastSquares
+from pymloc.model.optimization.objectives import NonLinearLeastSquares as NLLSObjective
 from pymloc.model.optimization.objectives.objective import Objective
 from pymloc.model.optimization.optimization import NullOptimization
 from pymloc.model.sensitivities.boundary_dae import BVPSensitivities
@@ -32,21 +33,25 @@ np.set_printoptions(precision=4)
 @pytest.fixture
 def f_nlsq():
     def f(ll_vars, hl_vars, loc_vars):
-        import ipdb
-        ipdb.set_trace()
         a, b = hl_vars
         x1, x2 = loc_vars
-        f1 = np.sqrt(2) * (a - x1)
-        f2 = np.sqrt(2 * b) * (x2 - x1**2)
-        return np.array([f1, f2])
+        f1 = jnp.sqrt(2) * (a - x1)
+        f2 = jnp.sqrt(2 * b) * (x2 - x1**2)
+        return jnp.array([f1, f2])
 
     return f
 
 
+@pytest.fixture
+def nllq(variables, objective_nllq):
+
+    return NonLinearLeastSquares(objective_nllq, *variables)
+
+
 @pytest.fixture()
-def constraint_nllq(variables, f_nlsq):
-    constraint = NonLinearLeastSquares(*variables, f_nlsq)
-    return constraint
+def objective_nllq(variables, f_nlsq):
+    objective = NLLSObjective(*variables, f_nlsq)
+    return objective
 
 
 @pytest.fixture
@@ -234,7 +239,7 @@ def variables():
     parameters = ParameterContainer(1, domain)
     state_input = InputStateVariables(n_states=2, m_inputs=1)
     null_vars = NullVariables()
-    return parameters, null_vars, state_input
+    return null_vars, parameters, state_input
 
 
 @pytest.fixture

@@ -17,7 +17,8 @@ class NonLinearLeastSquares(OptimizationObject):
         super().__init__(objective_obj, NullConstraint(*vars), *vars)
 
 
-class AutomaticLocalNonLinearLeastSquares(AutomaticLocalOptimizationObject):
+class AutomaticLocalNonLinearLeastSquares(AutomaticLocalOptimizationObject,
+                                          LocalNonLinearLeastSquares):
     pass
 
 

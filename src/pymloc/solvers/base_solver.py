@@ -22,13 +22,18 @@ class BaseSolver(ABC):
         return np.allclose(residual, 0., atol=self.abs_tol, rtol=self.rel_tol)
 
 
-class Solution(ABC):
-    def __init__(self, solution):
+class Solution:
+    def __init__(self, solution, params=None):
         self._solution = solution
+        self._solver_params = params
 
     @property
     def solution(self):
         return self._solution
+
+    @property
+    def params(self):
+        return self._solver_params
 
 
 class TimeSolution(Solution):

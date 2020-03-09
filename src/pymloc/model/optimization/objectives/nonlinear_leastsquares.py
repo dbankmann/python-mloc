@@ -1,5 +1,7 @@
-from ...multilevel_object import MultiLevelObject, local_object_factory
-from .objective import AutomaticLocalObjective, Objective
+from ...multilevel_object import MultiLevelObject
+from ...multilevel_object import local_object_factory
+from .objective import AutomaticLocalObjective
+from .objective import Objective
 
 
 class NonLinearLeastSquares(Objective):

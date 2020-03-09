@@ -50,7 +50,7 @@ class MultiLevelObject(ABC):
         if nparam == 3:
 
             def localized_function(variables):
-                args = (hl_vars, ) + (ll_vars, ) + (variables, )
+                args = (ll_vars, ) + (hl_vars, ) + (variables, )
                 return method(*args)
 
             return localized_function
