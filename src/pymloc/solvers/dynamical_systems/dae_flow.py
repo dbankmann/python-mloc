@@ -17,8 +17,9 @@ class DAEFlow(BaseSolver):
 
 
 class ProjectionDAEFlowIntegrator(DAEFlow):
-    def __init__(self, dae_flow_instance, time_interval, stepsize):
-        super().__init__(dae_flow_instance)
+    def __init__(self, dae_flow_instance, time_interval, stepsize, *args,
+                 **kwargs):
+        super().__init__(dae_flow_instance, *args, **kwargs)
         self._time_interval = time_interval
         self._stepsize = stepsize
         self._homogeneous_flows = None
@@ -36,7 +37,7 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
     def time_interval(self, value):
         self._time_interval = value
 
-    def run(self, x0):
+    def _run(self, x0):
         hom_flow = self.get_homogeneous_flows()
         t0 = self.time_interval.t_0
         tf = self.time_interval.t_f
@@ -85,7 +86,7 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
                                                 atol=self.abs_tol,
                                                 rtol=self.rel_tol)
         for i, unit_vector in enumerate(np.identity(n)):
-            logger.info("Compute solution for {}-th unit vector".format(i))
+            logger.debug("Compute solution for {}-th unit vector".format(i))
             integrator.set_initial_value(unit_vector, t0)
             flow[:, i] = integrator.integrate(tf)
         return flow

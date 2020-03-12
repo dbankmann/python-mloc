@@ -1,3 +1,6 @@
+import logging
+from copy import deepcopy
+
 import numpy as np
 import scipy
 import scipy.linalg as linalg
@@ -6,16 +9,20 @@ from pymloc.model.dynamical_system.flow_problem import LinearFlow
 
 from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
 from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValues
+from ...model.dynamical_system.initial_value_problem import InitialValueProblem
 from ...model.dynamical_system.representations import LinearFlowRepresentation
 from ...model.sensitivities.boundary_dae import BVPSensitivities
 from ...model.variables.container import StateVariablesContainer
 from ...model.variables.time_function import Time
 from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
+from ..base_solver import TimeSolution
+
+logger = logging.getLogger(__name__)
 
 
 class SensitivitiesSolver(BaseSolver):
-    def __init__(self, bvp_param, stepsize):
+    def __init__(self, bvp_param, *args, **kwargs):
         if not isinstance(bvp_param, BVPSensitivities):
             raise TypeError(bvp_param)
         self._bvp_param = bvp_param
@@ -23,7 +30,7 @@ class SensitivitiesSolver(BaseSolver):
         self._nn = self._dynamical_system.nn
         self._time_interval = self._bvp_param.time_interval
         self._boundary_values = self._bvp_param.boundary_value_problem.boundary_values
-        super().__init__(stepsize)
+        super().__init__(*args, **kwargs)
 
     def _compute_adjoint_boundary_values(self, localized_bvp):
         n = self._dynamical_system.nn
@@ -100,7 +107,7 @@ class SensitivitiesSolver(BaseSolver):
             return linalg.block_diag(a, a)
 
         def f(t):
-            return np.zeros((2 * n, n_param))
+            return np.zeros((2 * n, sel.shape[1]))
 
         variables = StateVariablesContainer((2 * n, sel.shape[0]))
         adjoint_dyn_sy = LinearFlowRepresentation(variables, e, a, f, 2 * n)
@@ -125,23 +132,51 @@ class SensitivitiesSolver(BaseSolver):
     def _evaluate_sensitivity_function(self):
         pass
 
-    def _get_adjoint_solution(self, localized_bvp, parameters, tau):
+    def _get_adjoint_solution(self, localized_bvp, parameters, tau, time):
         adjoint_bvp = self._setup_adjoint_sensitivity_bvp(
             localized_bvp, parameters, tau)
         flow_problem = self._get_adjoint_flow_problem(adjoint_bvp)
-        time = self._bvp_param.boundary_value_problem.time_interval
+        iv_problem = self._get_adjoint_ivp_problem(adjoint_bvp)
         #TODO: Make attribute
-        intermediate = 5
+        intermediate = 3
         nodes = np.concatenate((np.linspace(time.t_0, tau, intermediate),
                                 np.linspace(tau, time.t_f, intermediate)[1:]))
-        stepsize = 1e-4
-        adjoint_bvp.init_solver(flow_problem, nodes, stepsize)
-        return adjoint_bvp.solve()
+        stepsize = 1e-1
+        adjoint_bvp.init_solver(flow_problem,
+                                iv_problem,
+                                nodes,
+                                stepsize,
+                                rel_tol=self.rel_tol,
+                                abs_tol=self.abs_tol)
+        logger.info("Solving adjoint boundary value problem...")
+        adjoint_sol_blown_up = adjoint_bvp.solve(time)[0]
+        return self._adjoint_collapse_solution(adjoint_sol_blown_up, tau)
+
+    def _adjoint_collapse_solution(self, adjoint_solution, tau):
+        n = self._nn
+        grid = adjoint_solution.time_grid
+        solution = adjoint_solution.solution
+        tsize = grid.size
+        sshape = solution.shape
+
+        idx = np.searchsorted(grid, tau)
+        newn = sshape[0] // 2
+        coll_solution = np.empty((newn, *sshape[1:]))
+        coll_solution[:, :idx] = solution[:newn, :idx]
+        coll_solution[:, idx:] = solution[newn:, idx:]
+        return TimeSolution(grid, coll_solution)
 
     def _get_adjoint_flow_problem(self, adjoint_bvp):
         time = self._bvp_param.boundary_value_problem.time_interval
         flow_problem = LinearFlow(time, adjoint_bvp.dynamical_system)
         return flow_problem
+
+    def _get_adjoint_ivp_problem(self, adjoint_bvp):
+        time = self._bvp_param.boundary_value_problem.time_interval
+        initial_value = np.zeros(self._nn)
+        ivp = InitialValueProblem(initial_value, time,
+                                  adjoint_bvp.dynamical_system)
+        return ivp
 
     def _compute_sensitivity(self, f_tilde, localized_bvp, solution,
                              adjoint_solution, parameters, tau):
@@ -156,35 +191,42 @@ class SensitivitiesSolver(BaseSolver):
             parameters) @ localized_bvp.dynamical_system.d_a(
                 tau) @ self._bvp_param.dynamical_system.f_theta(
                     parameters, tau)
-        xi = self._xi_part @ np.block([
-            adjoint_solution.solution[..., 0], adjoint_solution.solution[...,
-                                                                         -1]
-        ])
+        xi = self._xi_part @ np.block([[adjoint_solution.solution[..., 0]],
+                                       [adjoint_solution.solution[..., -1]]])
         temp3 = np.einsum(
             'ij,ikl->jk', xi,
             self._boundary_values.inhomogeinity_theta(parameters))
-        f_tilde_arr = np.array([
-            f_tilde(t) for t in adjoint_solution.time_grid
-        ])  #TODO: slow on constant coefficients.
-        temp4 = scipy.integrate.trapz(adjoint_solution.solution.T @ f_tilde,
-                                      adjoint_solution.time_grid)
+        f_tilde_arr = np.array([f_tilde(t) for t in solution.time_grid
+                                ])  #TODO: slow on constant coefficients.
+        temp4m = adjoint_solution.solution.T @ f_tilde_arr
+        temp4 = scipy.integrate.trapz(temp4m.transpose(1, 2, 0),
+                                      solution.time_grid)
 
         return temp1 - temp2 - temp3 - temp4
 
-    def run(self, parameters, tau):
-        import ipdb
-        ipdb.set_trace()
+    def _run(self, parameters, tau):
         localized_bvp = self._bvp_param.get_sensitivity_bvp(parameters)
-        time = localized_bvp.time_interval
-        flow_prob = LinearFlow(time, localized_bvp.dynamical_system)
+        time = deepcopy(localized_bvp.time_interval)
+        stepsize = 1e-1  #needed for integration. TODO:Better way to choose that stepsize?
+        time.grid = np.hstack((np.arange(time.t_0, tau, stepsize),
+                               np.arange(tau, time.t_f + stepsize, stepsize)))
+        flow_prob = LinearFlow(deepcopy(time), localized_bvp.dynamical_system)
+        ivp_prob = InitialValueProblem(
+            np.zeros((localized_bvp.dynamical_system.nn, )), time,
+            localized_bvp.dynamical_system)
         nodes = np.linspace(time.t_0, time.t_f, 5)
-        stepsize = 1e-4
-        localized_bvp.init_solver(flow_prob, nodes, stepsize)
-        solution = localized_bvp.solve()
+        localized_bvp.init_solver(flow_prob,
+                                  ivp_prob,
+                                  nodes,
+                                  stepsize,
+                                  abs_tol=self.abs_tol,
+                                  rel_tol=self.rel_tol)
+        #time.add_to_grid(tau)
+        solution, node_solution = localized_bvp.solve(time)
         f_tilde = self._get_capital_f_tilde(localized_bvp, solution,
                                             parameters)
         adjoint_solution = self._get_adjoint_solution(localized_bvp,
-                                                      parameters, tau)
+                                                      parameters, tau, time)
         sensitivity = self._compute_sensitivity(f_tilde, localized_bvp,
                                                 solution, adjoint_solution,
                                                 parameters, tau)

@@ -14,6 +14,7 @@ class MultipleBoundaryValues:
         #TODO: Check size of inhomogeinity according to state dimension (vector or matrix)
         self._inhomogeinity = inhomogeinity
         self._z_gamma = z_gamma
+        self._n_inhom = inhomogeinity.shape[-1]
 
     def residual(self, node_values):
         #TODO: Make more efficient (save intermediate products)
@@ -21,6 +22,10 @@ class MultipleBoundaryValues:
             'hi,hjk,j...k->i...', self._z_gamma, self._boundary_values,
             node_values) - self._z_gamma.T @ self._inhomogeinity
         return residual
+
+    @property
+    def n_inhom(self):
+        return self._n_inhom
 
     @property
     def nnodes(self):

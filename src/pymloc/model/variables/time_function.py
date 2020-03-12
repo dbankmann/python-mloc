@@ -1,9 +1,12 @@
+import logging
 from abc import ABC
 from abc import abstractmethod
 
 import numpy as np
 
 from .variables import Variables
+
+logger = logging.getLogger(__name__)
 
 
 class TimeVariables(Variables, ABC):
@@ -53,11 +56,20 @@ class OutputVariables(TimeVariables):
 
 
 class Time(TimeVariables):
-    def __init__(self, t_0, t_f):
+    def __init__(self, t_0, t_f, time_grid=None):
         self.t_0 = t_0
         self.t_f = t_f
         super().__init__(dimension=1, time_domain=[t_0, t_f])
-        self._grid = None
+        self._grid = time_grid
+
+    def add_to_grid(self, tp):
+        if not self.t_0 < tp < self.t_f:
+            raise ValueError(tp)
+        elif tp in self.grid:
+            logger.warning("{} already in grid".format(tp))
+            return
+        idx = np.searchsorted(self.grid, tp)
+        self.grid = np.insert(self.grid, idx, tp)
 
     @property
     def grid(self):

@@ -18,8 +18,12 @@ class TestBVPSensitivities:
         assert isinstance(bvp_sens_object.get_sensitivity_bvp(parameters),
                           MultipleBoundaryValueProblem)
 
-    def test_solve_localized(self, localized_bvp, localized_flow_prob):
-        nodes = np.linspace(0, 1, 5)
+    def test_solve_localized(self, localized_bvp, localized_ivp,
+                             localized_flow_prob):
+        nodes = np.linspace(0, 1, 3)
         stepsize = 1e-4
-        localized_bvp.init_solver(localized_flow_prob, nodes, stepsize)
-        localized_bvp.solve()
+        time_interval = Time(0., 1., time_grid=np.linspace(0., 1., 10))
+
+        localized_bvp.init_solver(localized_flow_prob, localized_ivp, nodes,
+                                  stepsize)
+        localized_bvp.solve(time_interval)

@@ -19,7 +19,7 @@ def ms_object(initial_value_problem, flow_problem):
                                  initial_value_problem,
                                  shooting_nodes,
                                  stepsize=stepsize)
-    ms_object._init_solver(interval)
+    ms_object._init_solver(interval, flow_abs_tol=1e-6, flow_rel_tol=1e-6)
     return ms_object
 
 
@@ -93,7 +93,9 @@ class TestMultipleShooting:
 
     def test_run(self, ms_object):
         time_interval = ms_object._ivp_problem.time_interval
-        erg = ms_object.run(time_interval)[1]
+        erg = ms_object.run(time_interval,
+                            flow_abs_tol=1e-6,
+                            flow_rel_tol=1e-6)[1]
         scipy_flow = scipy.linalg.expm(0.5 * ms_object._dynamical_system._a(0))
         iv = ms_object._bvp.initial_value
         comp = np.block([iv, scipy_flow @ iv,
