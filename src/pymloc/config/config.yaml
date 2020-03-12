@@ -1,7 +1,7 @@
 ---
 
 version: 1
-disable_existing_loggers: False
+disable_existing_loggers: True
 formatters:
     simple:
         format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -10,7 +10,7 @@ formatters:
         datefmt: "%Y-%m-%d %H:%M:%S"
     console:
         class: colorlog.ColoredFormatter
-        format: "%(log_color)s[%(levelname)-8s][%(name)s] --- %(message)s (%(filename)s:%(lineno)s)"
+        format: "%(log_color)s[%(levelname)-8s] --- %(message)s (%(filename)s:%(lineno)s)"
         datefmt: "%Y-%m-%d %H:%M:%S"
     console_user:
         class: colorlog.ColoredFormatter
