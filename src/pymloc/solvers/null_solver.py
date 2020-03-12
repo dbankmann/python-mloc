@@ -1,10 +1,10 @@
-from ..solver_container import solver_container_factory
 from ..model.optimization import local_optimization
+from ..solver_container import solver_container_factory
 from . import BaseSolver
 
 
 class NullSolver(BaseSolver):
-    def run(self, *args, **kwargs):
+    def _run(self, *args, **kwargs):
         pass
 
 

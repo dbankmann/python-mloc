@@ -15,12 +15,10 @@ def jac_jax_reshaped(fun, shape, *args, **kwargs):
         return fun(*args_fun, **kwargs_fun).ravel()
 
     def jac_reshaped(*points, **kw_points):
-        import ipdb
-        ipdb.set_trace()
         jac = jax.jacobian(fun_raveled, *args, **kwargs)
         jac_eval = np.atleast_2d(np.array(jac(*points, **kw_points)))
         diff_dim = jac_eval.shape[0]
-        logger.info("Reshaping jacobian with original shape: {}".format(
+        logger.debug("Reshaping jacobian with original shape: {}".format(
             jac_eval.shape))
         return np.einsum('i...->...i',
                          jac_eval.reshape(diff_dim,

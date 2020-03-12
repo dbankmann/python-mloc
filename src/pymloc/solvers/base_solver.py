@@ -1,18 +1,28 @@
+import logging
 from abc import ABC
 from abc import abstractmethod
 
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 
 class BaseSolver(ABC):
-    def __init__(self, model=None, abs_tol=1.e-6, rel_tol=1.e-3, max_iter=10):
+    def __init__(self, model=None, abs_tol=1.e-3, rel_tol=1.e-3, max_iter=10):
         self.abs_tol = abs_tol
         self.model = model
         self.rel_tol = rel_tol
         self.max_iter = max_iter
 
-    @abstractmethod
     def run(self, *args, **kwargs):
+        logger.info("Starting solver {}".format(self.__class__.__name__))
+        logger.info(
+            "Current option values:\nabs_tol: {}\nrel_tol: {}\nmax_iter: {}".
+            format(self.rel_tol, self.abs_tol, self.max_iter))
+        return self._run(*args, **kwargs)
+
+    @abstractmethod
+    def _run(self, *args, **kwargs):
         pass
 
     def output(self):

@@ -34,10 +34,10 @@ def bvp_sens_object(linear_param_bvp):
 
 @pytest.fixture
 def sens_solver(bvp_sens_object):
-    return SensitivitiesSolver(bvp_sens_object, 1e-3)
+    return SensitivitiesSolver(bvp_sens_object, rel_tol=1e-1, abs_tol=1e-1)
 
 
-@pytest.fixture(params=np.arange(0.1, 2., 0.1))
+@pytest.fixture(params=np.arange(0.1, 2.5, 1.1))
 def localized_bvp(bvp_sens_object, request):
     parameters = np.array([request.param])
     return bvp_sens_object.get_sensitivity_bvp(parameters)
@@ -50,11 +50,19 @@ def localized_flow_prob(localized_bvp):
     return flowprob
 
 
+@pytest.fixture
+def localized_ivp(localized_bvp):
+    time_interval = Time(0., 1.)
+    ivp = InitialValueProblem(np.zeros(2), time_interval,
+                              localized_bvp.dynamical_system)
+    return ivp
+
+
 #param dae
 @pytest.fixture
 def linear_param_bvp(linear_param_dae, param_vars):
     initial_value = lambda p: jnp.array([p, 2., 1.])
-    t = Time(0., 1.)
+    t = Time(0., 1., time_grid=np.linspace(0., 1., 10))
     return ParameterInitialValueProblem(*param_vars, initial_value, t,
                                         linear_param_dae, 1)
 
