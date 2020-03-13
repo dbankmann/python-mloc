@@ -138,7 +138,7 @@ class SensitivitiesSolver(BaseSolver):
         flow_problem = self._get_adjoint_flow_problem(adjoint_bvp)
         iv_problem = self._get_adjoint_ivp_problem(adjoint_bvp)
         #TODO: Make attribute
-        intermediate = 3
+        intermediate = 2
         nodes = np.concatenate((np.linspace(time.t_0, tau, intermediate),
                                 np.linspace(tau, time.t_f, intermediate)[1:]))
         stepsize = 1e-1
