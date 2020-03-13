@@ -20,7 +20,7 @@ class TestBVPSensitivitiesSolver:
     def test_solve_adjoint_dae(self, sens_solver, localized_bvp, tau):
         parameters = localized_bvp._localization_parameters[0]
         time = deepcopy(localized_bvp.time_interval)
-        stepsize = 1e-1
+        stepsize = 0.5e-0
         time.grid = np.hstack((np.arange(time.t_0, tau + stepsize, stepsize),
                                np.arange(tau, time.t_f + stepsize, stepsize)))
         sol = sens_solver._get_adjoint_solution(localized_bvp, parameters, tau,
@@ -32,8 +32,8 @@ class TestBVPSensitivitiesSolver:
         flow_prob = LinearFlow(time, localized_bvp.dynamical_system)
         ivp_prob = InitialValueProblem(np.zeros((3, )), time,
                                        localized_bvp.dynamical_system)
-        nodes = np.linspace(time.t_0, time.t_f, 5)
-        stepsize = 1e-1
+        nodes = np.linspace(time.t_0, time.t_f, 3)
+        stepsize = 0.5e-0
         localized_bvp.init_solver(flow_prob, ivp_prob, nodes, stepsize)
         sens_solver._get_capital_f_tilde(
             localized_bvp, localized_bvp.solve(time),
