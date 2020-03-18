@@ -1,9 +1,12 @@
-from ..multilevel_object import MultiLevelObject, local_object_factory
-from .constraints.constraint import Constraint
-from .objectives.objective import Objective
-from ..variables.container import VariablesContainer
-from .local_optimization import LocalOptimizationObject, LocalNullOptimization
 from abc import ABC
+
+from ..multilevel_object import MultiLevelObject
+from ..multilevel_object import local_object_factory
+from ..variables.container import VariablesContainer
+from .constraints.constraint import Constraint
+from .local_optimization import LocalNullOptimization
+from .local_optimization import LocalOptimizationObject
+from .objectives.objective import Objective
 
 
 class OptimizationObject(MultiLevelObject, ABC):
@@ -43,15 +46,20 @@ class NullOptimization(OptimizationObject):
 class AutomaticLocalOptimizationObject(LocalOptimizationObject):
     _auto_generated = True
 
-    def __init__(self, global_optimization, *args, **kwargs):
+    def __init__(self, global_optimization, hl_value=None, ll_value=None):
         self._global_object = global_optimization
+        hl_vars = global_optimization.higher_level_variables
+        if hl_value is not None:
+            hl_vars.current_values = hl_value
+        ll_vars = global_optimization.lower_level_variables
+        if ll_value is not None:
+            ll_vars.current_values = ll_value
         loc_objective = global_optimization.objective_object.get_localized_object(
         )
         loc_constraint = global_optimization.constraint_object.get_localized_object(
         )
         loc_vars = global_optimization.local_level_variables
-        super().__init__(loc_objective, loc_constraint, loc_vars, *args,
-                         **kwargs)
+        super().__init__(loc_objective, loc_constraint, loc_vars)
 
 
 local_object_factory.register_localizer(NullOptimization,

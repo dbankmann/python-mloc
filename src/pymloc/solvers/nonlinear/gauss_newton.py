@@ -27,7 +27,7 @@ class GaussNewton(BaseSolver):
     def _run(self, x0):
         x = x0
         for i in range(self.max_iter):
-            f = self._nllq.loc_objective_object.residual(x)
+            f = self._nllq.objective.residual(x)
             if not self.abort(f):
                 x = self._newton_step(x, f)
             else:

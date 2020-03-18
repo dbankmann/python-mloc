@@ -72,8 +72,8 @@ class MultiLevelObject(ABC):
         else:
             logger.error("Unsupported number of parameters")
 
-    def get_localized_object(self, *args, **kwargs):
-        return local_object_factory.get_localized_object(self, *args, **kwargs)
+    def get_localized_object(self, **kwargs):
+        return local_object_factory.get_localized_object(self, **kwargs)
 
 
 class LocalObjectFactory:
