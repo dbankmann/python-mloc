@@ -2,6 +2,7 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
+from pymloc.model.control_system.dae import LinearControlSystem
 from pymloc.model.domains import RNDomain
 from pymloc.model.dynamical_system.flow_problem import LinearFlow
 from pymloc.model.dynamical_system.initial_value_problem import InitialValueProblem
