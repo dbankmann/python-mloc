@@ -10,8 +10,9 @@ class TestSolvers:
     def test_set_default_solver(self, local_opt):
         solver_container = solver_container_factory.get_solver_container(
             local_opt[0])
-        solver_container.default_solver(NullSolver)
-        assert solver_container.default_solver == NullSolver
+        null_solver = solver_container.solvers[0]
+        solver_container.default_solver = null_solver
+        assert solver_container.default_solver.solver == NullSolver
 
 
 class TestSolverContainerFactory:

@@ -8,6 +8,7 @@ from pygelda.pygelda import Gelda
 from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
 from ...model.dynamical_system.flow_problem import LinearFlow
 from ...model.dynamical_system.initial_value_problem import InitialValueProblem
+from ...model.optimization.optimal_control import LQOptimalControl
 from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
 from ..base_solver import TimeSolution
@@ -64,11 +65,11 @@ class MultipleShooting(BaseSolver):
         logger.debug("Creating flow solver with time_interval: {}".format(
             time_interval.grid))
         self._flow_solver = solver_container_factory.get_solver_container(
-            self._flow_problem).default_solver(self._flow_problem,
-                                               time_interval,
-                                               stepsize,
-                                               rel_tol=self.rel_tol,
-                                               abs_tol=self.abs_tol)
+            self._flow_problem).default_solver.solver(self._flow_problem,
+                                                      time_interval,
+                                                      stepsize,
+                                                      rel_tol=self.rel_tol,
+                                                      abs_tol=self.abs_tol)
 
     def _get_homogeneous_flows(self, abs_tol=None, rel_tol=None):
         flow_solver = self._flow_solver
@@ -246,3 +247,9 @@ class MultipleShooting(BaseSolver):
 solver_container_factory.register_solver(MultipleBoundaryValueProblem,
                                          MultipleShooting,
                                          default=True)
+
+solver_container_factory.register_solver(
+    LQOptimalControl,
+    MultipleShooting,
+    default=True,
+    creator_function=LQOptimalControl.get_bvp)

@@ -23,6 +23,14 @@ class Solvable(ABC):
         else:
             self._solver = self._available_solvers.default_solver
 
+    @property
+    def solver(self):
+        return self._solver
+
+    @solver.setter
+    def solver(self, solver):
+        self._solver = solver
+
     def solve(self, *args, **kwargs):
         try:
             solution = self._solver_instance.run(*args, **kwargs)
@@ -33,7 +41,15 @@ class Solvable(ABC):
                 .format(self))
 
     def init_solver(self, *args, **kwargs):
-        self._solver_instance = self._solver(self, *args, **kwargs)
+        creator_func = self._solver.creator_function
+        if creator_func is None:
+            tmp = self
+        else:
+            tmp = creator_func(self)
+
+        if not isinstance(tmp, tuple):
+            tmp = tuple((tmp, ))
+        self._solver_instance = self._solver.solver(*tmp, *args, **kwargs)
 
     def __get_class(self):
         if self._auto_generated:

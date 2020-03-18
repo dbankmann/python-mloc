@@ -34,16 +34,21 @@ class SolverContainerFactory:
     def _get_problem_class(self, problem_instance):
         return problem_instance._class
 
-    def register_solver(self, problem, solver, default=False):
+    def register_solver(self,
+                        problem,
+                        solver,
+                        default=False,
+                        creator_function=None):
         self._check_problem(problem)
         solver_container = self._solvers.get(problem)
         if solver_container is None:
-            self._solvers[problem] = SolverContainer(problem, solver, default)
+            self._solvers[problem] = SolverContainer(problem, solver, default,
+                                                     creator_function)
         else:
-            solver_container.add_solver(solver, default)
+            solver_container.add_solver(solver, default, creator_function)
         #Also register solvers for all problem subclasses.
         for subclass in problem.__subclasses__():
-            self.register_solver(subclass, solver)
+            self.register_solver(subclass, solver, False, creator_function)
 
     def get_solver_container(self, problem_instance):
         self._check_problem_instance(problem_instance)
