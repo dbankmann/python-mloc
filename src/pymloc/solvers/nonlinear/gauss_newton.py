@@ -24,7 +24,7 @@ class GaussNewton(BaseSolver):
     def _get_jacobian(self, x):
         return self._jac(x)
 
-    def run(self, x0):
+    def _run(self, x0):
         x = x0
         for i in range(self.max_iter):
             f = self._nllq.loc_objective_object.residual(x)
