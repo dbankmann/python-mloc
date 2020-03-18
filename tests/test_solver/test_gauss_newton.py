@@ -15,8 +15,7 @@ def nllq_obj_loc(nllq, request):
 @pytest.fixture
 def jac(nllq_obj_loc):
     def jacobian(x):
-        return np.array(
-            jax.jacobian(nllq_obj_loc.loc_objective_object.residual)(x))
+        return np.array(jax.jacobian(nllq_obj_loc.objective.residual)(x))
 
     return jacobian
 
