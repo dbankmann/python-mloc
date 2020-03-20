@@ -17,4 +17,7 @@ class TestSolverContainerFactory:
         solver_container_factory.register_solver(solver, opt)
 
     def test_solver_subproblem_creation(self, initial_value_problem_dae):
-        assert MultipleShooting in initial_value_problem_dae._available_solvers.solvers
+        assert MultipleShooting in [
+            tup.solver
+            for tup in initial_value_problem_dae._available_solvers.solvers
+        ]
