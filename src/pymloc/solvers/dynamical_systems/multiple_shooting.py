@@ -9,6 +9,7 @@ from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryVal
 from ...model.dynamical_system.flow_problem import LinearFlow
 from ...model.dynamical_system.initial_value_problem import InitialValueProblem
 from ...model.optimization.optimal_control import LQOptimalControl
+from ...model.variables.time_function import Time
 from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
 from ..base_solver import TimeSolution
@@ -201,7 +202,7 @@ class MultipleShooting(BaseSolver):
                 break
             projected_values = self._newton_step(projected_values, residual)
         x_d = self._get_x_d(projected_values)
-        full_node_values = x_d + np.einsum('ijr,j...r->i...r', self._das, x_d)
+        full_node_values = x_d - np.einsum('ijr,j...r->i...r', self._das, x_d)
         node_solution = TimeSolution(self._shooting_nodes, full_node_values)
         time_grid_solution = self._get_intermediate_values(node_solution)
         return time_grid_solution, node_solution
@@ -226,12 +227,19 @@ class MultipleShooting(BaseSolver):
         for i, node in enumerate(node_solution.time_grid):
             loweridx = idx[i]
             upperidx = idx[i + 1]
-            interval = self._solution_time_grid[loweridx:upperidx]
-            x0 = node_solution(node)
+            grid = self._solution_time_grid[loweridx:upperidx]
             t0 = node
+            if t0 in grid:
+                idx_increment = 0
+            else:
+                idx_increment = 1
+
+            x0 = node_solution(node)
+            tf = grid[-1]
+            interval = Time(t0, tf, grid)
             x0_times = self._ivp_problem.solve(interval, x0)
             solution[..., loweridx:upperidx] = np.atleast_2d(
-                x0_times.solution.T).T
+                x0_times.solution.T).T[:, idx_increment:]
         return TimeSolution(self._solution_time_grid, solution)
 
     def _get_x_d(self, projected_values):

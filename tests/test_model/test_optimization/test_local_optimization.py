@@ -29,4 +29,5 @@ class TestLocalOptimizationObject:
 
     def test_solve2(self, loc_opt, *args, **kwargs):
         loc_opt.init_solver(**kwargs)
-        loc_opt.solve(*args)
+        sol = loc_opt.solve(*args)
+        return sol
