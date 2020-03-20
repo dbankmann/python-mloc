@@ -14,7 +14,8 @@ class MultipleBoundaryValues:
         #TODO: Check size of inhomogeinity according to state dimension (vector or matrix)
         self._inhomogeinity = inhomogeinity
         self._z_gamma = z_gamma
-        self._n_inhom = inhomogeinity.shape[-1]
+        # Get last dimension, if only a vector, set to1
+        self._n_inhomnhom = np.atleast_2d(inhomogeinity.T).T.shape[-1]
 
     def residual(self, node_values):
         #TODO: Make more efficient (save intermediate products)
