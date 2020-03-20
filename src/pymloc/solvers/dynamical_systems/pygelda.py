@@ -32,21 +32,25 @@ class PyGELDA(BaseSolver):
         self.x0 = model.initial_value
         self.stepsize = stepsize
 
-    def _run(self, times=None, x0=None, stepsize=None, n_steps=None):
+    def _run(self, interval=None, x0=None, stepsize=None, n_steps=None):
         if x0 is None:
             x0 = self.x0
         if stepsize is None:
             stepsize = self.stepsize
         if n_steps is None:
             n_steps = np.int(np.ceil(1 / stepsize))
-        if times is None:
+        if interval is None:
             t0 = self.model.initial_time
             tf = self.model.final_time
             times = np.linspace(t0, tf, n_steps + 1)
-
+        else:
+            times = interval.grid
         f_1d = x0.ndim == 1
         x0 = np.atleast_2d(x0.T).T  #make 1d array a column vector
+        if len(times) == 1:
+            return TimeSolution(times, x0)
         xout = np.zeros((*x0.shape, times.size), order='F')
+
         if x0.ndim > 2:
             raise ValueError(x0)
         for i, x0_f in enumerate(x0.T):
