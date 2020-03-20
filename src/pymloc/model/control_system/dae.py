@@ -39,7 +39,7 @@ class LinearControlSystem:
 
         def cal_a(*args, **kwargs):
             cal_a_arr[:self._nn, :self._nn] = a(*args, **kwargs)
-            cal_a_arr[self._nn:, :self._nn] = b(*args, **kwargs)
+            cal_a_arr[:self._nn, self._nn:] = b(*args, **kwargs)
             return cal_a_arr
 
         def cal_f(*args, **kwargs):
