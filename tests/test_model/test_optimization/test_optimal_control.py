@@ -13,7 +13,7 @@ from .test_local_optimization import TestLocalOptimizationObject
 
 @pytest.fixture
 def dae_control():
-    variables = InputStateVariables(1, 1)
+    variables = InputStateVariables(1, 1, time=Time(0., 2.))
 
     def e(t):
         return np.array([[1.]])
