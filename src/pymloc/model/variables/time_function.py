@@ -60,7 +60,7 @@ class Time(TimeVariables):
         self.t_0 = t_0
         self.t_f = t_f
         super().__init__(dimension=1, time_domain=[t_0, t_f])
-        self._grid = time_grid
+        self.grid = time_grid
 
     def add_to_grid(self, tp):
         if not self.t_0 < tp < self.t_f:
@@ -77,6 +77,12 @@ class Time(TimeVariables):
 
     @grid.setter
     def grid(self, value):
+        if value is None:
+            self._grid = None
+        elif not self.t_0 in value:
+            value = np.insert(value, 0, self.t_0)
+        elif not self.t_f in value:
+            value = np.insert(value, -1, self.t_f)
         self._grid = value
 
     def get_random_values(self):
