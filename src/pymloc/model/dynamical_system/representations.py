@@ -16,7 +16,7 @@ class LinearFlowRepresentation(LinearDAE):
         return self._current_proj_compl
 
     def _compute_projection(self, t):
-        if self._check_current_time(t, "projection"):
+        if not self._check_current_time(t, "projection"):
             return
         self._recompute_quantities(t)
         self._current_projection = self.t2(t) @ self.t2(t).T
@@ -82,7 +82,7 @@ class LinearFlowRepresentation(LinearDAE):
         return self._current_proj_derivative
 
     def _compute_projection_derivative(self, t):
-        eplus = self._current_eplus
+        eplus = self.eplus(t)
         e = self.e(t)
         der_e = self.der_e(t)
         n = self.nn
