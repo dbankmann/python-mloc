@@ -15,7 +15,7 @@ class MultipleBoundaryValues:
         self._inhomogeinity = inhomogeinity
         self._z_gamma = z_gamma
         # Get last dimension, if only a vector, set to1
-        self._n_inhomnhom = np.atleast_2d(inhomogeinity.T).T.shape[-1]
+        self._n_inhom = np.atleast_2d(inhomogeinity.T).T.shape[-1]
 
     def residual(self, node_values):
         #TODO: Make more efficient (save intermediate products)
