@@ -136,11 +136,11 @@ class LinearDAE(DAE):
 
     def fhat_1(self, t):
         self._recompute_quantities(t)
-        return self._current_fhat[:self.rank, :]
+        return self._current_fhat[:self.rank, ...]
 
     def fhat_2(self, t):
         self._recompute_quantities(t)
-        return self._current_fhat[self.rank:, :]
+        return self._current_fhat[self.rank:, ...]
 
     def _recompute_coefficients(self, t):
         if self._check_current_time(t, "coefficients"):
