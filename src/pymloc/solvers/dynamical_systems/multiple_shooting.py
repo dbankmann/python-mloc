@@ -239,7 +239,7 @@ class MultipleShooting(BaseSolver):
             interval = Time(t0, tf, grid)
             x0_times = self._ivp_problem.solve(interval, x0)
             solution[..., loweridx:upperidx] = np.atleast_2d(
-                x0_times.solution.T).T[:, idx_increment:]
+                x0_times.solution.T).T[..., idx_increment:]
         return TimeSolution(self._solution_time_grid, solution)
 
     def _get_x_d(self, projected_values):

@@ -46,11 +46,12 @@ class PyGELDA(BaseSolver):
         else:
             times = interval.grid
         f_1d = x0.ndim == 1
-        x0 = np.atleast_2d(x0.T).T  #make 1d array a column vector
         if len(times) == 1:
-            return TimeSolution(times, x0)
+            xout = np.zeros((*x0.shape, times.size), order='F')
+            xout[..., 0] = x0
+            return TimeSolution(times, xout)
+        x0 = np.atleast_2d(x0.T).T  #make 1d array a column vector
         xout = np.zeros((*x0.shape, times.size), order='F')
-
         if x0.ndim > 2:
             raise ValueError(x0)
         for i, x0_f in enumerate(x0.T):
