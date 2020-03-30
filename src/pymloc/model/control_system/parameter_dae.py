@@ -4,6 +4,7 @@ from ..dynamical_system.parameter_dae import LinearParameterDAE
 from ..multilevel_object import MultiLevelObject
 from ..multilevel_object import local_object_factory
 from ..variables import InputOutputStateVariables
+from ..variables.container import StateVariablesContainer
 from .dae import LinearControlSystem
 
 
@@ -26,6 +27,12 @@ class LinearParameterControlSystem(MultiLevelObject):
         self._nn = loc_vars.n_states
         self._nm = loc_vars.m_inputs
         self._np = loc_vars.p_outputs
+        self._time = loc_vars.time
+        cal_e, cal_a, cal_f = self._get_cal_coeffs(e, a, b, c, d, f)
+        dim = self._nn + self._nm
+        self._augmented_dae = LinearParameterDAE(ll_vars, hl_vars,
+                                                 StateVariablesContainer(dim),
+                                                 cal_e, cal_a, cal_f, dim)
 
     @property
     def e(self):
@@ -50,6 +57,36 @@ class LinearParameterControlSystem(MultiLevelObject):
     @property
     def f(self):
         return self._f
+
+    @property
+    def time(self):
+        return self._time
+
+    @property
+    def augmented_dae(self):
+        return self._augmented_dae
+
+    #TODO: Refactor. Identical to control dae
+    def _get_cal_coeffs(self, e, a, b, c, d, f):
+        shape = (self._nn, self._nn + self._nm)
+        cal_e_arr = np.zeros(shape)
+        cal_a_arr = np.zeros(shape)
+        cal_f_arr = np.zeros(self._nn)
+
+        def cal_e(*args, **kwargs):
+            cal_e_arr[:self._nn, :self._nn] = e(*args, **kwargs)
+            return cal_e_arr
+
+        def cal_a(*args, **kwargs):
+            cal_a_arr[:self._nn, :self._nn] = a(*args, **kwargs)
+            cal_a_arr[:self._nn, self._nn:] = b(*args, **kwargs)
+            return cal_a_arr
+
+        def cal_f(*args, **kwargs):
+            cal_f_arr[:] = f(*args, **kwargs)
+            return cal_f_arr
+
+        return cal_e, cal_a, cal_f
 
 
 class AutomaticLinearControlSystem(LinearControlSystem):
