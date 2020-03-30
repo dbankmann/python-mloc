@@ -80,9 +80,15 @@ class Time(TimeVariables):
         if value is None:
             self._grid = None
         elif not self.t_0 in value:
-            value = np.insert(value, 0, self.t_0)
+            if np.allclose(self.t_0, value[0]):
+                value[0] = self.t_0
+            else:
+                value = np.insert(value, 0, self.t_0)
         elif not self.t_f in value:
-            value = np.insert(value, -1, self.t_f)
+            if np.allclose(self.t_f, value[-1]):
+                value[-1] = self.t_f
+            else:
+                value = np.append(value, self.t_f)
         self._grid = value
 
     def get_random_values(self):
