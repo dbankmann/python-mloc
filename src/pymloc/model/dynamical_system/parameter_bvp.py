@@ -1,3 +1,5 @@
+import numpy as np
+
 from ..multilevel_object import MultiLevelObject
 from ..multilevel_object import local_object_factory
 from ..variables.container import VariablesContainer
