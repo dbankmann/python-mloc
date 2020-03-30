@@ -1,3 +1,6 @@
+import jax.numpy as jnp
+import numpy as np
+
 from ...multilevel_object import local_object_factory
 from ...variables import NullVariables
 from . import AutomaticLocalObjective
@@ -37,6 +40,16 @@ class ParameterLQRObjective(Objective):
     @property
     def time(self):
         return self._time
+
+    def integral_weights(self, *args, **kwargs):
+        self._current_q = self._q(*args, **kwargs)
+        self._current_r = self._r(*args, **kwargs)
+        self._current_s = self._s(*args, **kwargs)
+        q = self._current_q
+        r = self._current_r
+        s = self._current_s
+        weights = jnp.block([[q, s], [s.T.conj(), r]])
+        return weights
 
 
 class AutomaticLocalLQRObjective(LQRObjective):
