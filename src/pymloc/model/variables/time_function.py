@@ -91,5 +91,20 @@ class Time(TimeVariables):
                 value = np.append(value, self.t_f)
         self._grid = value
 
+    def at_bound(self, tau):
+        return self.at_lower_bound(tau) or self.at_upper_bound(tau)
+
+    def at_upper_bound(self, tau):
+        if self.t_f == tau:
+            return True
+        else:
+            return False
+
+    def at_lower_bound(self, tau):
+        if self.t_0 == tau:
+            return True
+        else:
+            return False
+
     def get_random_values(self):
         return np.random.random(1)[0]
