@@ -16,8 +16,8 @@ def jac_jax_reshaped(fun, shape, *args, **kwargs):
 
     def jac_reshaped(*points, **kw_points):
         jac = jax.jacobian(fun_raveled, *args, **kwargs)
-        jac_eval = np.atleast_2d(np.array(jac(*points, **kw_points)))
-        diff_dim = jac_eval.shape[0]
+        jac_eval = np.atleast_2d(jac(*points, **kw_points).T).T
+        diff_dim = jac_eval.shape[1]
         logger.debug("Reshaping jacobian with original shape: {}".format(
             jac_eval.shape))
         return np.einsum('i...->...i',
