@@ -48,6 +48,10 @@ class LinearDAE(DAE):
         if der_e is None:
             der_e = lambda t: self._der_e_numerical(t)
         self._der_e = der_e
+        self._current_ahat = np.zeros((n, n), order='F')
+        self._current_ehat = np.zeros((n, n), order='F')
+        var_shape = self._variables.dimension
+        self._current_fhat = np.zeros(var_shape, order='F')
 
     @property
     def rank(self):
@@ -95,7 +99,7 @@ class LinearDAE(DAE):
         return self._current_a
 
     def f(self, t):
-        self._recompute_coefficients(t)
+        self._recompute_inhomogeinity(t)
         return self._current_f
 
     def eplus(self, t):
@@ -135,27 +139,29 @@ class LinearDAE(DAE):
         return self._current_ahat[self.rank:, :]
 
     def fhat_1(self, t):
-        self._recompute_quantities(t)
+        self._recompute_fhat(t)
         return self._current_fhat[:self.rank, ...]
 
     def fhat_2(self, t):
-        self._recompute_quantities(t)
+        self._recompute_fhat(t)
         return self._current_fhat[self.rank:, ...]
 
     def _recompute_coefficients(self, t):
         if self._check_current_time(t, "coefficients"):
             e = self._e(t)
             a = self._a(t)
-            f = self._f(t)
             self._current_e = e
             self._current_a = a
+
+    def _recompute_inhomogeinity(self, t):
+        if self._check_current_time(t, "inhomogeinity"):
+            f = self._f(t)
             self._current_f = f
 
     def _recompute_quantities(self, t):
         if self._check_current_time(t, "quantities"):
             e = self.e(t)
             a = self.a(t)
-            f = self.f(t)
             n = self.nn
             zzprime, sigma, ttprime_h = np.linalg.svd(e)
             rank = self.rank
@@ -165,16 +171,18 @@ class LinearDAE(DAE):
                 np.diag(sigma[:rank]),
                 self.z1(t).T)
             ehat_1 = self.z1(t).T @ e
-            self._current_ehat = np.zeros((n, n), order='F')
             self._current_ehat[:rank, :] = ehat_1
             ahat_1 = self.z1(t).T @ a
             ahat_2 = self.z1prime(t).T @ a
-            self._current_ahat = np.zeros((n, n), order='F')
             self._current_ahat[:rank, :] = ahat_1
             self._current_ahat[rank:, :] = ahat_2
+
+    def _recompute_fhat(self, t):
+        self._recompute_quantities(t)
+        if self._check_current_time(t, "fhat"):
+            rank = self.rank
+            f = self.f(t)
             fhat_1 = self.z1(t).T @ f
             fhat_2 = self.z1prime(t).T @ f
-            var_shape = self._variables.dimension
-            self._current_fhat = np.zeros(var_shape, order='F')
             self._current_fhat[:rank, ...] = fhat_1
             self._current_fhat[rank:, ...] = fhat_2
