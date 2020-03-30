@@ -7,21 +7,21 @@ from ..variables.time_function import Time
 
 
 class MultipleBoundaryValues:
-    def __init__(self, boundary_values, inhomogeinity, z_gamma=None):
+    def __init__(self, boundary_values, inhomogeneity, z_gamma=None):
         self._nnodes = len(boundary_values)
         self._boundary_values = self._set_bvs(boundary_values)
         self._inner_nodes = boundary_values[1:-1]
-        #TODO: Check size of inhomogeinity according to state dimension (vector or matrix)
-        self._inhomogeinity = inhomogeinity
+        #TODO: Check size of inhomogeneity according to state dimension (vector or matrix)
+        self._inhomogeneity = inhomogeneity
         self._z_gamma = z_gamma
         # Get last dimension, if only a vector, set to1
-        self._n_inhom = np.atleast_2d(inhomogeinity.T).T.shape[-1]
+        self._n_inhom = np.atleast_2d(inhomogeneity.T).T.shape[-1]
 
     def residual(self, node_values):
         #TODO: Make more efficient (save intermediate products)
         residual = np.einsum(
             'hi,hjk,j...k->i...', self._z_gamma, self._boundary_values,
-            node_values) - self._z_gamma.T @ self._inhomogeinity
+            node_values) - self._z_gamma.T @ self._inhomogeneity
         return residual
 
     @property
@@ -37,8 +37,12 @@ class MultipleBoundaryValues:
         return self._boundary_values
 
     @property
-    def inhomogeinity(self):
-        return self._inhomogeinity
+    def inhomogeneity(self):
+        return self._inhomogeneity
+
+    @inhomogeneity.setter
+    def inhomogeneity(self, value):
+        self._inhomogeneity = value
 
     @property
     def z_gamma(self):

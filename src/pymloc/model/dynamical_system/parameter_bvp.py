@@ -12,7 +12,7 @@ class ParameterMultipleBoundaryValues(MultiLevelObject):
                  higher_level_variables: VariablesContainer,
                  local_level_variables: VariablesContainer,
                  boundary_values,
-                 inhomogeinity,
+                 inhomogeneity,
                  nn,
                  n_param=1,
                  z_gamma=None):
@@ -20,23 +20,37 @@ class ParameterMultipleBoundaryValues(MultiLevelObject):
                          local_level_variables)
         self._nnodes = len(boundary_values)
         self._boundary_values = boundary_values
-        self._inhomogeinity = inhomogeinity
+        self._inhomogeneity = inhomogeneity
         self._z_gamma = z_gamma
         self._n_param = n_param
         self._nn = nn
-        self._inhomogeinity_shape = (self._nn, self._n_param)
+        self._inhomogeneity_shape = (self._nn, )
 
     @property
     def boundary_values(self):
         return self._boundary_values
 
     @property
-    def inhomogeinity(self):
-        return self._inhomogeinity
+    def inhomogeneity(self):
+        return self._inhomogeneity
 
-    @property
-    def inhomogeinity_theta(self):
-        return jac_jax_reshaped(self.inhomogeinity, self._inhomogeinity_shape)
+    @inhomogeneity.setter
+    def inhomogeneity(self, value):
+        self._inhomogeneity = value
+
+    def get_inhomogeneity_theta(self, solution, parameters):
+        #Assumes exactly 2-bounds
+        sol = solution.solution
+        inhom_theta = jac_jax_reshaped(self.inhomogeneity,
+                                       self._inhomogeneity_shape)(parameters)
+        shape = (self._nn, self._nn)
+        boundary_indices = (0, -1)
+        for bound, index in zip(self.boundary_values, boundary_indices):
+            bound_theta = np.einsum('ijk,j->ik',
+                                    jac_jax_reshaped(bound, shape)(parameters),
+                                    sol[..., index])
+            inhom_theta -= bound_theta
+        return inhom_theta
 
     @property
     def z_gamma(self):
@@ -131,10 +145,10 @@ class AutomaticMultipleBoundaryValues(MultipleBoundaryValues):
         boundary_values = list(
             global_object.localize_method(method)
             for method in global_object.boundary_values)
-        inhomogeinity = global_object.localize_method(
-            global_object.inhomogeinity)
+        inhomogeneity = global_object.localize_method(
+            global_object.inhomogeneity)
         z_gamma = global_object.localize_method(global_object.z_gamma)
-        super().__init__(boundary_values, inhomogeinity, z_gamma=None)
+        super().__init__(boundary_values, inhomogeneity, z_gamma=None)
 
 
 local_object_factory.register_localizer(ParameterMultipleBoundaryValues,
