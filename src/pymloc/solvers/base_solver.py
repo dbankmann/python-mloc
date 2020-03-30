@@ -47,7 +47,7 @@ class Solution:
 
 
 class TimeSolution(Solution):
-    def __init__(self, time_grid, solution):
+    def __init__(self, time_grid, solution, interpolation=False):
         super().__init__(solution)
         self._time_grid = time_grid
         solution_time_dict = {
@@ -55,6 +55,17 @@ class TimeSolution(Solution):
             for i in range(time_grid.size)
         }
         self._solution_time_dict = solution_time_dict
+        self._interpolation = interpolation
+
+        self._current_t = dict()
+
+    @property
+    def interpolation(self):
+        return self._interpolation
+
+    @interpolation.setter
+    def interpolation(self, value):
+        self._interpolation = value
 
     @property
     def time_grid(self):
@@ -63,6 +74,32 @@ class TimeSolution(Solution):
     def __call__(self, t):
         sol = self._solution_time_dict.get(t)
         if sol is None:
-            raise ValueError("Time: {} not in time_grid".format(t))
+            if self._interpolation:
+                self._recompute_interpolated(t)
+                return self._current_interpolated
+            else:
+                raise ValueError("Time: {} not in time_grid".format(t))
         else:
             return sol
+
+    def _recompute_interpolated(self, t):
+        if self._check_current_time(t, "interpolate"):
+            logger.warning("Interpolating value...\nPotentially slow!")
+            idx = np.searchsorted(self._time_grid,
+                                  t)  #TODO: Improvable for sorted array?
+            try:
+                t0, tf = self._time_grid[idx - 1:idx + 1]
+            except:
+                import ipdb
+                ipdb.set_trace()
+            m = tf - t0
+            x = self._solution_time_dict.get
+            sol = x(t0) + (t - t0) * (x(tf) - x(t0)) / m
+            self._current_interpolated = sol
+
+    def _check_current_time(self, t, method):
+        if self._current_t.get(method) is None or self._current_t[method] != t:
+            self._current_t[method] = t
+            return True
+        else:
+            return False
