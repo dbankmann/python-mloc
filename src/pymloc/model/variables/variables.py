@@ -11,6 +11,10 @@ class Variables(ABC):
     def dimension(self):
         return self._dimension
 
+    @dimension.setter
+    def dimension(self, value):
+        self._dimension = value
+
     @property
     @abstractmethod
     def current_values(self):
