@@ -174,10 +174,17 @@ class MultipleShooting(BaseSolver):
         current_x_d = self._get_x_d(current_node_states)
         boundary_node_states = current_x_d[..., self._boundary_indices]
         bound_res = self._bvp.boundary_values.residual(boundary_node_states)
-        diffs = current_node_states[..., 1:] - np.einsum(
-            'ijr,j...r->i...r', self._gis, current_node_states[..., :-1])
+        computed_node_states = self._forward_projected_nodes(
+            current_node_states)
+        diffs = current_node_states[..., 1:] - computed_node_states[..., :-1]
         res_b = self._unstack(diffs)
         return np.concatenate((res_b, bound_res), axis=0)
+
+    def _forward_projected_nodes(self, node_values):
+        solver = self._flow_solver
+        lift_up = self._get_x_d(node_values)
+        sol = solver.forward_solve_differential(lift_up)
+        return self._project_values(sol)
 
     def _get_initial_guess(self, initial_guess=None):
         shape = self._dynamical_system.variables.shape + (
@@ -190,19 +197,21 @@ class MultipleShooting(BaseSolver):
                     initial_guess.shape, shape))
         return initial_guess
 
+    def _project_values(self, values):
+        return np.einsum('ijr,i...r->j...r', self._t2s, values)
+
     def _run(self, time_interval, initial_guess=None, *args, **kwargs):
         self._init_solver(time_interval, *args, **kwargs)
         initial_guess = self._get_initial_guess(initial_guess)
-        projected_values = np.einsum('ijr,i...r->j...r', self._t2s,
-                                     initial_guess)
-
+        projected_values = self._project_values(initial_guess)
         for i in range(self.max_iter):
             residual = self._get_newton_rhs(projected_values)
             if self.abort(residual):
                 break
             projected_values = self._newton_step(projected_values, residual)
         x_d = self._get_x_d(projected_values)
-        full_node_values = x_d - np.einsum('ijr,j...r->i...r', self._das, x_d)
+        full_node_values = x_d - np.einsum('ijr,j...r->i...r', self._das,
+                                           x_d) - self._fas
         node_solution = TimeSolution(self._shooting_nodes, full_node_values)
         time_grid_solution = self._get_intermediate_values(node_solution)
         return time_grid_solution, node_solution
@@ -229,7 +238,7 @@ class MultipleShooting(BaseSolver):
             upperidx = idx[i + 1]
             grid = self._solution_time_grid[loweridx:upperidx]
             t0 = node
-            if t0 in grid:
+            if np.allclose(t0, grid[0], 1e-16):
                 idx_increment = 0
             else:
                 idx_increment = 1
@@ -247,9 +256,15 @@ class MultipleShooting(BaseSolver):
 
     def _set_d_as(self):
         das = np.zeros((self._nn, self._nn, self._n_shooting_nodes), order='F')
+        shape = self._dynamical_system.variables.shape
+        fas = np.zeros((*shape, self._n_shooting_nodes), order='F')
+
+        self._dynamical_system.init_rank()
         for i, node in enumerate(self._shooting_nodes):
             das[:, :, i] = self._dynamical_system.d_a(node)
+            fas[..., i] = self._dynamical_system.f_a(node)
         self._das = das
+        self._fas = fas
 
 
 solver_container_factory.register_solver(MultipleBoundaryValueProblem,

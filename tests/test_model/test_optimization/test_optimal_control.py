@@ -11,6 +11,35 @@ from pymloc.model.variables.time_function import Time
 from .test_local_optimization import TestLocalOptimizationObject
 
 
+def compute_ref_sol(theta, time, x0, t):
+    tf = time.t_f
+    t0 = time.t_0
+    exp0 = np.exp(2 * theta * (tf - t0))
+    exp1 = np.exp(-(t + t0) * theta)
+    exp2 = np.exp(2 * t * theta)
+    exp3 = np.exp(2 * tf * theta)
+    tmp1 = theta + exp0 * (theta + 1) - 1
+    tmp2 = np.array([
+        -(exp2 - exp3) * (theta**2 - 1),
+        (exp2 * (theta - 1) + exp3 * (theta + 1)),
+        (exp2 - exp3) * (theta**2 - 1)
+    ])
+
+    refsol = tmp1**-1 * tmp2 * exp1 * x0
+    return refsol
+
+
+def compare_sol_ref_sol(loc_opt, theta=2.):
+    loc_opt.init_solver(stepsize=1e-3, abs_tol=1e-12, rel_tol=1e-12)
+    time = Time(0., 2.)
+    time.grid = np.linspace(0., 2., 100)
+    sol = loc_opt.solve(time, flow_abs_tol=1e-12, flow_rel_tol=1e-12)[0]
+    x0 = loc_opt.constraint.initial_value
+    for t in sol.time_grid:
+        refsol = compute_ref_sol(theta, time, x0, t)
+        assert np.allclose(sol(t), refsol)
+
+
 @pytest.fixture
 def dae_control():
     variables = InputStateVariables(1, 1, time=Time(0., 2.))
@@ -68,29 +97,4 @@ class TestLQOptimalControl(TestLocalOptimizationObject):
         ref_sol = None
 
     def test_solve3(self, loc_opt):
-        loc_opt.init_solver(stepsize=1e-3, abs_tol=1e-12, rel_tol=1e-12)
-        theta = 2
-        time = Time(0., 2.)
-        time.grid = np.linspace(0., 2., 100)
-        sol = loc_opt.solve(time, flow_abs_tol=1e-12, flow_rel_tol=1e-12)[0]
-        x0 = loc_opt.constraint.initial_value
-        for t in sol.time_grid:
-            refsol = self.refsol(theta, time, x0, t)
-            assert np.allclose(sol(t), refsol)
-
-    def refsol(self, theta, time, x0, t):
-        tf = time.t_f
-        t0 = time.t_0
-        exp0 = np.exp(2 * theta * (tf - t0))
-        exp1 = np.exp(-(t + t0) * theta)
-        exp2 = np.exp(2 * t * theta)
-        exp3 = np.exp(2 * tf * theta)
-        tmp1 = theta + exp0 * (theta + 1) - 1
-        tmp2 = np.array([
-            -(exp2 - exp3) * (theta**2 - 1),
-            (exp2 * (theta - 1) + exp3 * (theta + 1)),
-            (exp2 - exp3) * (theta**2 - 1)
-        ])
-
-        refsol = tmp1**-1 * tmp2 * exp1 * x0
-        return refsol
+        compare_sol_ref_sol(loc_opt)

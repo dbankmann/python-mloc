@@ -25,7 +25,7 @@ from pymloc.model.variables.container import InputOutputStateVariables
 from pymloc.model.variables.container import StateVariablesContainer
 from pymloc.model.variables.time_function import StateVariables
 from pymloc.model.variables.time_function import Time
-from pymloc.solvers.dynamical_systems.sensitivities import SensitivitiesSolver
+from pymloc.solvers.dynamical_systems.adjoint_sensitivities import AdjointSensitivitiesSolver
 
 np.set_printoptions(precision=4)
 
@@ -62,7 +62,9 @@ def bvp_sens_object(linear_param_bvp):
 
 @pytest.fixture
 def sens_solver(bvp_sens_object):
-    return SensitivitiesSolver(bvp_sens_object, rel_tol=1e-1, abs_tol=1e-1)
+    return AdjointSensitivitiesSolver(bvp_sens_object,
+                                      rel_tol=1e-1,
+                                      abs_tol=1e-1)
 
 
 @pytest.fixture(params=np.arange(0.1, 2.5, 1.1))

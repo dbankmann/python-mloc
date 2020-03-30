@@ -26,6 +26,11 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
         self._nn = dae_flow_instance._nn
 
     @property
+    def _intervals(self):
+        time_grid = self._time_interval.grid
+        return zip(time_grid, time_grid[1:])
+
+    @property
     def stepsize(self):
         return self._stepsize
 
@@ -59,7 +64,7 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
     def _save_homogeneous_flows(self):
         n = self._nn
         time_grid = self.time_interval.grid
-        intervals = zip(time_grid, time_grid[1:])
+        intervals = self._intervals
         nflows = len(time_grid) - 1
         flows = np.zeros((n, n, nflows), order='F')
         #TODO: Paralellize
@@ -81,8 +86,7 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
             return self.model.flow_dae.d_d(t)
 
         h = self.stepsize
-        integrator = ode(f, jac).set_integrator('vode',
-                                                method='bdf',
+        integrator = ode(f, jac).set_integrator('dopri5',
                                                 atol=self.abs_tol,
                                                 rtol=self.rel_tol)
         for i, unit_vector in enumerate(np.identity(n)):
@@ -90,6 +94,40 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
             integrator.set_initial_value(unit_vector, t0)
             flow[:, i] = integrator.integrate(tf)
         return flow
+
+    def forward_solve_differential(self, node_values):
+        end_values = np.zeros(node_values.shape)
+        for i, ((tm, tp),
+                values) in enumerate(zip(self._intervals, node_values.T)):
+            logger.info(
+                "Computing inhomogeneous solution in the interval ({}, {})".
+                format(tm, tp))
+            end_values[..., i] = self._forward_solve(tm, tp, values)
+
+        return end_values
+
+    def _forward_solve(self, tm, tp, values):
+        shape = values.shape
+        values2d = np.atleast_2d(values)
+        value_arr = np.empty(values2d.shape).T
+
+        def jac(t, x):
+            return self.model.flow_dae.d_d(t)
+
+        for i, value in enumerate(values2d):
+
+            def f(t, x):
+                return self.model.flow_dae.d_d(t) @ x + np.atleast_2d(
+                    self.model.flow_dae.f_d(t).T).T[:, i]
+
+            integrator = ode(f, jac).set_integrator('dopri5',
+                                                    atol=self.abs_tol,
+                                                    rtol=self.rel_tol)
+            integrator.set_initial_value(value, tm)
+            value_arr[:, i] = integrator.integrate(tp)
+        if len(shape) == 1:
+            value_arr = np.squeeze(value_arr, axis=1)
+        return value_arr
 
 
 solver_container_factory.register_solver(LinearFlow,
