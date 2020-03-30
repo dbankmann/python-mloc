@@ -38,6 +38,9 @@ class OptimizationObject(MultiLevelObject, ABC):
     def constraint_object(self):
         return self._constraint_object
 
+    def get_sensitivities(self):
+        raise NotImplementedError
+
 
 class NullOptimization(OptimizationObject):
     _local_object_class = LocalNullOptimization
