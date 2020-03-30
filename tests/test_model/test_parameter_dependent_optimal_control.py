@@ -179,3 +179,32 @@ class TestPDOCObject:
         rsol = self.refsol(2., 0., 2., 1., 2.)
         ref = np.block([[rsol], [-rsol[0]]])
         assert np.allclose(ref, sol[0](1.), atol=1e-2, rtol=1e-9)
+
+    def test_forward_boundary_sens(self, pdoc_object):
+        sens = pdoc_object.get_sensitivities()
+        solver = sens._available_solvers.solvers[1]
+        sens.solver = solver
+        sens.init_solver(abs_tol=1e-8, rel_tol=1e-8)
+        sol = sens.solve(parameters=np.array([2.]))
+        rsol0 = self.refsol(2., 0., 2., 0., 2.)
+        ref0 = np.block([[rsol0], [-rsol0[0]]])
+        rsolf = self.refsol(2., 0., 2., 2., 2.)
+        reff = np.block([[rsolf], [-rsolf[0]]])
+        assert np.allclose(ref0, sol[0](0.), rtol=1e-9, atol=1e-1)
+        assert np.allclose(reff, sol[0](2.), rtol=1e-9, atol=1e-1)
+
+    def test_boundary_sens1(self, pdoc_object):
+        sens = pdoc_object.get_sensitivities()
+        sens.init_solver(abs_tol=1e-8, rel_tol=1e-8)
+        solf = sens.solve(parameters=np.array([2.]), tau=2.)
+        rsolf = self.refsol(2., 0., 2., 2., 2.)
+        reff = np.block([[rsolf], [-rsolf[0]]])
+        assert np.allclose(reff, solf, rtol=1e-9, atol=1e-1)
+
+    def test_boundary_sens2(self, pdoc_object):
+        sens = pdoc_object.get_sensitivities()
+        sens.init_solver(abs_tol=1e-8, rel_tol=1e-8)
+        solf = sens.solve(parameters=np.array([2.]), tau=2.)
+        rsolf = self.refsol(2., 0., 2., 2., 2.)
+        reff = np.block([[rsolf], [-rsolf[0]]])
+        assert np.allclose(reff, solf, rtol=1e-9, atol=1e-1)
