@@ -37,10 +37,15 @@ class LinearFlowRepresentation(LinearDAE):
         return self._current_d_d
 
     def _compute_d_d(self, t):
-        self._current_d_d = (
-            self.t2(t) @ np.linalg.solve(
-                self.ehat_1(t) @ self.t2(t), self.ahat_1(t)) +
-            self.projection_derivative(t)) @ self.cal_projection(t)
+        #TODO: save intermediate
+        epa = self._compute_eplusa(t)
+        self._current_d_d = epa @ self.cal_projection(t)
+
+    def _compute_eplusa(self, t):
+        epa = (self.t2(t) @ np.linalg.solve(
+            self.ehat_1(t) @ self.t2(t), self.ahat_1(t)) +
+               self.projection_derivative(t))
+        return epa
 
     def d_a(self, t):
         self._compute_d_a(t)
@@ -73,20 +78,22 @@ class LinearFlowRepresentation(LinearDAE):
         return self._current_proj_compl @ x
 
     def _compute_f_d(self, t):
-        self._current_f_d = (self.t2(t) @ np.linalg.solve(
-            self.ehat_1(t) @ self.t2(t), self.fhat_1(t)) +
-                             self.proj_derivative(t)) @ self.cal_projection(t)
+        self._compute_projection_derivative(t)
+        epa = self._compute_eplusa(t)
+        self._current_f_d = self.t2(t) @ np.linalg.solve(
+            self.ehat_1(t) @ self.t2(t), self.fhat_1(t)) - epa @ self.f_a(t)
 
     def projection_derivative(self, t):
         self._compute_projection_derivative(t)
         return self._current_proj_derivative
 
     def _compute_projection_derivative(self, t):
-        eplus = self.eplus(t)
-        e = self.e(t)
-        der_e = self.der_e(t)
-        n = self.nn
-        der_ep_e = -eplus @ der_e @ eplus @ e + (
-            np.identity(n) - eplus @ e) @ der_e.T @ eplus.T @ eplus @ e
-        ep_der_e = eplus @ der_e
-        self._current_proj_derivative = der_ep_e + ep_der_e
+        if self._check_current_time(t, "proj_derivative"):
+            eplus = self.eplus(t)
+            e = self.e(t)
+            der_e = self.der_e(t)
+            n = self.nn
+            der_ep_e = -eplus @ der_e @ eplus @ e + (
+                np.identity(n) - eplus @ e) @ der_e.T @ eplus.T @ eplus @ e
+            ep_der_e = eplus @ der_e
+            self._current_proj_derivative = der_ep_e + ep_der_e
