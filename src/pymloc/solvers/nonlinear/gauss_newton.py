@@ -1,9 +1,13 @@
+import logging
+
 import scipy.linalg as linalg
 
 from ...model.optimization.nonlinear_leastsquares import LocalNonLinearLeastSquares
 from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
 from ..base_solver import Solution
+
+logger = logging.getLogger(__name__)
 
 
 class GaussNewton(BaseSolver):
@@ -20,6 +24,7 @@ class GaussNewton(BaseSolver):
         jac = self._get_jacobian(x)
         q, r = linalg.qr(jac)
         x_new = x - linalg.solve(r.T @ r, r.T) @ q.T @ f
+        logger.info("New x value:\n{}\nNew jac value:\n{}".format(x_new, jac))
         return x_new
 
     def _get_jacobian(self, x):
@@ -36,7 +41,9 @@ class GaussNewton(BaseSolver):
     def _run(self, x0=None):
         x = self._get_x0(x0)
         for i in range(self.max_iter):
+            logger.info("Starting iteration: {}".format(i))
             f = self._nllq.objective.residual(x)
+            logger.info("Current residual: {}".format(f))
             if not self.abort(f):
                 x = self._newton_step(x, f)
                 self._variables.current_values = x
