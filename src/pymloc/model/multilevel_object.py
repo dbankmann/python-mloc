@@ -19,6 +19,8 @@ class MultiLevelObject(ABC):
             if not isinstance(container, VariablesContainer):
                 raise TypeError(container)
 
+        self._localize_dict = dict()
+
     @property
     def lower_level_variables(self):
         return self._lower_level_variables
@@ -40,16 +42,27 @@ class MultiLevelObject(ABC):
     def _loc_vars_filter(self):
         return self._local_level_variables.current_values
 
+    def _get_ll_vars(self, loc_vars):
+        id_vars = id(loc_vars)
+        ll_vars = self._localize_dict.get(id_vars)
+        if ll_vars is None:
+            logger.info("Updating lower level variables...")
+            self._lower_level_variables.update_values()
+            ll_vars = self._ll_vars_filter()
+            self._localize_dict[id_vars] = ll_vars
+        return ll_vars
+
     def localize_method(self, method):
         if method is None:
             return None
-        hl_vars = self._hl_vars_filter()
-        ll_vars = self._ll_vars_filter()
         nparam = len(inspect.signature(method).parameters)
         #Signature 'guessing': For 2 parameters, only use hl_vars and loc_vars
+        #TODO: Generalize to more cases
         if nparam == 3:
 
             def localized_function(variables):
+                hl_vars = self._hl_vars_filter()
+                ll_vars = self._get_ll_vars(variables)
                 args = (ll_vars, ) + (hl_vars, ) + (variables, )
                 return method(*args)
 
@@ -57,12 +70,14 @@ class MultiLevelObject(ABC):
         elif nparam == 2:
 
             def localized_function(variables):
+                hl_vars = self._hl_vars_filter()
                 args = (hl_vars, ) + (variables, )
                 return method(*args)
 
             return localized_function
 
         elif nparam == 1:
+            hl_vars = self._hl_vars_filter()
             localized_parameter = method(hl_vars)
             return localized_parameter
         elif nparam == 0:
@@ -71,9 +86,16 @@ class MultiLevelObject(ABC):
             return method
         else:
             logger.error("Unsupported number of parameters")
+            return None
 
     def get_localized_object(self, **kwargs):
         return local_object_factory.get_localized_object(self, **kwargs)
+
+    def solve(self, *args, **kwargs):
+        loc_object = self.get_localized_object()
+        loc_object.init_solver()
+        solution = loc_object.solve()
+        return solution
 
 
 class LocalObjectFactory:

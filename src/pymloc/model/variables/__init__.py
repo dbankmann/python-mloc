@@ -7,3 +7,4 @@ from .null_variables import NullVariables
 from .time_function import InputVariables
 from .time_function import OutputVariables
 from .time_function import StateVariables
+from .time_function import Time

@@ -13,27 +13,93 @@ from .variables import Variables
 class VariablesContainer(ABC):
     def __init__(self):
         self._variables = []
+        self._n_variables = 0
+        self._linked_variable = None
 
     @property
     def variables(self):
         return self._variables
 
+    @property
+    def linked_variable(self):
+        return self._linked_variable
+
+    @linked_variable.setter
+    def linked_variable(self, value):
+        self._linked_variable = value
+
+    def link_variable(self, variable, overwrite=False):
+        self.linked_variable = variable
+        if overwrite:
+            variable.time = self._time
+
     def merge(self, *args):
         for variables in args:
             if isinstance(variables, Variables):
                 self._variables.append(variables)
+                self._n_variables += 1
             else:
                 raise TypeError(
                     "{} must be a subclass of Variables".format(variables))
 
     @property
     def current_values(self):
-        vals = [var.current_values for var in self.variables]
-        return vals
+        #TODO: Refactor
+        if self._linked_variable is None:
+            return self._local_values()
+        else:
+            return self._linked_variable.current_values
+
+    def _local_values(self):
+        if self._n_variables == 1:
+            return self.variables[0].current_values
+        else:
+            vals = [var.current_values for var in self.variables]
+            return vals
+
+    @current_values.setter
+    def current_values(self, values):
+        if self._n_variables == 1:
+            self.variables[0].current_values = values
+        else:
+            for value, variable in zip(values, self.variables):
+                variable.current_values = value
 
     def get_random_values(self):
         vals = (var.get_random_values() for var in self.variables)
         return vals
+
+    def update_values(self):
+        try:
+            problem = self.associated_problem
+        except:
+            raise ValueError("There is no associated problem or solver")
+
+        if problem is not None:
+            problem.init_solver()
+            solution = problem.solve()
+
+    def get_sensitivities(self):
+        sens_obj = self.sensitivity_problem.get_sensitivities()
+        sens_obj.init_solver()
+        sens = sens_obj.solve()
+        return sens
+
+    @property
+    def associated_problem(self):
+        return self._associated_problem
+
+    @associated_problem.setter
+    def associated_problem(self, value):
+        self._associated_problem = value
+
+    @property
+    def sensitivity_problem(self):
+        return self._sensitivity_problem
+
+    @sensitivity_problem.setter
+    def sensitivity_problem(self, value):
+        self._sensitivity_problem = value
 
 
 class UniqueVariablesContainer(VariablesContainer, ABC):
@@ -97,7 +163,14 @@ class InputOutputStateVariables(VariablesContainer):
 
     @property
     def time(self):
-        return self._time
+        if self._linked_variable is None:
+            return self._time
+        else:
+            return self._linked_variable.time
+
+    @time.setter
+    def time(self, value):
+        self._time = value
 
 
 class InputStateVariables(InputOutputStateVariables):
@@ -115,11 +188,15 @@ class StateVariablesContainer(InputStateVariables):
         self._inputs = None
 
     def _merge(self):
-        self.merge(self.states, self.inputs, self.time)
+        self.merge(self.states)
 
     @property
     def shape(self):
-        return np.array(self.dimension).shape
+        n = self._n_states
+        if isinstance(n, tuple):
+            return n
+        else:
+            return (n, )
 
 
 class ParameterContainer(UniqueVariablesContainer):
