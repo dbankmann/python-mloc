@@ -64,3 +64,25 @@ class Solvable(ABC):
             self._class = self._global_object._local_object_class
         else:
             self._class = self.__class__
+
+
+class VariableSolvable(Solvable, ABC):
+    def __init__(self, variables):
+        super().__init__()
+        if not isinstance(variables, VariablesContainer):
+            raise TypeError(variables)
+        self._variables = variables
+        self._associate_problem_variables()
+
+    def _associate_problem_variables(self):
+        self.variables.associated_problem = self
+
+    @property
+    def variables(self):
+        return self._variables
+
+    def _save_solution(self, solution):
+        self.variables.set_value = solution
+
+    def link_solution(self, variables):
+        pass
