@@ -2,7 +2,7 @@ from abc import ABC
 
 import numpy as np
 
-from ..solvable import Solvable
+from ..solvable import VariableSolvable
 from ..variables.time_function import Time
 
 
@@ -68,7 +68,7 @@ class BoundaryValues(MultipleBoundaryValues):
         ), inhomogeneity, z_gamma)
 
 
-class MultipleBoundaryValueProblem(Solvable):
+class MultipleBoundaryValueProblem(VariableSolvable):
     def __init__(self, time_intervals, dynamical_system, boundary_values):
         self._initial_time = time_intervals[0].t_0
         self._final_time = time_intervals[-1].t_f
@@ -83,7 +83,8 @@ class MultipleBoundaryValueProblem(Solvable):
             raise ValueError(
                 "Timepoints and boundary values need to have same size.")
         self._nodes = self._get_and_check_nodes()
-        super().__init__()
+        variables = dynamical_system.variables
+        super().__init__(variables)
 
     @property
     def dynamical_system(self):
