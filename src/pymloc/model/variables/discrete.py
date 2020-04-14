@@ -1,3 +1,5 @@
+import numpy as np
+
 from .variables import Variables
 
 
@@ -9,7 +11,9 @@ class Parameters(Variables):
     @property
     def current_values(self):
         vals = self._current_values
-        if vals is not None and vals.size == 1:
+        if isinstance(vals, float):
+            return np.float(vals)
+        elif vals is not None and vals.size == 1:
             return vals.item()
         else:
             return vals
