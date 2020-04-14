@@ -2,6 +2,8 @@ import numpy as np
 import pytest
 import scipy
 
+from pymloc.misc import restack
+from pymloc.misc import unstack
 from pymloc.solvers.dynamical_systems.multiple_shooting import MultipleShooting
 from pymloc.solvers.dynamical_systems.pygelda import PyGELDA
 
@@ -110,13 +112,12 @@ class TestMultipleShooting:
 
     def test_unstack(self, rand_shape):
         a = rand_shape
-        b = MultipleShooting._unstack(a)
+        b = unstack(a)
         np.testing.assert_equal(a[..., 0], b[:a.shape[0], ...])
 
     def test_restack(self, rand_shape):
-        b = MultipleShooting._unstack(rand_shape)
-        np.testing.assert_equal(MultipleShooting._restack(b, rand_shape.shape),
-                                rand_shape)
+        b = unstack(rand_shape)
+        np.testing.assert_equal(restack(b, rand_shape.shape), rand_shape)
 
     @pytest.fixture(params=np.arange(100))
     def rand_shape(self):
