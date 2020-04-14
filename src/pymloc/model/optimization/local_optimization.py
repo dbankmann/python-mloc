@@ -1,13 +1,13 @@
 from abc import ABC
 from abc import abstractmethod
 
-from ..solvable import Solvable
+from ..solvable import VariableSolvable
 from ..variables.container import VariablesContainer
 from .constraints.local_constraint import LocalConstraint
 from .objectives.local_objective import LocalObjective
 
 
-class LocalOptimizationObject(Solvable, ABC):
+class LocalOptimizationObject(VariableSolvable, ABC):
     """
     Abstract class for defining local optimization problems.
     """
@@ -19,12 +19,9 @@ class LocalOptimizationObject(Solvable, ABC):
             raise TypeError(loc_objective_obj)
         if not isinstance(loc_constraint_obj, LocalConstraint):
             raise TypeError(loc_constraint_obj)
-        if not isinstance(variables_obj, VariablesContainer):
-            raise TypeError(variables_obj)
         self._objective = loc_objective_obj
         self._constraint = loc_constraint_obj
-        self._variables = variables_obj
-        super().__init__()
+        super().__init__(variables_obj)
 
     @property
     def objective(self):
@@ -33,10 +30,6 @@ class LocalOptimizationObject(Solvable, ABC):
     @property
     def constraint(self):
         return self._constraint
-
-    @property
-    def variables(self):
-        return self._variables
 
 
 class LocalNullOptimization(LocalOptimizationObject):
