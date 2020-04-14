@@ -59,6 +59,7 @@ class LQOptimalControl(LocalOptimizationObject):
         gamma_rhs[:self._nn] = self.constraint.initial_value
 
         variables = StateVariablesContainer(dim)
+        self.variables.link_variable(variables, overwrite=True)
         dyn_sys = LinearFlowRepresentation(variables, ecal, acal, fcal, dim)
         bvs = BoundaryValues(gamma_0, gamma_f, gamma_rhs)
         flow_prob = LinearFlow(self._time, dyn_sys)
