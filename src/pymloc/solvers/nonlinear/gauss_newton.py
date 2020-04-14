@@ -12,8 +12,8 @@ class GaussNewton(BaseSolver):
             raise TypeError(nllq)
         self._nllq = nllq
         self._jac = sensitivity_fun
+        self._variables = nllq.variables
 
-        super().__init__(nllq, max_iter=maxiter)
         super().__init__(nllq, max_iter=max_iter)
 
     def _newton_step(self, x, f):
