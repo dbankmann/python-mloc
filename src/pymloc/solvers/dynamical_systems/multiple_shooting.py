@@ -5,6 +5,8 @@ import numpy as np
 import scipy.linalg as linalg
 from pygelda.pygelda import Gelda
 
+from ...misc import restack
+from ...misc import unstack
 from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
 from ...model.dynamical_system.flow_problem import LinearFlow
 from ...model.dynamical_system.initial_value_problem import InitialValueProblem
@@ -18,9 +20,14 @@ logger = logging.getLogger(__name__)
 
 
 class MultipleShooting(BaseSolver):
-    def __init__(self, bvp: MultipleBoundaryValueProblem,
-                 flow_problem: LinearFlow, ivp_problem: InitialValueProblem,
-                 shooting_nodes, stepsize, *args, **kwargs):
+    def __init__(self,
+                 bvp: MultipleBoundaryValueProblem,
+                 flow_problem: LinearFlow,
+                 ivp_problem: InitialValueProblem,
+                 shooting_nodes,
+                 stepsize=1e-1,
+                 *args,
+                 **kwargs):
         if not isinstance(bvp, MultipleBoundaryValueProblem):
             raise TypeError(bvp)
         if not isinstance(flow_problem, LinearFlow):
@@ -37,6 +44,7 @@ class MultipleShooting(BaseSolver):
         self._final_time = self._shooting_nodes[-1]
         self._inner_nodes = shooting_nodes[1:-1]
         self._dynamical_system = bvp.dynamical_system
+        self._variables = self._dynamical_system.variables
         self._nn = self._dynamical_system.nn
         self._flow_problem = flow_problem
         self._ivp_problem = ivp_problem
@@ -54,6 +62,8 @@ class MultipleShooting(BaseSolver):
         self._flows = self._get_homogeneous_flows(flow_abs_tol, flow_rel_tol)
         self._set_gis()
         self._shooting_values = self._get_shooting_values()
+        if time_interval is None:
+            time_interval = self._variables.time
         self._time_interval = time_interval
         if time_interval.grid is None:
             time_interval.grid = self._shooting_nodes
@@ -155,20 +165,9 @@ class MultipleShooting(BaseSolver):
     def _newton_step(self, current_node_states, rhs):
         shooting_matrix = self._get_shooting_matrix()
         lin_sys_sol = np.linalg.solve(shooting_matrix, rhs)
-        next_nodes = current_node_states - self._restack(
-            lin_sys_sol, current_node_states.shape)
+        next_nodes = current_node_states - restack(lin_sys_sol,
+                                                   current_node_states.shape)
         return next_nodes
-
-    @staticmethod
-    def _unstack(array):
-        return np.moveaxis(array, -1, 0).reshape(-1, *array.shape[1:-1])
-
-    @staticmethod
-    def _restack(array, shape):
-        *shapefirst, shapem2, shapem1 = shape
-        restacked = np.einsum('ij...->j...i',
-                              array.reshape(shapem1, *shapefirst, shapem2))
-        return restacked
 
     def _get_newton_rhs(self, current_node_states):
         current_x_d = self._get_x_d(current_node_states)
@@ -177,7 +176,7 @@ class MultipleShooting(BaseSolver):
         computed_node_states = self._forward_projected_nodes(
             current_node_states)
         diffs = current_node_states[..., 1:] - computed_node_states[..., :-1]
-        res_b = self._unstack(diffs)
+        res_b = unstack(diffs)
         return np.concatenate((res_b, bound_res), axis=0)
 
     def _forward_projected_nodes(self, node_values):
@@ -200,7 +199,7 @@ class MultipleShooting(BaseSolver):
     def _project_values(self, values):
         return np.einsum('ijr,i...r->j...r', self._t2s, values)
 
-    def _run(self, time_interval, initial_guess=None, *args, **kwargs):
+    def _run(self, time_interval=None, initial_guess=None, *args, **kwargs):
         self._init_solver(time_interval, *args, **kwargs)
         initial_guess = self._get_initial_guess(initial_guess)
         projected_values = self._project_values(initial_guess)
@@ -214,6 +213,8 @@ class MultipleShooting(BaseSolver):
                                            x_d) - self._fas
         node_solution = TimeSolution(self._shooting_nodes, full_node_values)
         time_grid_solution = self._get_intermediate_values(node_solution)
+        #TODO: Make plugin in time solvable
+        self._bvp.variables.current_values = time_grid_solution
         return time_grid_solution, node_solution
 
     def _get_intermediate_values(self, node_solution):
