@@ -7,13 +7,14 @@ from ..base_solver import Solution
 
 
 class GaussNewton(BaseSolver):
-    def __init__(self, nllq, jac, maxiter):
+    def __init__(self, nllq, sensitivity_fun=None, max_iter=20):
         if not isinstance(nllq, LocalNonLinearLeastSquares):
             raise TypeError(nllq)
         self._nllq = nllq
-        self._jac = jac
+        self._jac = sensitivity_fun
 
         super().__init__(nllq, max_iter=maxiter)
+        super().__init__(nllq, max_iter=max_iter)
 
     def _newton_step(self, x, f):
         jac = self._get_jacobian(x)
