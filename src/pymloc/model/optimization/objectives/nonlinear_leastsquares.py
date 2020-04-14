@@ -1,3 +1,7 @@
+import numpy as np
+
+from ....misc import restack
+from ....misc import unstack
 from ...multilevel_object import MultiLevelObject
 from ...multilevel_object import local_object_factory
 from .objective import AutomaticLocalObjective
@@ -14,9 +18,22 @@ class NonLinearLeastSquares(Objective):
     def residual(self, ll_vars, hl_vars, loc_vars):
         return self._rhs(ll_vars, hl_vars, loc_vars)
 
+    def get_jac(self, ll_vars, hl_vars, loc_vars):
+        loc_sens = self._get_loc_sens()
+        ll_sens_sol = self.lower_level_variables.get_sensitivities()
+        ll_sens = unstack(ll_sens_sol.solution)
+        return ll_sens
+
+    def _get_loc_sens(self):
+        #TODO:Implement
+        return np.zeros(1)
+
 
 class AutomaticLocalNonLinearLeastSquares(AutomaticLocalObjective):
-    pass
+    def __init__(self, global_objective):
+        super().__init__(global_objective)
+        self.get_jac = global_objective.localize_method(
+            global_objective.get_jac)
 
 
 local_object_factory.register_localizer(NonLinearLeastSquares,
