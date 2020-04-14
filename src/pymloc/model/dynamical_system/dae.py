@@ -7,9 +7,9 @@ class DAE:
     def __init__(self, variables, n):
         if not isinstance(variables, StateVariablesContainer):
             raise TypeError(variables)
-        self._variables = variables.variables[0]
-        self._nm = self._variables.shape[0]
-        if n != self._nm:
+        self._variables = variables
+        self._nm = self._variables.n_states
+        if n != self._nm and n != self._nm[0]:
             raise ValueError(
                 "Number of variables is {}, but has to equal number of equations, which is {}"
                 .format(self._nm, n))
@@ -50,7 +50,7 @@ class LinearDAE(DAE):
         self._der_e = der_e
         self._current_ahat = np.zeros((n, n), order='F')
         self._current_ehat = np.zeros((n, n), order='F')
-        var_shape = self._variables.dimension
+        var_shape = self._variables.n_states
         self._current_fhat = np.zeros(var_shape, order='F')
 
     @property
