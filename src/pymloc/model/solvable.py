@@ -2,6 +2,7 @@ import inspect
 import logging
 from abc import ABC
 
+from ..model.variables.container import VariablesContainer
 from ..solver_container import solver_container_factory
 
 logger = logging.getLogger()
@@ -31,9 +32,17 @@ class Solvable(ABC):
     def solver(self, solver):
         self._solver = solver
 
+    @property
+    def available_solver(self):
+        return self._available_solvers
+
+    def _save_solution(self, solution):
+        pass
+
     def solve(self, *args, **kwargs):
         try:
             solution = self._solver_instance.run(*args, **kwargs)
+            self._save_solution(solution)
             return solution
         except AttributeError:
             raise AttributeError(
@@ -46,7 +55,6 @@ class Solvable(ABC):
             tmp = self
         else:
             tmp = creator_func(self)
-
         if not isinstance(tmp, tuple):
             tmp = tuple((tmp, ))
         self._solver_instance = self._solver.solver(*tmp, *args, **kwargs)
