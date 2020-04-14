@@ -23,14 +23,23 @@ class GaussNewton(BaseSolver):
         return x_new
 
     def _get_jacobian(self, x):
-        return self._jac(x)
+        if self._jac is None:
+            return self._nllq.objective.get_jac(x)
+        else:
+            return self._jac(x)
 
-    def _run(self, x0):
-        x = x0
+    def _get_x0(self, x0):
+        if x0 is None:
+            x0 = self._variables.current_values
+        return x0
+
+    def _run(self, x0=None):
+        x = self._get_x0(x0)
         for i in range(self.max_iter):
             f = self._nllq.objective.residual(x)
             if not self.abort(f):
                 x = self._newton_step(x, f)
+                self._variables.current_values = x
             else:
                 break
         solver_params = {"iter": i}
