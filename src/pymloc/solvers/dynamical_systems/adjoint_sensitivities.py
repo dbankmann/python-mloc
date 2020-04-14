@@ -280,8 +280,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
 
         return temp1 - temp2 - temp3 + temp4
 
-    def _run(self, parameters, tau):
-        localized_bvp = self._bvp_param.get_sensitivity_bvp(parameters)
+    def _compute_single_sensitivity(self, tau, localized_bvp, parameters):
         time = deepcopy(localized_bvp.time_interval)
         stepsize = 1e-1  #needed for integration. TODO:Better way to choose that stepsize?
         time.grid = np.hstack(
@@ -307,6 +306,26 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
                                                 solution, adjoint_solution,
                                                 parameters, tau)
         return sensitivity
+
+    def _run(self, parameters=None, tau=None):
+        if parameters is None:
+            parameters = self._bvp_param.parameters.current_values
+        localized_bvp = self._bvp_param.get_sensitivity_bvp(parameters)
+
+        if tau is None:
+            tau = self._bvp_param.time_interval
+        elif isinstance(tau, float):
+            tau = Time(tau, tau, time_grid=np.array([tau]))
+
+        gridsize = tau.grid.size
+        selshape = self._bvp_param.selector(parameters).shape[1]
+        solution = np.zeros((self._nn, self._bvp_param.n_param, gridsize))
+        for i, tau_val in enumerate(tau.grid):
+            logger.info("Compute sensitivity at tau = {}".format(tau_val))
+            solution[..., i] = self._compute_single_sensitivity(
+                tau_val, localized_bvp, parameters)
+
+        return TimeSolution(tau.grid, solution)
 
 
 solver_container_factory.register_solver(BVPSensitivities,
