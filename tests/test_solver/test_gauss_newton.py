@@ -22,7 +22,7 @@ def jac(nllq_obj_loc):
 
 @pytest.fixture
 def gn_instance(nllq_obj_loc, jac):
-    return GaussNewton(nllq_obj_loc, jac, maxiter=10)
+    return GaussNewton(nllq_obj_loc, jac, max_iter=10)
 
 
 class TestGaussNewton:
