@@ -19,12 +19,17 @@ class BVPSensitivities(Solvable):
         self._bvp = boundary_value_problem
         self._dynamical_system = boundary_value_problem.dynamical_system
         self._time_interval = self._bvp.time_interval
+        self._parameters = self._bvp.higher_level_variables
         self._n_param = n_param
         if selector is None:
             selector = lambda p: np.identity(self._dynamical_system.nn)
             self._sel_shape = (self._dynamical_system.nn,
                                self._dynamical_system.nn)
         self._selector = selector
+
+    @property
+    def parameters(self):
+        return self._parameters
 
     @property
     def n_param(self):
@@ -51,5 +56,5 @@ class BVPSensitivities(Solvable):
     def time_interval(self):
         return self._time_interval
 
-    def get_sensitivity_bvp(self, parameters):
+    def get_sensitivity_bvp(self, parameters=None):
         return self._bvp.get_localized_object(parameters=parameters)
