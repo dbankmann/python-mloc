@@ -79,17 +79,18 @@ class Time(TimeVariables):
     def grid(self, value):
         if value is None:
             self._grid = None
-        elif not self.t_0 in value:
-            if np.allclose(self.t_0, value[0]):
-                value[0] = self.t_0
-            else:
-                value = np.insert(value, 0, self.t_0)
-        elif not self.t_f in value:
-            if np.allclose(self.t_f, value[-1]):
-                value[-1] = self.t_f
-            else:
-                value = np.append(value, self.t_f)
-        self._grid = value
+        else:
+            if self.t_0 not in value:
+                if np.allclose(self.t_0, value[0]):
+                    value[0] = self.t_0
+                else:
+                    value = np.insert(value, 0, self.t_0)
+            if self.t_f not in value:
+                if np.allclose(self.t_f, value[-1]):
+                    value[-1] = self.t_f
+                else:
+                    value = np.append(value, self.t_f)
+            self._grid = value
 
     def at_bound(self, tau):
         return self.at_lower_bound(tau) or self.at_upper_bound(tau)
