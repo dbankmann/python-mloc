@@ -282,7 +282,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
 
     def _compute_single_sensitivity(self, tau, localized_bvp, parameters):
         time = deepcopy(localized_bvp.time_interval)
-        stepsize = 1e-1  #needed for integration. TODO:Better way to choose that stepsize?
+        stepsize = self.abs_tol
         time.grid = np.hstack(
             (np.arange(time.t_0, tau,
                        stepsize), np.arange(tau, time.t_f, stepsize)))
