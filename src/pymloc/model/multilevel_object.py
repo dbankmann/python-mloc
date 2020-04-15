@@ -20,6 +20,8 @@ class MultiLevelObject(ABC):
                 raise TypeError(container)
 
         self._localize_dict = dict()
+        self._localize_id = None
+        self._localize_val = None
 
     @property
     def lower_level_variables(self):
@@ -44,13 +46,12 @@ class MultiLevelObject(ABC):
 
     def _get_ll_vars(self, loc_vars):
         id_vars = id(loc_vars)
-        ll_vars = self._localize_dict.get(id_vars)
-        if ll_vars is None:
+        if self._localize_id is None or id_vars != self._localize_id:
             logger.info("Updating lower level variables...")
             self._lower_level_variables.update_values()
             ll_vars = self._ll_vars_filter()
-            self._localize_dict[id_vars] = ll_vars
-        return ll_vars
+            self._localize_value = ll_vars
+        return self._localize_value
 
     def localize_method(self, method):
         if method is None:
