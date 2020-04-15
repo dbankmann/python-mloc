@@ -4,8 +4,8 @@ from .. import BaseSolver
 
 
 class MultiLevelIterativeSolver(BaseSolver):
-    def __init__(self, model):
-        super().__init__(model)
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
         self._opts = model.optimizations
         self._hopt = model.highest_opt
         self._lopt = model.lowest_opt
@@ -14,6 +14,7 @@ class MultiLevelIterativeSolver(BaseSolver):
     def _run(self, *args, **kwargs):
         self._check_variables()
         self._set_associations()
+        self._init_solvers(*args, **kwargs)
         upperopt = self._hopt
         sol = upperopt.solve(*args, **kwargs)
         return sol
@@ -35,7 +36,8 @@ class MultiLevelIterativeSolver(BaseSolver):
 
     def _init_solvers(self):
         for opt in self._opts:
-            opt.init_solver()
+            opt.get_localized_object().init_solver(abs_tol=self.abs_tol,
+                                                   rel_tol=self.rel_tol)
 
 
 solver_container_factory.register_solver(MultiLevelOptimalControl,

@@ -11,14 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 class GaussNewton(BaseSolver):
-    def __init__(self, nllq, sensitivity_fun=None, max_iter=20):
+    def __init__(self,
+                 nllq,
+                 sensitivity_fun=None,
+                 max_iter=20,
+                 *args,
+                 **kwargs):
         if not isinstance(nllq, LocalNonLinearLeastSquares):
             raise TypeError(nllq)
         self._nllq = nllq
         self._jac = sensitivity_fun
         self._variables = nllq.variables
 
-        super().__init__(nllq, max_iter=max_iter)
+        super().__init__(nllq, max_iter=max_iter, *args, **kwargs)
 
     def _newton_step(self, x, f):
         jac = self._get_jacobian(x)
