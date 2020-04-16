@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import scipy.linalg as linalg
 
 from ...model.optimization.nonlinear_leastsquares import LocalNonLinearLeastSquares
@@ -22,15 +23,50 @@ class GaussNewton(BaseSolver):
         self._nllq = nllq
         self._jac = sensitivity_fun
         self._variables = nllq.variables
+        self._upper_eta = 1.
 
         super().__init__(nllq, max_iter=max_iter, *args, **kwargs)
 
+    @property
+    def upper_eta(self):
+        return self._upper_eta
+
+    @upper_eta.setter
+    def upper_eta(self, value):
+        self._upper_eta = value
+
+    @property
+    def lower_abs_tolerance(self):
+        return self._lower_abs_tolerance
+
+    def _get_lower_tolerance(self, jac, res):
+        safety_factor = 0.9
+        eta = self._upper_eta * safety_factor
+        tmp1 = eta * np.linalg.norm(jac.T @ res)
+        svals = np.linalg.svd(jac)[1]
+        smin = svals[0]
+        smax = svals[-1]
+        condJ = smax / smin
+        tmp2 = (condJ**2 + 2 * eta) * smax
+        tmp3 = (condJ**2 + eta * condJ + 1) * np.linalg.norm(res)
+        atol = tmp1 / (tmp2 + tmp3)
+        self._lower_abs_tolerance = atol
+        return atol
+
     def _newton_step(self, x, f):
         jac = self._get_jacobian(x)
-        q, r = linalg.qr(jac)
-        x_new = x - linalg.solve(r.T @ r, r.T) @ q.T @ f
-        logger.info("New x value:\n{}\nNew jac value:\n{}".format(x_new, jac))
-        return x_new
+        residual = jac.T @ f
+        logger.info("Current residual: {}".format(residual))
+        logger.info("Current allowed lower level tolerance: {}".format(
+            self._get_lower_tolerance(jac, f)))
+        if not self.abort(residual):
+            q, r = linalg.qr(jac)
+            x_new = x - linalg.solve(r.T @ r, r.T) @ q.T @ f
+            logger.info("New x value:\n{}\nNew jac value:\n{}".format(
+                x_new, jac))
+            return x_new, True
+        else:
+            return x, False
 
     def _get_jacobian(self, x):
         if self._jac is None:
@@ -48,12 +84,10 @@ class GaussNewton(BaseSolver):
         for i in range(self.max_iter):
             logger.info("Starting iteration: {}".format(i))
             f = self._nllq.objective.residual(x)
-            logger.info("Current residual: {}".format(f))
-            if not self.abort(f):
-                x = self._newton_step(x, f)
-                self._variables.current_values = x
-            else:
+            x, cont = self._newton_step(x, f)
+            if not cont:
                 break
+            self._variables.current_values = x
         solver_params = {"iter": i}
         return Solution(x, solver_params)
 

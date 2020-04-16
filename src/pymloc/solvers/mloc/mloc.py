@@ -10,11 +10,10 @@ class MultiLevelIterativeSolver(BaseSolver):
         self._hopt = model.highest_opt
         self._lopt = model.lowest_opt
         self._vars = model.variables
-
-    def _run(self, *args, **kwargs):
         self._check_variables()
         self._set_associations()
-        self._init_solvers(*args, **kwargs)
+
+    def _run(self, *args, **kwargs):
         upperopt = self._hopt
         sol = upperopt.solve(*args, **kwargs)
         return sol
@@ -27,17 +26,22 @@ class MultiLevelIterativeSolver(BaseSolver):
                     .format(variable))
 
     def _set_associations(self):
-        for variable, optimization in zip(self._vars, self._opts):
-            variable.associated_problem = optimization.get_localized_object()
-            variable.sensitivity_problem = optimization
+        for i, (variable,
+                optimization) in enumerate(zip(self._vars, self._opts)):
+            associated_problem = optimization.get_localized_object()
+            variable.associated_problem = associated_problem
+            self._init_solver(associated_problem)
+            if i > 0:
+                sens = optimization.get_sensitivities()
+                variable.sensitivity_problem = sens
+                self._init_solver(sens)
 
     def _init_upper_level(self):
         self._hopt.init_solver()
 
-    def _init_solvers(self):
-        for opt in self._opts:
-            opt.get_localized_object().init_solver(abs_tol=self.abs_tol,
-                                                   rel_tol=self.rel_tol)
+    def _init_solver(self, associated_problem):
+        associated_problem.init_solver(abs_tol=self.abs_tol,
+                                       rel_tol=self.rel_tol)
 
 
 solver_container_factory.register_solver(MultiLevelOptimalControl,
