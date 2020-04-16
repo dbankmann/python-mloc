@@ -56,9 +56,8 @@ class TestParameterFitting:
         solvers = [None, None]
         variables = (variables2[0], variables2[1])
         mloc = MultiLevelOptimalControl(optimizations, variables)
-        mloc.init_solver()
         with pytest.raises(ValueError):
-            mloc.solve()
+            mloc.init_solver()
 
     def test_mloc_solver(self, pdoc_object, nlsq, variables2):
         optimizations = [nlsq, pdoc_object]
@@ -71,6 +70,22 @@ class TestParameterFitting:
         logger = logging.getLogger("pymloc.solvers.nonlinear.gauss_newton")
         logger.setLevel(logging.DEBUG)
         mloc = MultiLevelOptimalControl(optimizations, variables)
-        mloc.init_solver(abs_tol=1e-2, rel_tol=1e-2)
+        mloc.init_solver(abs_tol=1e-1, rel_tol=1e-1)
         solution = mloc.solve()
-        assert np.allclose(solution.solution, 2., atol=1e-4)
+        assert np.allclose(solution.solution, 2., atol=1e-2)
+
+    def test_mloc_solver_at_final(self, pdoc_object, nlsq, variables2):
+        optimizations = [nlsq, pdoc_object]
+        solvers = [None, None]
+        variables = (variables2[0], variables2[1])
+        variables[0].current_values = np.array([2.])
+        #TODO: Initialize correctly
+        variables[1].current_values = np.array([])
+        variables[1].time.grid = np.array([1., 1.3])
+        logger = logging.getLogger("pymloc.solvers.nonlinear.gauss_newton")
+        logger.setLevel(logging.DEBUG)
+        mloc = MultiLevelOptimalControl(optimizations, variables)
+        mloc.init_solver(abs_tol=1e-1, rel_tol=1e-1)
+        variables[0].associated_problem._solver_instance.upper_eta = 1.
+        solution = mloc.solve()
+        assert np.allclose(solution.solution, 2., atol=1e-12)
