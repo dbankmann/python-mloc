@@ -44,11 +44,15 @@ class MultiLevelObject(ABC):
     def _loc_vars_filter(self):
         return self._local_level_variables.current_values
 
+    def _get_ll_solver_args(self):
+        return dict()
+
     def _get_ll_vars(self, loc_vars):
         id_vars = id(loc_vars)
         if self._localize_id is None or id_vars != self._localize_id:
             logger.info("Updating lower level variables...")
-            self._lower_level_variables.update_values()
+            kwargs = self._get_ll_solver_args()
+            self._lower_level_variables.update_values(**kwargs)
             ll_vars = self._ll_vars_filter()
             self._localize_value = ll_vars
         return self._localize_value
@@ -93,9 +97,8 @@ class MultiLevelObject(ABC):
         return local_object_factory.get_localized_object(self, **kwargs)
 
     def solve(self, *args, **kwargs):
-        loc_object = self.get_localized_object()
-        loc_object.init_solver()
-        solution = loc_object.solve()
+        loc_var = self.local_level_variables
+        solution = loc_var.update_values()
         return solution
 
 

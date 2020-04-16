@@ -20,13 +20,26 @@ class NonLinearLeastSquares(Objective):
 
     def get_jac(self, ll_vars, hl_vars, loc_vars):
         loc_sens = self._get_loc_sens()
-        ll_sens_sol = self.lower_level_variables.get_sensitivities()
+        solver_args = self._get_ll_solver_args()
+        ll_sens_sol = self.lower_level_variables.get_sensitivities(
+            **solver_args)
         ll_sens = unstack(ll_sens_sol.solution)
         return ll_sens
 
     def _get_loc_sens(self):
         #TODO:Implement
         return np.zeros(1)
+
+    def _get_ll_solver_args(self):
+        kwargs = dict()
+        si = self.local_level_variables.associated_problem.solver_instance
+        try:
+            abst = si.lower_abs_tolerance
+            kwargs['abs_tol'] = abst
+            kwargs['rel_tol'] = si.rel_tol
+        except AttributeError:
+            pass
+        return kwargs
 
 
 class AutomaticLocalNonLinearLeastSquares(AutomaticLocalObjective):

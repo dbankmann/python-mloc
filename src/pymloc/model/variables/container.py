@@ -1,3 +1,4 @@
+import logging
 from abc import ABC
 
 import numpy as np
@@ -8,6 +9,8 @@ from .time_function import OutputVariables
 from .time_function import StateVariables
 from .time_function import Time
 from .variables import Variables
+
+logger = logging.getLogger(__name__)
 
 
 class VariablesContainer(ABC):
@@ -69,19 +72,31 @@ class VariablesContainer(ABC):
         vals = (var.get_random_values() for var in self.variables)
         return vals
 
-    def update_values(self):
+    def _check_and_init(self, problem, **kwargs):
+        if len(kwargs) == 0:
+            return
+        if not problem.has_solver_instance():
+            logger.warning(
+                "Solver not initialized for problem: {}.\nInitializing with defaults..."
+                .format(problem))
+            import ipdb
+            ipdb.set_trace()
+        problem.init_solver(**kwargs)
+
+    def update_values(self, **kwargs):
         try:
             problem = self.associated_problem
-        except:
-            raise ValueError("There is no associated problem or solver")
+        except AttributeError:
+            raise AttributeError("There is no associated problem or solver")
 
         if problem is not None:
-            problem.init_solver()
+            self._check_and_init(problem, **kwargs)
             solution = problem.solve()
+            return solution
 
-    def get_sensitivities(self):
-        sens_obj = self.sensitivity_problem.get_sensitivities()
-        sens_obj.init_solver()
+    def get_sensitivities(self, **kwargs):
+        sens_obj = self.sensitivity_problem
+        self._check_and_init(sens_obj, **kwargs)
         sens = sens_obj.solve()
         return sens
 

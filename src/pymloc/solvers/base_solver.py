@@ -53,6 +53,7 @@ class TimeSolution(Solution):
     def __init__(self, time_grid, solution, interpolation=False):
         super().__init__(solution)
         self._time_grid = time_grid
+        #TODO: Make more efficient
         solution_time_dict = {
             time_grid[i]: solution[..., i]
             for i in range(time_grid.size)
@@ -90,11 +91,7 @@ class TimeSolution(Solution):
             logger.warning("Interpolating value...\nPotentially slow!")
             idx = np.searchsorted(self._time_grid,
                                   t)  #TODO: Improvable for sorted array?
-            try:
-                t0, tf = self._time_grid[idx - 1:idx + 1]
-            except:
-                import ipdb
-                ipdb.set_trace()
+            t0, tf = self._time_grid[idx - 1:idx + 1]
             m = tf - t0
             x = self._solution_time_dict.get
             sol = x(t0) + (t - t0) * (x(tf) - x(t0)) / m

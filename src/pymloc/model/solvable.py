@@ -59,6 +59,13 @@ class Solvable(ABC):
             tmp = tuple((tmp, ))
         self._solver_instance = self._solver.solver(*tmp, *args, **kwargs)
 
+    @property
+    def solver_instance(self):
+        return self._solver_instance
+
+    def has_solver_instance(self):
+        return not self._solver_instance is None
+
     def __get_class(self):
         if self._auto_generated:
             self._class = self._global_object._local_object_class

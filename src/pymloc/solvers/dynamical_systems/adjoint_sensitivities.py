@@ -193,13 +193,13 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         iv_problem = self._get_adjoint_ivp_problem(adjoint_bvp)
         #TODO: Make attribute
         nodes = self._get_adjoint_nodes(tau)
-        stepsize = 1e-6
+        stepsize = self.abs_tol
         adjoint_bvp.init_solver(flow_problem,
                                 iv_problem,
                                 nodes,
                                 stepsize,
-                                rel_tol=self.rel_tol,
-                                abs_tol=self.abs_tol)
+                                abs_tol=self.abs_tol,
+                                rel_tol=self.rel_tol)
         logger.info("Solving adjoint boundary value problem...")
         adjoint_sol_blown_up = adjoint_bvp.solve(time)
         coll_sol = self._adjoint_collapse_solution(adjoint_sol_blown_up[0],
