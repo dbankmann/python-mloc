@@ -3,36 +3,17 @@
 version: 1
 disable_existing_loggers: True
 formatters:
-    simple:
-        format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    info:
-        format: "[%(asctime)s] [%(levelname)-8s] --- %(message)s (%(filename)s:%(lineno)s)"
-        datefmt: "%Y-%m-%d %H:%M:%S"
     console:
         class: colorlog.ColoredFormatter
-        format: "%(log_color)s%(message)s (%(filename)s:%(lineno)s)"
-        datefmt: "%Y-%m-%d %H:%M:%S"
-    console_user:
-        class: colorlog.ColoredFormatter
-        format: "%(log_color)s%(message)s"
-        log_colors=:
-          DEBUG: 'red'
-          INFO: 'green'
-          WARNING: 'yellow'
-          ERROR: 'red'
-          CRITICAL: 'red,bg_white'
+        format: "%(log_color)s%(level_indent)s%(message)s (%(filename)s:%(lineno)s)"
 handlers:
     console:
         class: logging.StreamHandler
         level: INFO
         formatter: console
         stream: ext://sys.stdout
-    dummy:
-        class: logging.NullHandler
-        formatter: console_user
-
 
 
 root:
     level: DEBUG
-    handlers: [console, dummy]
+    handlers: [console]

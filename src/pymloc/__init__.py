@@ -8,6 +8,7 @@ from . import logger
 from . import model
 from . import solver_container
 from . import solvers
+from . import level_filter
 from .mloc import MultiLevelOptimalControl
 
 jax.config.update("jax_enable_x64", True)

@@ -15,11 +15,14 @@ class BaseSolver(ABC):
         self.max_iter = max_iter
 
     def run(self, *args, **kwargs):
+        solver_level.level += 1
         logger.info("Starting solver {}".format(self.__class__.__name__))
         logger.info(
             "Current option values:\nabs_tol: {}\nrel_tol: {}\nmax_iter: {}".
-            format(self.rel_tol, self.abs_tol, self.max_iter))
-        return self._run(*args, **kwargs)
+            format(self.abs_tol, self.rel_tol, self.max_iter))
+        sol = self._run(*args, **kwargs)
+        solver_level.level -= 1
+        return sol
 
     @abstractmethod
     def _run(self, *args, **kwargs):
@@ -103,3 +106,23 @@ class TimeSolution(Solution):
             return True
         else:
             return False
+
+
+class Level:
+    __instance = None
+
+    @staticmethod
+    def get_instance():
+        if Level.__instance == None:
+            Level()
+        return Level.__instance
+
+    def __init__(self):
+        if Level.__instance != None:
+            raise Exception("This class is a singleton!")
+        else:
+            Level.__instance = self
+        self.level = 0
+
+
+solver_level = Level()
