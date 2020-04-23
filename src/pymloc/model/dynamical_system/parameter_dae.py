@@ -10,6 +10,7 @@ from .representations import LinearFlowRepresentation
 logger = logging.getLogger(__name__)
 
 
+#TODO: Seems to be fixed in recent versions of jax
 def jac_jax_reshaped(fun, shape, *args, **kwargs):
     def fun_raveled(*args_fun, **kwargs_fun):
         return fun(*args_fun, **kwargs_fun).ravel()
@@ -20,9 +21,9 @@ def jac_jax_reshaped(fun, shape, *args, **kwargs):
         diff_dim = jac_eval.shape[1]
         logger.debug("Reshaping jacobian with original shape: {}".format(
             jac_eval.shape))
+        jac_eval_tmp = jac_eval.ravel(order='F').reshape(diff_dim, *shape)
         return np.einsum('i...->...i',
-                         jac_eval.reshape(diff_dim,
-                                          *shape))  #Transpose for column major
+                         jac_eval_tmp)  #Transpose for column major
 
     return jac_reshaped
 
