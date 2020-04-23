@@ -26,6 +26,9 @@ class LinearControlSystem:
         dim = self._nn + self._nm
         self._augmented_dae = LinearDAE(StateVariablesContainer(dim), cal_e,
                                         cal_a, cal_f, dim)
+        _hom_f = lambda t: np.zeros((self._nn))
+        self._free_dae = LinearDAE(StateVariablesContainer(self._nn), e, a,
+                                   _hom_f, self._nn)
 
     def _get_cal_coeffs(self, e, a, b, c, d, f):
         shape = (self._nn, self._nn + self._nm)
@@ -87,3 +90,7 @@ class LinearControlSystem:
     @property
     def augmented_dae(self):
         return self._augmented_dae
+
+    @property
+    def free_dae(self):
+        return self._free_dae
