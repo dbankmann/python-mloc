@@ -19,12 +19,15 @@ from ...model.variables.time_function import Time
 from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
 from ..base_solver import TimeSolution
+from .sensitivities import SensInhomProjectionNoSubset
 from .sensitivities import SensitivitiesSolver
 
 logger = logging.getLogger(__name__)
 
 
 class AdjointSensitivitiesSolver(SensitivitiesSolver):
+    capital_f_default_class = SensInhomProjectionNoSubset
+
     def _compute_adjoint_boundary_values(self, localized_bvp):
         n = self._dynamical_system.nn
         rank = localized_bvp.dynamical_system.rank
@@ -100,7 +103,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         gamma_new_f = gamma_f @ e_check(t_f)
         gamma_new = (
             sel @ localized_bvp.dynamical_system.cal_projection(tau)).T
-        self._sel_times_projector = gamma_new
+        self._sel_times_projector = gamma_new.T
         if time.at_bound(tau):
             bound_0 = gamma_new_0
             bound_f = gamma_new_f
@@ -116,7 +119,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
                                   [-e_check(tau), e_check(tau)]])
             bound_f = np.block([[zeros, gamma_new_f], [zeros, zeros]])
             bounds = (bound_0, bound_tau, bound_f)
-            gamma = np.block([[zeros], [gamma_new]])
+            gamma = np.block([[np.zeros(gamma_new.shape)], [gamma_new]])
 
         return bounds, gamma
 
@@ -150,7 +153,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
             return linalg.block_diag(a, a)
 
         def f(t):
-            return np.zeros((nf, sel_shape[1]))
+            return np.zeros((nf, sel_shape[0]))
 
         time = self._time_interval
         if time.at_bound(tau):
@@ -193,7 +196,8 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         iv_problem = self._get_adjoint_ivp_problem(adjoint_bvp)
         #TODO: Make attribute
         nodes = self._get_adjoint_nodes(tau)
-        stepsize = self.abs_tol
+        stepsize = self.abs_tol**(1 / 3)
+
         adjoint_bvp.init_solver(flow_problem,
                                 iv_problem,
                                 nodes,
@@ -257,12 +261,24 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
 
         return xi
 
-    def _compute_sensitivity(self, f_tilde, localized_bvp, solution,
-                             adjoint_solution, parameters, tau):
+    def _get_f_tilde_dae(self, localized_bvp, f_tilde):
+        n = self._nn
+        nparam = self._bvp_param.n_param
+        shape = (n, nparam)
+        variables = StateVariablesContainer(shape)
+        dyn_sys = localized_bvp.dynamical_system
+        return LinearFlowRepresentation(variables, dyn_sys.e, dyn_sys.a,
+                                        f_tilde, n)
+
+    def _compute_sensitivity(self, capital_f_theta, capital_f_tilde,
+                             localized_bvp, solution, adjoint_solution,
+                             eplus_e_theta, parameters, tau):
 
         temp1 = np.einsum('ijk, j->ik',
                           self._bvp_param.selector_theta(parameters),
                           solution(tau))
+        temp_bvp = self._get_f_tilde_dae(localized_bvp, capital_f_theta)
+        temp12 = self._bvp_param.selector(parameters) @ temp_bvp.f_a(tau)
         temp2 = self._bvp_param.selector(
             parameters) @ localized_bvp.dynamical_system.d_a(
                 tau) @ self._bvp_param.dynamical_system.f_theta(
@@ -272,17 +288,43 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
             'ij,ik->jk', xi,
             self._boundary_values.get_inhomogeneity_theta(
                 solution, parameters))
-        f_tilde_arr = np.array([f_tilde(t) for t in solution.time_grid
-                                ])  #TODO: slow on constant coefficients.
-        temp4m = adjoint_solution.solution.T @ f_tilde_arr
-        temp4 = scipy.integrate.trapz(temp4m.transpose(1, 2, 0),
-                                      solution.time_grid)
+        if len(solution.time_grid) <= 10000:
+            f_tilde_arr = np.array([
+                capital_f_tilde(t) for t in solution.time_grid
+            ])  #TODO: slow on constant coefficients.
+            temp4m = adjoint_solution.solution.T @ f_tilde_arr
+            temp4 = scipy.integrate.trapz(temp4m.transpose(1, 2, 0),
+                                          solution.time_grid)
+        else:
+            raise NotImplementedError(
+                "Integrations with higher precision need dynamic updates of solutions..."
+            )
+        time = self._time_interval
+        t0 = time.t_0
+        tf = time.t_f
 
-        return temp1 - temp2 - temp3 + temp4
+        temp5 = self._compute_temp5_quant(
+            localized_bvp, adjoint_solution,
+            eplus_e_theta, solution, tf) - self._compute_temp5_quant(
+                localized_bvp, adjoint_solution, eplus_e_theta, solution, t0)
+
+        temp6 = np.einsum('ij, jkp, k->ip', self._sel_times_projector,
+                          eplus_e_theta(tau), solution(tau))
+        import ipdb
+        ipdb.set_trace()
+        return temp1 - temp12 - temp2 - temp3 - temp4 - temp5 - temp6
+
+    def _compute_temp5_quant(self, localized_bvp, adjoint_solution,
+                             eplus_e_theta, solution, t):
+        e = localized_bvp.dynamical_system.e
+        val = np.einsum('ij, jkp,k->ip',
+                        adjoint_solution(t).T @ e(t), eplus_e_theta(t),
+                        solution(t))
+        return val
 
     def _compute_single_sensitivity(self, tau, localized_bvp, parameters):
         time = deepcopy(localized_bvp.time_interval)
-        stepsize = self.abs_tol
+        stepsize = self.abs_tol**(1 / 3)  #Heuristics
         time.grid = np.hstack(
             (np.arange(time.t_0, tau,
                        stepsize), np.arange(tau, time.t_f, stepsize)))
@@ -298,13 +340,14 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
                                   abs_tol=self.abs_tol,
                                   rel_tol=self.rel_tol)
         solution, node_solution = localized_bvp.solve(time)
-        f_tilde = self._get_capital_f_tilde(localized_bvp, solution,
-                                            parameters)
+        capital_f_theta, capital_f_tilde, epluse_theta = self._get_capital_fs(
+            localized_bvp, solution, parameters)
         adjoint_solution = self._get_adjoint_solution(localized_bvp,
                                                       parameters, tau, time)
-        sensitivity = self._compute_sensitivity(f_tilde, localized_bvp,
+        sensitivity = self._compute_sensitivity(capital_f_theta,
+                                                capital_f_tilde, localized_bvp,
                                                 solution, adjoint_solution,
-                                                parameters, tau)
+                                                epluse_theta, parameters, tau)
         return sensitivity
 
     def _run(self, parameters=None, tau=None):
@@ -318,8 +361,8 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
             tau = Time(tau, tau, time_grid=np.array([tau]))
 
         gridsize = tau.grid.size
-        selshape = self._bvp_param.selector(parameters).shape[1]
-        solution = np.zeros((self._nn, self._bvp_param.n_param, gridsize))
+        selshape = self._bvp_param.selector(parameters).shape[0]
+        solution = np.zeros((selshape, self._bvp_param.n_param, gridsize))
         for i, tau_val in enumerate(tau.grid):
             logger.info("Compute sensitivity at tau = {}".format(tau_val))
             solution[..., i] = self._compute_single_sensitivity(

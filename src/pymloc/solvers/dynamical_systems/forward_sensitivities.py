@@ -83,8 +83,7 @@ class ForwardSensitivitiesSolver(SensitivitiesSolver):
         #time.add_to_grid(tau)
         solution, node_solution = localized_bvp.solve(time)
         solution.interpolation = True
-        f_tilde = self._get_capital_f_tilde(localized_bvp, solution,
-                                            parameters)
+        f_tilde = self._get_capital_fs(localized_bvp, solution, parameters)
         sensitivity = self._compute_sensitivity(localized_bvp, parameters,
                                                 f_tilde, solution)
         return sensitivity

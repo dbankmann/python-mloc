@@ -1,3 +1,4 @@
+import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
@@ -34,6 +35,100 @@ np.set_printoptions(precision=4)
 
 
 @pytest.fixture
+def variables3():
+    loc_vars = InputStateVariables(2, 1, time=Time(0., 2.))
+    hl_vars = ParameterContainer(2, domain=RNDomain(1))
+    return hl_vars, loc_vars
+
+
+@pytest.fixture
+def param_control_2(variables3):
+
+    ll_vars = NullVariables()
+
+    @jax.jit
+    def e(p, t):
+        q = p[1]
+        return jnp.array([[1., 0.], [q, 0.]])
+
+    @jax.jit
+    def a(p, t):
+        q = p[1]
+        return jnp.array([[-1., 0.], [-q, 1.]])
+
+    @jax.jit
+    def b(p, t):
+        q = p[1]
+        return jnp.array([[1.], [q]])
+
+    @jax.jit
+    def c(p, t):
+        return jnp.identity(2)
+
+    @jax.jit
+    def d(p, t):
+        return np.array([[0.]])
+
+    @jax.jit
+    def f(p, t):
+        return np.array([0., 0.])
+
+    return LinearParameterControlSystem(ll_vars, *variables3, e, a, b, c, d, f)
+
+
+@pytest.fixture
+def initial_value_2():
+    def ivp(p):
+        q = p[1]
+        return np.array([2., 0.])
+
+    return ivp
+
+
+@pytest.fixture
+def q_2():
+    def q(p, t):
+        return jnp.array([[p[0]**2. - 1., 0.], [0., 0.]])
+
+    return q
+
+
+@pytest.fixture
+def s_2():
+    def s(p, t):
+        return np.zeros((2, 1))
+
+    return s
+
+
+@pytest.fixture
+def m_2():
+    def m(p):
+        return jnp.zeros((2, 2))
+
+    return m
+
+
+@pytest.fixture
+def pdoc_objective_2(q_2, s_2, r, m_2, variables3):
+    time = Time(0., 2.)
+    return ParameterLQRObjective(*variables3, time, q_2, s_2, r, m_2)
+
+
+@pytest.fixture
+def pdoc_constraint_2(variables3, param_control_2, initial_value_2):
+    return ParameterLQRConstraint(*variables3, param_control_2,
+                                  initial_value_2)
+
+
+@pytest.fixture
+def pdoc_object_2(variables3, pdoc_objective_2, pdoc_constraint_2):
+    return ParameterDependentOptimalControl(*variables3, pdoc_objective_2,
+                                            pdoc_constraint_2)
+
+
+#Next example
+@pytest.fixture
 def variables2():
     loc_vars = InputStateVariables(1, 1, time=Time(0., 2.))
     hl_vars = ParameterContainer(1, domain=RNDomain(1))
@@ -69,7 +164,7 @@ def param_control(variables2):
 @pytest.fixture
 def initial_value():
     def ivp(p):
-        return np.array([[2.]])
+        return np.array([2.])
 
     return ivp
 
@@ -110,6 +205,11 @@ def m():
 def pdoc_objective(q, s, r, m, variables2):
     time = Time(0., 2.)
     return ParameterLQRObjective(*variables2, time, q, s, r, m)
+
+
+@pytest.fixture
+def pdoc_constraint(variables2, param_control, initial_value):
+    return ParameterLQRConstraint(*variables2, param_control, initial_value)
 
 
 @pytest.fixture
