@@ -65,13 +65,13 @@ class ParameterMultipleBoundaryValueProblem(MultiLevelObject):
     _local_object_class = MultipleBoundaryValueProblem
 
     def __init__(
-            self,
-            lower_level_variables: VariablesContainer,
-            higher_level_variables: VariablesContainer,
-            local_level_variables: VariablesContainer,
-            time_intervals,
-            dynamical_system,
-            boundary_values,
+        self,
+        lower_level_variables: VariablesContainer,
+        higher_level_variables: VariablesContainer,
+        local_level_variables: VariablesContainer,
+        time_intervals,
+        dynamical_system,
+        boundary_values,
     ):
         super().__init__(lower_level_variables, higher_level_variables,
                          local_level_variables)
@@ -96,13 +96,13 @@ class ParameterMultipleBoundaryValueProblem(MultiLevelObject):
 
 class ParameterBoundaryValueProblem(ParameterMultipleBoundaryValueProblem):
     def __init__(
-            self,
-            lower_level_variables: VariablesContainer,
-            higher_level_variables: VariablesContainer,
-            local_level_variables: VariablesContainer,
-            time_interval,
-            dynamical_system,
-            boundary_values,
+        self,
+        lower_level_variables: VariablesContainer,
+        higher_level_variables: VariablesContainer,
+        local_level_variables: VariablesContainer,
+        time_interval,
+        dynamical_system,
+        boundary_values,
     ):
         self._time_interval = time_interval
         self._initial_time = time_interval.t_0
@@ -150,7 +150,7 @@ class AutomaticMultipleBoundaryValues(MultipleBoundaryValues):
         inhomogeneity = global_object.localize_method(
             global_object.inhomogeneity)
         z_gamma = global_object.localize_method(global_object.z_gamma)
-        super().__init__(boundary_values, inhomogeneity, z_gamma=None)
+        super().__init__(boundary_values, inhomogeneity, z_gamma=z_gamma)
 
 
 local_object_factory.register_localizer(ParameterMultipleBoundaryValues,
