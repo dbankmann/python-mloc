@@ -34,6 +34,11 @@ class LinearParameterControlSystem(MultiLevelObject):
                                                  StateVariablesContainer(dim),
                                                  cal_e, cal_a, cal_f, dim)
 
+        _hom_f = lambda p, t: np.zeros((self._nn))
+        self._free_dae = LinearParameterDAE(ll_vars, hl_vars,
+                                            StateVariablesContainer(self._nn),
+                                            e, a, _hom_f, self._nn)
+
     @property
     def e(self):
         return self._e
@@ -66,24 +71,28 @@ class LinearParameterControlSystem(MultiLevelObject):
     def augmented_dae(self):
         return self._augmented_dae
 
+    @property
+    def free_dae(self):
+        return self._free_dae
+
     #TODO: Refactor. Identical to control dae
     def _get_cal_coeffs(self, e, a, b, c, d, f):
-        shape = (self._nn, self._nn + self._nm)
-        cal_e_arr = np.zeros(shape)
-        cal_a_arr = np.zeros(shape)
-        cal_f_arr = np.zeros(self._nn)
+        nn = self._nn
+        nm = self._nm
 
+        @jax.jit
         def cal_e(*args, **kwargs):
-            cal_e_arr[:self._nn, :self._nn] = e(*args, **kwargs)
+            cal_e_arr = jnp.block([[e(*args, **kwargs), jnp.zeros((nn, nm))]])
             return cal_e_arr
 
+        @jax.jit
         def cal_a(*args, **kwargs):
-            cal_a_arr[:self._nn, :self._nn] = a(*args, **kwargs)
-            cal_a_arr[:self._nn, self._nn:] = b(*args, **kwargs)
+            cal_a_arr = jnp.block([[a(*args, **kwargs), b(*args, **kwargs)]])
             return cal_a_arr
 
+        @jax.jit
         def cal_f(*args, **kwargs):
-            cal_f_arr[:] = f(*args, **kwargs)
+            cal_f_arr = f(*args, **kwargs)
             return cal_f_arr
 
         return cal_e, cal_a, cal_f
