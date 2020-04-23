@@ -9,7 +9,8 @@ class BVPSensitivities(Solvable):
     def __init__(self,
                  boundary_value_problem: ParameterBoundaryValueProblem,
                  n_param,
-                 selector=None):
+                 selector=None,
+                 selector_shape=None):
         super().__init__()
         if not isinstance(boundary_value_problem,
                           ParameterBoundaryValueProblem):
@@ -25,6 +26,8 @@ class BVPSensitivities(Solvable):
             selector = lambda p: np.identity(self._dynamical_system.nn)
             self._sel_shape = (self._dynamical_system.nn,
                                self._dynamical_system.nn)
+        else:
+            self._sel_shape = selector_shape
         self._selector = selector
 
     @property
