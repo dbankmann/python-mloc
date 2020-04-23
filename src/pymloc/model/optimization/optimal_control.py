@@ -53,8 +53,8 @@ class LQOptimalControl(LocalOptimizationObject):
         gamma_f = np.zeros((dim, dim))
         gamma_0[:self._nn, self._nn:] = econtr(self._time.t_0)
         gamma_f[self._nn:2 * self._nn, :self._nn] = np.identity(self._nn)
-        gamma_f[self._nn:2 * self._nn, self._nn:2 *
-                self._nn] = self.objective.final_weight
+        gamma_f[self._nn:2 * self._nn,
+                self._nn:2 * self._nn] = self.objective.final_weight
         gamma_rhs = np.zeros((dim, ))
         gamma_rhs[:self._nn] = self.constraint.initial_value
 
