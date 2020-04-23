@@ -36,7 +36,15 @@ class DAE:
 
 
 class LinearDAE(DAE):
-    def __init__(self, variables, e, a, f, n, der_e=None):
+    def __init__(self,
+                 variables,
+                 e,
+                 a,
+                 f,
+                 n,
+                 der_e=None,
+                 constant_coefficients=True):
+        self._constant_coefficients = constant_coefficients
         super().__init__(variables, n)
         self._e = e
         self._a = a
@@ -52,6 +60,14 @@ class LinearDAE(DAE):
         self._current_ehat = np.zeros((n, n), order='F')
         var_shape = self._variables.n_states
         self._current_fhat = np.zeros(var_shape, order='F')
+
+    @property
+    def constant_coefficients(self):
+        return self._constant_coefficients
+
+    @constant_coefficients.setter
+    def constant_coefficients(self, value):
+        self._constant_coefficients = value
 
     @property
     def rank(self):
@@ -84,7 +100,9 @@ class LinearDAE(DAE):
         return (e_h - e) / h
 
     def _check_current_time(self, t, method):
-        if self._current_t.get(method) is None or self._current_t[method] != t:
+        if self._current_t.get(method) is None or (
+                not self.constant_coefficients
+                and self._current_t[method] != t):
             self._current_t[method] = t
             return True
         else:
