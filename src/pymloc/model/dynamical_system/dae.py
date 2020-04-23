@@ -1,3 +1,4 @@
+import jax.numpy as jnp
 import numpy as np
 
 from ...model.variables.container import StateVariablesContainer
@@ -81,7 +82,7 @@ class LinearDAE(DAE):
 
     def _compute_rank(self, t):
         e = self.e(t)
-        rank = np.linalg.matrix_rank(e)
+        rank = jnp.linalg.matrix_rank(e)
         if self._current_rank is not None and rank != self._current_rank:
             raise ValueError(
                 "Rank change in parameters detected. Not supported and may lead to wrong results."
@@ -181,7 +182,7 @@ class LinearDAE(DAE):
             e = self.e(t)
             a = self.a(t)
             n = self.nn
-            zzprime, sigma, ttprime_h = np.linalg.svd(e)
+            zzprime, sigma, ttprime_h = jnp.linalg.svd(e)
             rank = self.rank
             self._current_ttprime_h = ttprime_h.T
             self._current_zzprime = zzprime
