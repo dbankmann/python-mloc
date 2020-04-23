@@ -1,3 +1,5 @@
+import jax
+import jax.numpy as jnp
 import numpy as np
 
 from ..dynamical_system.parameter_dae import LinearParameterDAE
