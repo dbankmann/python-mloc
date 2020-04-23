@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 class MultiLevelObject(ABC):
+    """
+    BaseObject for all classes that describe problems, with multiple variable levels. These can be both, higher level variables and lower level variables.
+    """
     def __init__(self, lower_level_variables: VariablesContainer,
                  higher_level_variables: VariablesContainer,
                  local_level_variables: VariablesContainer):
