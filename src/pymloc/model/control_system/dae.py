@@ -1,3 +1,4 @@
+import jax.numpy as jnp
 import numpy as np
 
 from ..dynamical_system.dae import LinearDAE
@@ -31,22 +32,19 @@ class LinearControlSystem:
                                    _hom_f, self._nn)
 
     def _get_cal_coeffs(self, e, a, b, c, d, f):
-        shape = (self._nn, self._nn + self._nm)
-        cal_e_arr = np.zeros(shape)
-        cal_a_arr = np.zeros(shape)
-        cal_f_arr = np.zeros(self._nn)
+        nn = self._nn
+        nm = self._nm
 
         def cal_e(*args, **kwargs):
-            cal_e_arr[:self._nn, :self._nn] = e(*args, **kwargs)
+            cal_e_arr = jnp.block([[e(*args, **kwargs), jnp.zeros((nn, nm))]])
             return cal_e_arr
 
         def cal_a(*args, **kwargs):
-            cal_a_arr[:self._nn, :self._nn] = a(*args, **kwargs)
-            cal_a_arr[:self._nn, self._nn:] = b(*args, **kwargs)
+            cal_a_arr = jnp.block([[a(*args, **kwargs), b(*args, **kwargs)]])
             return cal_a_arr
 
         def cal_f(*args, **kwargs):
-            cal_f_arr[:] = f(*args, **kwargs)
+            cal_f_arr = f(*args, **kwargs)
             return cal_f_arr
 
         return cal_e, cal_a, cal_f
