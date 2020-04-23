@@ -1,3 +1,4 @@
+import jax
 import jax.numpy as jnp
 import numpy as np
 import scipy.integrate
@@ -81,47 +82,82 @@ class ParameterDependentOptimalControl(OptimizationObject):
         acontr = self.constraint.control_system.augmented_dae.a
         fcontr = self.constraint.control_system.augmented_dae.f
 
-        zeros = np.zeros((nn, nn))
-        zeros2 = np.zeros((nn + nm, nn + nm))
+        zeros = jnp.zeros((nn, nn))
+        zeros2 = jnp.zeros((nn + nm, nn + nm))
+        zeros3 = jnp.zeros((nn + nm, ))
+        zeros4 = jnp.zeros((nn + nm, 2 * nn + nm))
+        zeros5 = jnp.zeros((nn, dim))
+        zeros51 = jnp.zeros((nm, dim))
+        zeros6 = jnp.zeros((nn, nm))
 
+        @jax.jit
         def ecal(p, t):
             e = econtr(p, t)
             ecal = jnp.block([[zeros, e], [-e.T, zeros2]])
             return ecal
 
+        @jax.jit
         def acal(p, t):
             a = acontr(p, t)
             iweight = iweights(p, t)
             acal = jnp.block([[zeros, a], [a.T, iweight]])
             return acal
 
+        @jax.jit
         def fcal(p, t):
-            zeros3 = np.zeros((nn + nm, ))
             fcal = np.block([fcontr(p, t), zeros3])
             return fcal
 
-        gamma_0_arr = np.zeros((dim, dim))
-        gamma_f_arr = np.zeros((dim, dim))
-        gamma_rhs_arr = np.zeros((dim, ))
-
+        @jax.jit
         def gamma_0(p):
-            gamma_0_arr[:nn, nn:] = econtr(p, self._time.t_0)
+            gamma_0_arr = jnp.block([[zeros, econtr(p, self._time.t_0)],
+                                     [zeros4]])
             return gamma_0_arr
 
+        @jax.jit
         def gamma_f(p):
-            gamma_f_arr[nn:2 * nn, :nn] = np.identity(nn)
-            gamma_f_arr[nn:2 * nn, nn:2 * nn] = self.objective.final_weight(p)
+            gamma_f_arr = jnp.block(
+                [[zeros5],
+                 [jnp.identity(nn),
+                  self.objective.final_weight(p), zeros6], [zeros51]])
             return gamma_f_arr
 
+        free_dae = self.constraint.control_system.free_dae
+
+        @jax.jit
         def gamma_rhs(p):
-            gamma_rhs_arr[:nn] = self.constraint.initial_value(p)
+            gamma_rhs_arr = jnp.block([
+                free_dae.e(p, self._time.t_0)
+                @ self.constraint.initial_value(p), zeros3
+            ])
             return gamma_rhs_arr
+
+        def z_gamma(p):
+            time = self._time
+            t0 = time.t_0
+            tf = time.t_f
+            free_dae.higher_level_variables.current_values = p
+            loc_dae = free_dae.get_localized_object()
+            rank = loc_dae.rank
+            z_1_x = loc_dae.z1(t0)
+            z_1_l = loc_dae.t2(tf)
+            zerosn = jnp.zeros((nn, rank))
+            zerosm = jnp.zeros((nm, rank))
+            z_g = jnp.block([[z_1_x, zerosn], [zerosn, z_1_l],
+                             [zerosm, zerosm]])
+
+            return z_g
 
         variables = StateVariablesContainer(dim)
         bvs = ParameterBoundaryValues(self.lower_level_variables,
-                                      self.higher_level_variables, variables,
-                                      gamma_0, gamma_f, gamma_rhs, dim,
-                                      n_param)
+                                      self.higher_level_variables,
+                                      variables,
+                                      gamma_0,
+                                      gamma_f,
+                                      gamma_rhs,
+                                      dim,
+                                      n_param,
+                                      z_gamma=z_gamma)
         dyn_sys = LinearParameterDAE(self.lower_level_variables,
                                      self.higher_level_variables, variables,
                                      ecal, acal, fcal, dim)
