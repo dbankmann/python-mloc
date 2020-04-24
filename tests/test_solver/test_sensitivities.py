@@ -39,7 +39,7 @@ def sens_solver_sine2(bvp_sens_object):
     bvpsens2.boundary_value_problem.boundary_values.inhomogeneity = lambda p: jnp.array(
         [0., 2.])
 
-    return AdjointSensitivitiesSolver(bvpsens2, rel_tol=1e-3, abs_tol=1e-3)
+    return AdjointSensitivitiesSolver(bvpsens2, rel_tol=1e-6, abs_tol=1e-6)
 
 
 @pytest.fixture
@@ -135,9 +135,8 @@ class TestBVPSensitivitiesSolver:
         nodes = np.linspace(time.t_0, time.t_f, 3)
         stepsize = 0.5e-0
         localized_bvp.init_solver(flow_prob, ivp_prob, nodes, stepsize)
-        sens_solver._get_capital_f_tilde(
-            localized_bvp, localized_bvp.solve(time),
-            localized_bvp._localization_parameters[0])
+        sens_solver._get_capital_fs(localized_bvp, localized_bvp.solve(time),
+                                    localized_bvp._localization_parameters[0])
 
     #def test_compute_sensitivity(self, f_tilde, solution, adjoint_solution):
     @pytest.mark.parametrize("tau", np.arange(0.1, 1., 0.4))

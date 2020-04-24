@@ -310,8 +310,6 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
 
         temp6 = np.einsum('ij, jkp, k->ip', self._sel_times_projector,
                           eplus_e_theta(tau), solution(tau))
-        import ipdb
-        ipdb.set_trace()
         return temp1 - temp12 - temp2 - temp3 - temp4 - temp5 - temp6
 
     def _compute_temp5_quant(self, localized_bvp, adjoint_solution,

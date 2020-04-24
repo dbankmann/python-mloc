@@ -19,12 +19,15 @@ from ...model.variables.time_function import Time
 from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
 from ..base_solver import TimeSolution
+from .sensitivities import SensInhomProjection
 from .sensitivities import SensitivitiesSolver
 
 logger = logging.getLogger(__name__)
 
 
 class ForwardSensitivitiesSolver(SensitivitiesSolver):
+    capital_f_default_class = SensInhomProjection
+
     def _get_forward_system(self, localized_bvp, parameters, f_tilde,
                             solution):
         dyn_sys = localized_bvp.dynamical_system
@@ -83,7 +86,7 @@ class ForwardSensitivitiesSolver(SensitivitiesSolver):
         #time.add_to_grid(tau)
         solution, node_solution = localized_bvp.solve(time)
         solution.interpolation = True
-        f_tilde = self._get_capital_fs(localized_bvp, solution, parameters)
+        f_tilde = self._get_capital_fs(localized_bvp, solution, parameters)[0]
         sensitivity = self._compute_sensitivity(localized_bvp, parameters,
                                                 f_tilde, solution)
         return sensitivity

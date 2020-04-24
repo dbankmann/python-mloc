@@ -35,6 +35,10 @@ class SensitivitiesInhomogeneity(ABC):
         self._localized_bvp = localized_bvp
         self._bvp_param = self._sensitivities.bvp_param
 
+        eplus = self._localized_bvp.dynamical_system.eplus
+        self.eplus_e_theta = self._get_eplus_e_der_theta(
+            self._parameter, self.e_dif, eplus)
+
     def a_dif(self, t):
         return self._dynamical_system.a_theta(self._parameter, t)
 
@@ -71,29 +75,6 @@ class SensitivitiesInhomogeneity(ABC):
     def get_capital_fs(self):
         return self.capital_f_theta, self.capital_f_tilde, self.eplus_e_theta
 
-
-class SensInhomWithTimeDerivative(SensitivitiesInhomogeneity):
-    def capital_f_theta(self, t):
-        f_tilde = np.einsum(
-            'ijk,j->ik', self.a_dif(t), self._solution(t)) - np.einsum(
-                'ijk,j->ik', self.e_dif(t), self.x_dot(t)) + self.f_dif(t)
-        return f_tilde
-
-    def capital_f_tilde(self, t):
-        return self.capital_f_theta(t)
-
-    def _complement_f_tilde(self, t):
-        return np.zeros(0)
-
-
-class SensInhomProjection(SensitivitiesInhomogeneity):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        eplus = self._localized_bvp.dynamical_system.eplus
-        self.eplus_e_theta = self._get_eplus_e_der_theta(
-            self._parameter, self.e_dif, eplus)
-
     def _get_eplus_e_der_theta(self, parameter, e_dif, eplus_t):
         #similar to time derivative. #TODO: Replace by jax method
         dae = self._dynamical_system
@@ -115,10 +96,38 @@ class SensInhomProjection(SensitivitiesInhomogeneity):
 
         return eplus_e_theta
 
+
+class SensInhomWithTimeDerivative(SensitivitiesInhomogeneity):
+    def capital_f_theta(self, t):
+        f_tilde = np.einsum(
+            'ijk,j->ik', self.a_dif(t), self._solution(t)) - np.einsum(
+                'ijk,j->ik', self.e_dif(t), self.x_dot(t)) + self.f_dif(t)
+        return f_tilde
+
+    def capital_f_tilde(self, t):
+        return self.capital_f_theta(t)
+
+    def _complement_f_tilde(self, t):
+        return np.zeros(0)
+
+
+class SensInhomProjection(SensitivitiesInhomogeneity):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._der_eplus_e_theta_is_zero = False
+        self._der_eplus_e_theta = None
+        self._der_warning()
+        self._check_subset()
+
+    def _check_subset(self):
+        pass  #TODO: Check for forward sensitivities
+
+    def _der_warning(self):
         if not self._der_eplus_e_theta_is_zero and self._der_eplus_e_theta is None:
             logger.warning(
                 "Derivative of d/dt (eplus @ e )_p is not given explicitly and not confirmed to be zero."
             )
+            self.e_ddt_epluse_p = lambda t: np.zeros(1)
         else:
             raise NotImplementedError("Custom derivatives not implemented yet")
 
