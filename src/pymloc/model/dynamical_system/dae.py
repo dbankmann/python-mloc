@@ -100,9 +100,9 @@ class LinearDAE(DAE):
         e = self.e(t)
         return (e_h - e) / h
 
-    def _check_current_time(self, t, method):
+    def _check_current_time(self, t, method, time_varying=False):
         if self._current_t.get(method) is None or (
-                not self.constant_coefficients
+            (time_varying or not self.constant_coefficients)
                 and self._current_t[method] != t):
             self._current_t[method] = t
             return True
@@ -173,7 +173,7 @@ class LinearDAE(DAE):
             self._current_a = a
 
     def _recompute_inhomogeinity(self, t):
-        if self._check_current_time(t, "inhomogeinity"):
+        if self._check_current_time(t, "inhomogeinity", time_varying=True):
             f = self._f(t)
             self._current_f = f
 
@@ -198,7 +198,7 @@ class LinearDAE(DAE):
 
     def _recompute_fhat(self, t):
         self._recompute_quantities(t)
-        if self._check_current_time(t, "fhat"):
+        if self._check_current_time(t, "fhat", time_varying=True):
             rank = self.rank
             f = self.f(t)
             fhat_1 = self.z1(t).T @ f
