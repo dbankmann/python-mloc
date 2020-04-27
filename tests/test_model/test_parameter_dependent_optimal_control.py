@@ -58,7 +58,7 @@ class TestPDOCObject:
         assert jac_val == np.array([[2 * parameters[0]]])
 
     def test_int_theta(self, pdoc_object):
-        parameters = np.array([2.])
+        parameters = np.array(2.)
         intw = pdoc_object.objective.integral_weights
         jac = jac_jax_reshaped(intw, (2, 2))
         jac_val = jac(parameters, 2.)
@@ -91,7 +91,7 @@ class TestPDOCObject:
         solver = sens._available_solvers.solvers[1]
         sens.solver = solver
         sens.init_solver(abs_tol=1e-8, rel_tol=1e-8)
-        sol = sens.solve(parameters=np.array([2.]))
+        sol = sens.solve(parameters=np.array(2.))
         rsol = refsol(2., 0., 2., 1., 2.)
         ref = np.block([[rsol], [-rsol[0]]])
         assert np.allclose(ref, sol[0](1.), atol=1e-2, rtol=1e-9)
@@ -101,7 +101,7 @@ class TestPDOCObject:
         solver = sens._available_solvers.solvers[1]
         sens.solver = solver
         sens.init_solver(abs_tol=1e-8, rel_tol=1e-8)
-        sol = sens.solve(parameters=np.array([2.]))
+        sol = sens.solve(parameters=np.array(2.))
         rsol0 = refsol(2., 0., 2., 0., 2.)
         ref0 = np.block([[rsol0], [-rsol0[0]]])
         rsolf = refsol(2., 0., 2., 2., 2.)
@@ -112,7 +112,7 @@ class TestPDOCObject:
     def test_boundary_sens1(self, pdoc_object):
         sens = pdoc_object.get_sensitivities()
         sens.init_solver(abs_tol=1e-8, rel_tol=1e-8)
-        solf = sens.solve(parameters=np.array([2.]), tau=2.)
+        solf = sens.solve(parameters=np.array(2.), tau=2.)
         rsolf = refsol(2., 0., 2., 2., 2.)
         reff = np.block([[rsolf], [-rsolf[0]]])
         assert np.allclose(reff, solf.solution, rtol=1e-9, atol=1e-1)
@@ -120,7 +120,7 @@ class TestPDOCObject:
     def test_boundary_sens2(self, pdoc_object):
         sens = pdoc_object.get_sensitivities()
         sens.init_solver(abs_tol=1e-8, rel_tol=1e-8)
-        solf = sens.solve(parameters=np.array([2.]), tau=2.)
+        solf = sens.solve(parameters=np.array(2.), tau=2.)
         rsolf = refsol(2., 0., 2., 2., 2.)
         reff = np.block([[rsolf], [-rsolf[0]]])
         assert np.allclose(reff, solf.solution, rtol=1e-9, atol=1e-1)
