@@ -4,6 +4,8 @@ from abc import abstractmethod
 
 import numpy as np
 
+from ..model.variables import Time
+
 logger = logging.getLogger(__name__)
 
 
@@ -50,7 +52,11 @@ class Solution:
 
 
 class TimeSolution(Solution):
-    def __init__(self, time_grid, solution, interpolation=False):
+    def __init__(self,
+                 time_grid,
+                 solution,
+                 interpolation=False,
+                 dynamic_update=None):
         super().__init__(solution)
         self._time_grid = time_grid
         #TODO: Make more efficient
@@ -60,6 +66,7 @@ class TimeSolution(Solution):
         }
         self._solution_time_dict = solution_time_dict
         self._interpolation = interpolation
+        self._dynamic_update = dynamic_update
 
         self._current_t = dict()
 
@@ -81,10 +88,21 @@ class TimeSolution(Solution):
             if self._interpolation:
                 self._recompute_interpolated(t)
                 return self._current_interpolated
+            elif self._dynamic_update is not None:
+                return self._add_solution(t)
             else:
                 raise ValueError("Time: {} not in time_grid".format(t))
         else:
             return sol
+
+    def _add_solution(self, t):
+        grid = self.time_grid
+        idx = grid.searchsorted(t)
+        self._time_grid = np.insert(grid, idx, t)
+        time = Time(t, t)
+        sol = self._dynamic_update(self, time)(t)
+        self._solution = np.insert(self._solution, idx, sol)
+        self._solution_time_dict[t] = sol
 
     def _recompute_interpolated(self, t):
         if self._check_current_time(t, "interpolate"):
