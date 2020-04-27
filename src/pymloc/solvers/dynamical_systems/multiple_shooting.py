@@ -213,22 +213,23 @@ class MultipleShooting(BaseSolver):
         full_node_values = x_d - np.einsum('ijr,j...r->i...r', self._das,
                                            x_d) - self._fas
         node_solution = TimeSolution(self._shooting_nodes, full_node_values)
-        time_grid_solution = self._get_intermediate_values(node_solution)
+        time_grid_solution = self._get_intermediate_values(
+            node_solution, self._solution_time_grid)
         #TODO: Make plugin in time solvable
         self._bvp.variables.current_values = time_grid_solution
         return time_grid_solution, node_solution
 
-    def _get_intermediate_values(self, node_solution):
+    def _get_intermediate_values(self, node_solution, time_grid):
         # this is rather slow, but it's an inherent disadvantage of the shooting approach
         logger.info(
             "Getting intermediate values on time grid of size: {}".format(
-                self._solution_time_grid.size))
-        idsize = self._solution_time_grid.size
+                time_grid.size))
+        idsize = time_grid.size
         idx = np.append(
-            np.searchsorted(self._solution_time_grid, node_solution.time_grid,
-                            'left'), idsize)
-        solution = np.zeros((*node_solution.solution.shape[:-1],
-                             self._solution_time_grid.size))
+            np.searchsorted(time_grid, node_solution.time_grid, 'left'),
+            idsize)
+        solution = np.zeros(
+            (*node_solution.solution.shape[:-1], time_grid.size))
         f_columns = self._bvp.boundary_values.n_inhom
         self._ivp_problem.init_solver(stepsize=self._stepsize,
                                       f_columns=f_columns,
@@ -238,20 +239,21 @@ class MultipleShooting(BaseSolver):
         for i, node in enumerate(node_solution.time_grid):
             loweridx = idx[i]
             upperidx = idx[i + 1]
-            grid = self._solution_time_grid[loweridx:upperidx]
+            grid = time_grid[loweridx:upperidx]
             t0 = node
+            if grid.size == 0:
+                continue
             if np.allclose(t0, grid[0], 1e-16):
                 idx_increment = 0
             else:
                 idx_increment = 1
-
             x0 = node_solution(node)
             tf = grid[-1]
             interval = Time(t0, tf, grid)
             x0_times = self._ivp_problem.solve(interval, x0)
             solution[..., loweridx:upperidx] = np.atleast_2d(
                 x0_times.solution.T).T[..., idx_increment:]
-        return TimeSolution(self._solution_time_grid, solution)
+        return TimeSolution(time_grid, solution)
 
     def _get_x_d(self, projected_values):
         return np.einsum('ijr,j...r->i...r', self._t2s, projected_values)
