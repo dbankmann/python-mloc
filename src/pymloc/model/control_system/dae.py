@@ -31,6 +31,10 @@ class LinearControlSystem:
         self._free_dae = LinearDAE(StateVariablesContainer(self._nn), e, a,
                                    _hom_f, self._nn)
 
+    def reset(self):
+        self._free_dae.reset()
+        self._augmented_dae.reset()
+
     def _get_cal_coeffs(self, e, a, b, c, d, f):
         nn = self._nn
         nm = self._nm

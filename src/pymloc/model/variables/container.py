@@ -79,8 +79,6 @@ class VariablesContainer(ABC):
             logger.warning(
                 "Solver not initialized for problem: {}.\nInitializing with defaults..."
                 .format(problem))
-            import ipdb
-            ipdb.set_trace()
         problem.init_solver(**kwargs)
 
     def update_values(self, **kwargs):

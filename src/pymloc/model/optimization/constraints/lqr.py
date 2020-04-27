@@ -6,6 +6,9 @@ class LQRConstraint(LocalConstraint):
         self._dae = dae_control
         self._initial_value = initial_value
 
+    def reset(self):
+        self._dae.reset()
+
     @property
     def control_system(self):
         return self._dae

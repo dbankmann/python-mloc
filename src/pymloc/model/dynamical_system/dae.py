@@ -1,7 +1,11 @@
+import logging
+
 import jax.numpy as jnp
 import numpy as np
 
 from ...model.variables.container import StateVariablesContainer
+
+logger = logging.getLogger(__name__)
 
 
 class DAE:
@@ -51,7 +55,7 @@ class LinearDAE(DAE):
         self._a = a
         self._f = f
         self._rank = None
-        self._current_t = dict()
+        self.reset()
         #TODO: Make more general!
         self.init_rank()
         if der_e is None:
@@ -61,6 +65,10 @@ class LinearDAE(DAE):
         self._current_ehat = np.zeros((n, n), order='F')
         var_shape = self._variables.n_states
         self._current_fhat = np.zeros(var_shape, order='F')
+
+    def reset(self):
+        logger.debug("Current a:\n{}\n{}".format(self._a, self._a(0.)))
+        self._current_t = dict()
 
     @property
     def constant_coefficients(self):

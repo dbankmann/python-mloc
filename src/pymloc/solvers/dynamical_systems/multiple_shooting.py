@@ -44,6 +44,7 @@ class MultipleShooting(BaseSolver):
         self._final_time = self._shooting_nodes[-1]
         self._inner_nodes = shooting_nodes[1:-1]
         self._dynamical_system = bvp.dynamical_system
+        self._dynamical_system.reset()
         self._variables = self._dynamical_system.variables
         self._nn = self._dynamical_system.nn
         self._flow_problem = flow_problem
@@ -54,9 +55,7 @@ class MultipleShooting(BaseSolver):
         boundary_nodes: {}\n'''.format(shooting_nodes, self._bvp_nodes))
         super().__init__(*args, **kwargs)
 
-    def _init_solver(self,
-                     time_interval,
-                     flow_abs_tol=None,
+    def _init_solver(self, time_interval, flow_abs_tol=None,
                      flow_rel_tol=None):
         self._set_t2s()
         self._set_d_as()

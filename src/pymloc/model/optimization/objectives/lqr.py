@@ -12,10 +12,10 @@ class LQRObjective(LocalObjective):
         self._s = s
         self._r = r
         self._m = final_weight
-        self._reset()
+        self.reset()
         super().__init__()
 
-    def _reset(self):
+    def reset(self):
         self._current_t = dict()
 
     def integral_weights(self, t):

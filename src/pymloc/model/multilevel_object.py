@@ -63,6 +63,7 @@ class MultiLevelObject(ABC):
     def localize_method(self, method):
         if method is None:
             return None
+        logger.debug("Getting localized method for method: {}".format(method))
         nparam = len(inspect.signature(method).parameters)
         #Signature 'guessing': For 2 parameters, only use hl_vars and loc_vars
         #TODO: Generalize to more cases
@@ -72,6 +73,8 @@ class MultiLevelObject(ABC):
                 hl_vars = self._hl_vars_filter()
                 ll_vars = self._get_ll_vars(variables)
                 args = (ll_vars, ) + (hl_vars, ) + (variables, )
+                logger.debug("In localized method: {}\nargs: {}".format(
+                    method, args))
                 return method(*args)
 
             return localized_function
@@ -80,6 +83,8 @@ class MultiLevelObject(ABC):
             def localized_function(variables):
                 hl_vars = self._hl_vars_filter()
                 args = (hl_vars, ) + (variables, )
+                logger.debug("In localized method: {}\nargs: {}".format(
+                    method, args))
                 return method(*args)
 
             return localized_function

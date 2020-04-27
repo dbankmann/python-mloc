@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 from ..dynamical_system.boundary_value_problem import BoundaryValueProblem
@@ -10,6 +12,8 @@ from .constraints.lqr import LQRConstraint
 from .local_optimization import LocalOptimizationObject
 from .objectives.lqr import LQRObjective
 
+logger = logging.getLogger()
+
 
 class LQOptimalControl(LocalOptimizationObject):
     def __init__(self, objective: LQRObjective, constraint: LQRConstraint,
@@ -21,8 +25,14 @@ class LQOptimalControl(LocalOptimizationObject):
         self._nm = self.constraint.control_system.nm
         self._nn = self.constraint.control_system.nn
         self._time = self.constraint.control_system.time
+        self.reset()
+
+    def reset(self):
+        self._objective.reset()
+        self._constraint.reset()
 
     def get_bvp(self):
+        self.reset()
         dim = self._nm + 2 * self._nn
         acal_arr = np.zeros((dim, dim))
         ecal_arr = np.zeros((dim, dim))
@@ -40,9 +50,11 @@ class LQOptimalControl(LocalOptimizationObject):
 
         def acal(t):
             a = acontr(t)
+            iweightseval = iweights(t)
             acal_arr[:self._nn, self._nn:] = a
             acal_arr[self._nn:, :self._nn] = a.T
-            acal_arr[self._nn:, self._nn:] = iweights(t)
+            acal_arr[self._nn:, self._nn:] = iweightseval
+            logger.debug("iweights inside acal: {}".format(iweightseval))
             return acal_arr
 
         def fcal(t):
