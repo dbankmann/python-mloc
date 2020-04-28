@@ -257,7 +257,7 @@ class MultipleShooting(BaseSolver):
             tf = grid[-1]
             interval = Time(t0, tf, grid)
             x0_times = self._ivp_problem.solve(interval, x0)
-            if x0_times.solution.shape[-1] == 1:
+            if node in grid or x0_times.solution.shape[-1] == 1:
                 idx_increment = 0
             else:
                 idx_increment = 1
