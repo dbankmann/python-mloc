@@ -253,14 +253,15 @@ class MultipleShooting(BaseSolver):
             t0 = node
             if grid.size == 0:
                 continue
-            if np.allclose(t0, grid[0], 1e-16):
-                idx_increment = 0
-            else:
-                idx_increment = 1
             x0 = node_solution(node)
             tf = grid[-1]
             interval = Time(t0, tf, grid)
             x0_times = self._ivp_problem.solve(interval, x0)
+            if x0_times.solution.shape[-1] == 1:
+                idx_increment = 0
+            else:
+                idx_increment = 1
+            logger.debug("x0_timesshape: {}".format(x0_times.solution.shape))
             solution[..., loweridx:upperidx] = np.atleast_2d(
                 x0_times.solution.T).T[..., idx_increment:]
         return TimeSolution(time_grid, solution)
