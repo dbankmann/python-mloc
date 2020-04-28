@@ -50,12 +50,11 @@ class MultipleShooting(BaseSolver):
         self._flow_problem = flow_problem
         self._ivp_problem = ivp_problem
         self._stepsize = stepsize
-        logger.info('''MultipleShooting solver initialized with\n
-        shooting_nodes: {}\n
-        boundary_nodes: {}\n'''.format(shooting_nodes, self._bvp_nodes))
         super().__init__(*args, **kwargs)
 
-    def _init_solver(self, time_interval, flow_abs_tol=None,
+    def _init_solver(self,
+                     time_interval,
+                     flow_abs_tol=None,
                      flow_rel_tol=None):
         self._set_t2s()
         self._set_d_as()
@@ -200,7 +199,15 @@ class MultipleShooting(BaseSolver):
     def _project_values(self, values):
         return np.einsum('ijr,i...r->j...r', self._t2s, values)
 
-    def _run(self, time_interval=None, initial_guess=None, *args, **kwargs):
+    def _run(self,
+             time_interval=None,
+             initial_guess=None,
+             dynamic_update=False,
+             *args,
+             **kwargs):
+        logger.info('''MultipleShooting solver initialized with\n
+        shooting_nodes: {}\n
+        boundary_nodes: {}\n'''.format(self._shooting_nodes, self._bvp_nodes))
         self._init_solver(time_interval, *args, **kwargs)
         initial_guess = self._get_initial_guess(initial_guess)
         projected_values = self._project_values(initial_guess)
@@ -213,15 +220,18 @@ class MultipleShooting(BaseSolver):
         full_node_values = x_d - np.einsum('ijr,j...r->i...r', self._das,
                                            x_d) - self._fas
         node_solution = TimeSolution(self._shooting_nodes, full_node_values)
-        time_grid_solution = self._get_intermediate_values(
-            node_solution, self._solution_time_grid)
-        #TODO: Make plugin in time solvable
+        if dynamic_update:
+            time_grid_solution = deepcopy(node_solution)
+            time_grid_solution.dynamic_update = self._get_intermediate_values
+        else:
+            time_grid_solution = self._get_intermediate_values(
+                node_solution, self._solution_time_grid)
         self._bvp.variables.current_values = time_grid_solution
         return time_grid_solution, node_solution
 
     def _get_intermediate_values(self, node_solution, time_grid):
         # this is rather slow, but it's an inherent disadvantage of the shooting approach
-        logger.info(
+        logger.debug(
             "Getting intermediate values on time grid of size: {}".format(
                 time_grid.size))
         idsize = time_grid.size

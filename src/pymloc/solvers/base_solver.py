@@ -71,6 +71,14 @@ class TimeSolution(Solution):
         self._current_t = dict()
 
     @property
+    def dynamic_update(self):
+        return self._dynamic_update
+
+    @dynamic_update.setter
+    def dynamic_update(self, value):
+        self._dynamic_update = value
+
+    @property
     def interpolation(self):
         return self._interpolation
 
@@ -98,11 +106,14 @@ class TimeSolution(Solution):
     def _add_solution(self, t):
         grid = self.time_grid
         idx = grid.searchsorted(t)
+        time_grid = np.array([t])
+        sol = self._dynamic_update(self, time_grid)
+        if isinstance(sol, TimeSolution):
+            sol = sol(t)
         self._time_grid = np.insert(grid, idx, t)
-        time = Time(t, t)
-        sol = self._dynamic_update(self, time)(t)
-        self._solution = np.insert(self._solution, idx, sol)
+        self._solution = np.insert(self._solution, idx, sol, axis=-1)
         self._solution_time_dict[t] = sol
+        return sol
 
     def _recompute_interpolated(self, t):
         if self._check_current_time(t, "interpolate"):

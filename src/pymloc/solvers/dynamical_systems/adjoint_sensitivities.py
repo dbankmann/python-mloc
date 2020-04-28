@@ -7,6 +7,8 @@ import scipy.linalg as linalg
 
 from pymloc.model.dynamical_system.flow_problem import LinearFlow
 
+from ...misc import restack
+from ...misc import unstack
 from ...model.dynamical_system.boundary_value_problem import BoundaryValueProblem
 from ...model.dynamical_system.boundary_value_problem import BoundaryValues
 from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
@@ -205,16 +207,36 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
                                 abs_tol=self.abs_tol,
                                 rel_tol=self.rel_tol)
         logger.info("Solving adjoint boundary value problem...")
-        adjoint_sol_blown_up = adjoint_bvp.solve(time)
+        adjoint_sol_blown_up = adjoint_bvp.solve(time, dynamic_update=True)
         coll_sol = self._adjoint_collapse_solution(adjoint_sol_blown_up[0],
                                                    tau)
 
+        adjoint_sol_blown_up[0](1.31)
+        coll_sol.dynamic_update = self._collapsed_dynamic_update(
+            adjoint_sol_blown_up[0], tau)
+
         return coll_sol
+
+    def _collapsed_dynamic_update(self, adjoint_sol, tau):
+        def _collapse_dynamic_update(sol, t):
+            adjoint_solution = adjoint_sol(
+                t[0])  #TODO: Generalize for multiple time points
+            time = self._time_interval
+            if time.at_bound(tau):
+                return adjoint_solution
+            else:
+                n = self._nn
+                if t >= tau:
+                    return adjoint_solution[n:]
+                else:
+                    return adjoint_solution[:n]
+
+        return _collapse_dynamic_update
 
     def _adjoint_collapse_solution(self, adjoint_solution, tau):
         time = self._time_interval
         if time.at_bound(tau):
-            return adjoint_solution
+            return deepcopy(adjoint_solution)
         else:
             n = self._nn
             grid = adjoint_solution.time_grid
@@ -270,10 +292,18 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         return LinearFlowRepresentation(variables, dyn_sys.e, dyn_sys.a,
                                         f_tilde, n)
 
+    def _adjoint_integrand(self, t, y, adjoint_solution, f_tilde):
+        adj = adjoint_solution(t)
+        f_eval = f_tilde(t)
+        return unstack(adj.T @ f_eval)
+
     def _compute_sensitivity(self, capital_f_theta, capital_f_tilde,
                              localized_bvp, solution, adjoint_solution,
                              eplus_e_theta, parameters, tau):
 
+        time = self._time_interval
+        t0 = time.t_0
+        tf = time.t_f
         temp1 = np.einsum('ijk, j->ik',
                           self._bvp_param.selector_theta(parameters),
                           solution(tau))
@@ -288,21 +318,8 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
             'ij,ik->jk', xi,
             self._boundary_values.get_inhomogeneity_theta(
                 solution, parameters))
-        if len(solution.time_grid) <= 10000:
-            f_tilde_arr = np.array([
-                capital_f_tilde(t) for t in solution.time_grid
-            ])  #TODO: slow on constant coefficients.
-            temp4m = adjoint_solution.solution.T @ f_tilde_arr
-            temp4 = scipy.integrate.trapz(temp4m.transpose(1, 2, 0),
-                                          solution.time_grid)
-        else:
-            raise NotImplementedError(
-                "Integrations with higher precision need dynamic updates of solutions..."
-            )
-        time = self._time_interval
-        t0 = time.t_0
-        tf = time.t_f
-
+        temp4 = self._compute_temp4_integral(adjoint_solution, capital_f_tilde,
+                                             tau)
         temp5 = self._compute_temp5_quant(
             localized_bvp, adjoint_solution,
             eplus_e_theta, solution, tf) - self._compute_temp5_quant(
@@ -311,6 +328,41 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         temp6 = np.einsum('ij, jkp, k->ip', self._sel_times_projector,
                           eplus_e_theta(tau), solution(tau))
         return temp1 - temp12 - temp2 - temp3 - temp4 - temp5 - temp6
+
+    def _compute_temp4_integral(self, adjoint_solution, capital_f_tilde, tau):
+        time = self._time_interval
+        t0 = time.t_0
+        tf = time.t_f
+        shapetemp4 = self._adjoint_sol_shape
+        if time.at_bound(tau):
+            temp4 = scipy.integrate.solve_ivp(self._adjoint_integrand,
+                                              [t0, tf],
+                                              np.zeros(shapetemp4).ravel(),
+                                              t_eval=[tf],
+                                              args=(adjoint_solution,
+                                                    capital_f_tilde),
+                                              rtol=self.rel_tol,
+                                              atol=self.abs_tol)
+        else:
+            temp4 = scipy.integrate.solve_ivp(self._adjoint_integrand,
+                                              [t0, tau],
+                                              np.zeros(shapetemp4).ravel(),
+                                              t_eval=[tau],
+                                              args=(adjoint_solution,
+                                                    capital_f_tilde),
+                                              rtol=self.rel_tol,
+                                              atol=self.abs_tol)
+
+            temp4 = scipy.integrate.solve_ivp(self._adjoint_integrand,
+                                              [tau, tf],
+                                              temp4.y[..., -1],
+                                              t_eval=[tf],
+                                              args=(adjoint_solution,
+                                                    capital_f_tilde),
+                                              rtol=self.rel_tol,
+                                              atol=self.abs_tol)
+        temp4 = restack(temp4.y[..., -1], shapetemp4)
+        return temp4
 
     def _compute_temp5_quant(self, localized_bvp, adjoint_solution,
                              eplus_e_theta, solution, t):
@@ -337,7 +389,8 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
                                   stepsize,
                                   abs_tol=self.abs_tol,
                                   rel_tol=self.rel_tol)
-        solution, node_solution = localized_bvp.solve(time)
+        solution, node_solution = localized_bvp.solve(time,
+                                                      dynamic_update=True)
         capital_f_theta, capital_f_tilde, epluse_theta = self._get_capital_fs(
             localized_bvp, solution, parameters)
         adjoint_solution = self._get_adjoint_solution(localized_bvp,
@@ -360,7 +413,8 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
 
         gridsize = tau.grid.size
         selshape = self._bvp_param.selector(parameters).shape[0]
-        solution = np.zeros((selshape, self._bvp_param.n_param, gridsize))
+        self._adjoint_sol_shape = (selshape, self._bvp_param.n_param)
+        solution = np.zeros((*self._adjoint_sol_shape, gridsize))
         for i, tau_val in enumerate(tau.grid):
             logger.info("Compute sensitivity at tau = {}".format(tau_val))
             solution[..., i] = self._compute_single_sensitivity(
