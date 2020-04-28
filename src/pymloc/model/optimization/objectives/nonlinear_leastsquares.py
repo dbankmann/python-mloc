@@ -32,8 +32,8 @@ class NonLinearLeastSquares(Objective):
 
     def _get_ll_solver_args(self):
         kwargs = dict()
-        si = self.local_level_variables.associated_problem.solver_instance
         try:
+            si = self.local_level_variables.associated_problem.solver_instance
             abst = si.lower_abs_tolerance
             kwargs['abs_tol'] = abst
             kwargs['rel_tol'] = si.rel_tol
