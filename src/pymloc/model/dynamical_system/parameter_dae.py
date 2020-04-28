@@ -78,6 +78,31 @@ class LinearParameterDAE(ParameterDAE):
     def f_theta(self):
         return jac_jax_reshaped(self.f, (self.nn, ))
 
+    def e_plus(self, *args):
+        return np.linalg.pinv(self.e(*args))
+
+    def projectors(self, *args):
+        eplus = self.e_plus(*args)
+        e = self.e(*args)
+        p_z = eplus @ e
+        p_check_z = e @ eplus
+        return p_z, p_check_z
+
+    def _d_a_part(self, *args):
+        p_z, p_check_z = self.projectors(*args)
+        a = self.a(*args)
+        identity = np.eye(self.nn)
+        da_part = (identity - p_check_z) @ a @ (identity - p_z)
+        return np.linalg.pinv(da_part)
+
+    def d_a(self, *args):
+        a = self.a(*args)
+        return self._d_a_part(*args) @ a
+
+    def f_a(self, *args):
+        f = self.f(*args)
+        return self._d_a_part(*args) @ f
+
     def residual(self, hl_vars, loc_vars, ll_vars):
         p, = hl_vars.current_value
         xdot, x, t = loc_vars.current_value

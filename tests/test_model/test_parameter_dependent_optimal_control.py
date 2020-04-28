@@ -88,7 +88,6 @@ class TestPDOCObject:
         ref = selector(3.) @ ref
         assert np.allclose(ref, sol, rtol=1e-2, atol=1e-2)
 
-    @pytest.mark.skip("Not Implemented yet")
     def test_sensitivities_augmented_full_selector(self, pdoc_object,
                                                    pdoc_object_2):
         #local_lq = pdoc_object.get_localized_object(hl_value=2.)

@@ -283,15 +283,6 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
 
         return xi
 
-    def _get_f_tilde_dae(self, localized_bvp, f_tilde):
-        n = self._nn
-        nparam = self._bvp_param.n_param
-        shape = (n, nparam)
-        variables = StateVariablesContainer(shape)
-        dyn_sys = localized_bvp.dynamical_system
-        return LinearFlowRepresentation(variables, dyn_sys.e, dyn_sys.a,
-                                        f_tilde, n)
-
     def _adjoint_integrand(self, t, y, adjoint_solution, f_tilde):
         adj = adjoint_solution(t)
         f_eval = f_tilde(t)
@@ -307,12 +298,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         temp1 = np.einsum('ijk, j->ik',
                           self._bvp_param.selector_theta(parameters),
                           solution(tau))
-        temp_bvp = self._get_f_tilde_dae(localized_bvp, capital_f_theta)
-        temp12 = self._bvp_param.selector(parameters) @ temp_bvp.f_a(tau)
-        temp2 = self._bvp_param.selector(
-            parameters) @ localized_bvp.dynamical_system.d_a(
-                tau) @ self._bvp_param.dynamical_system.f_theta(
-                    parameters, tau)
+        temp2 = self._capital_fs_instance.temp2_f_a_theta(capital_f_theta, tau)
         xi = self._get_xi(localized_bvp, adjoint_solution, tau)
         temp3 = np.einsum(
             'ij,ik->jk', xi,
@@ -327,7 +313,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
 
         temp6 = np.einsum('ij, jkp, k->ip', self._sel_times_projector,
                           eplus_e_theta(tau), solution(tau))
-        return temp1 - temp12 - temp2 - temp3 - temp4 - temp5 - temp6
+        return temp1 - temp2 - temp3 - temp4 - temp5 - temp6
 
     def _compute_temp4_integral(self, adjoint_solution, capital_f_tilde, tau):
         time = self._time_interval

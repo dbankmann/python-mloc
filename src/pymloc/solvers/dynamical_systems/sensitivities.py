@@ -3,6 +3,7 @@ from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 import scipy
@@ -38,6 +39,10 @@ class SensitivitiesInhomogeneity(ABC):
         eplus = self._localized_bvp.dynamical_system.eplus
         self.eplus_e_theta = self._get_eplus_e_der_theta(
             self._parameter, self.e_dif, eplus)
+
+    @property
+    def solution(self):
+        return self._solution
 
     def a_dif(self, t):
         return self._dynamical_system.a_theta(self._parameter, t)
@@ -142,6 +147,26 @@ class SensInhomProjection(SensitivitiesInhomogeneity):
     def _complement_f_tilde(self, t):
         return np.zeros(1)
 
+    def _get_f_tilde_dae(self, localized_bvp, f_tilde):
+        n = self._nn
+        nparam = self._bvp_param.n_param
+        shape = (n, nparam)
+        variables = StateVariablesContainer(shape)
+        dyn_sys = localized_bvp.dynamical_system
+        return LinearFlowRepresentation(variables, dyn_sys.e, dyn_sys.a,
+                                        f_tilde, n)
+
+    def temp2_f_a_theta(self, capital_f_theta, tau):
+
+        selector = self._bvp_param.selector(self._parameters)
+        da = self._localized_bvp.dynamical_system.d_a(tau)
+        f_theta = self._bvp_param.dynamical_system.f_theta(
+            self._parameters, tau)
+        temp_bvp = self._get_f_tilde_dae(self._localized_bvp, capital_f_theta)
+        temp12 = selector @ temp_bvp.f_a(tau)
+        temp2 = selector @ da @ f_theta
+        return temp2 + temp12
+
 
 class SensInhomProjectionNoSubset(SensInhomProjection):
     def a_times_epluse_theta(self, t):
@@ -164,6 +189,24 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
         epep = self.eplus_e_theta(t)
         compl = np.einsum('ij, jkp,k->ip', a, epep, self._solution(t))
         return compl
+
+    def temp2_f_a_theta(self, capital_f_theta, tau):
+        selector = self._bvp_param.selector(self._parameter)
+        da = self._localized_bvp.dynamical_system.d_a(tau)
+        dyn_param = self._bvp_param.dynamical_system
+        da_theta = jax.jacobian(dyn_param.d_a)
+        fa_theta = jax.jacobian(dyn_param.f_a)
+        temp = np.einsum('ijp,j...->i...p', self.eplus_e_theta(tau),
+                         self.solution(tau))
+        temp = temp - np.einsum('ij,j...p->i...p', da, temp)
+        da_th_eval = da_theta(self._parameter, tau)
+        fa_th_eval = fa_theta(self._parameter, tau)
+        if da_th_eval.ndim == 2:  #TODO: Homogenize. Better always use arrays; also for float inputs
+            da_th_eval = da_th_eval[..., np.newaxis]
+            fa_th_eval = fa_th_eval[..., np.newaxis]
+        temp2 = np.einsum('ijp, j...->i...p', da_th_eval, self.x_d(tau))
+        val = temp - temp2 - fa_th_eval
+        return selector @ val
 
 
 class SensitivitiesSolver(BaseSolver):
