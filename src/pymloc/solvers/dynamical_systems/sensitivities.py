@@ -57,9 +57,11 @@ class SensitivitiesInhomogeneity(ABC):
         return self._localized_bvp.dynamical_system.x_d(t, self._solution(t))
 
     def x_d_dot(self, t):
-        return np.einsum('ij,j->i',
+        fd = self._localized_bvp.dynamical_system.f_d(t)
+        ddxd = np.einsum('ij,j->i',
                          self._localized_bvp.dynamical_system.d_d(t),
                          self.x_d(t))
+        return ddxd + fd
 
     def x_dot(self, t):
         raise NotImplementedError  #TODO: Implement
@@ -142,13 +144,14 @@ class SensInhomProjection(SensitivitiesInhomogeneity):
                             self._solution(t)) - np.einsum(
                                 'ijk,j->ik', self.e_dif(t),
                                 self.x_d_dot(t)) + self.f_dif(t)
+        #TODO: Add terms for time derivatives
         return f_tilde
 
     def _complement_f_tilde(self, t):
         return np.zeros(1)
 
     def _get_f_tilde_dae(self, localized_bvp, f_tilde):
-        n = self._nn
+        n = self._dynamical_system.nn
         nparam = self._bvp_param.n_param
         shape = (n, nparam)
         variables = StateVariablesContainer(shape)
@@ -158,13 +161,15 @@ class SensInhomProjection(SensitivitiesInhomogeneity):
 
     def temp2_f_a_theta(self, capital_f_theta, tau):
 
-        selector = self._bvp_param.selector(self._parameters)
+        selector = self._bvp_param.selector(self._parameter)
         da = self._localized_bvp.dynamical_system.d_a(tau)
         f_theta = self._bvp_param.dynamical_system.f_theta(
-            self._parameters, tau)
+            self._parameter, tau)
         temp_bvp = self._get_f_tilde_dae(self._localized_bvp, capital_f_theta)
         temp12 = selector @ temp_bvp.f_a(tau)
         temp2 = selector @ da @ f_theta
+        import ipdb
+        ipdb.set_trace()
         return temp2 + temp12
 
 

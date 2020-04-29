@@ -20,7 +20,7 @@ class PyGELDA(BaseSolver):
 
         def ith_fdif(i):
             def fdif(t, ndif):
-                return np.atleast_2d(model.dynamical_system.f(t))[:, i]
+                return np.atleast_2d(model.dynamical_system.f(t).T).T[:, i]
 
             return fdif
 

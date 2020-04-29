@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 from pymloc.model.dynamical_system.parameter_dae import jac_jax_reshaped
+from pymloc.solvers.dynamical_systems.sensitivities import SensInhomProjection
 
 from .test_optimization.test_optimal_control import compare_sol_ref_sol
 from .test_optimization.test_optimal_control import compute_ref_sol
@@ -88,13 +89,7 @@ class TestPDOCObject:
         ref = selector(3.) @ ref
         assert np.allclose(ref, sol, rtol=1e-2, atol=1e-2)
 
-    def test_sensitivities_augmented_full_selector(self, pdoc_object,
-                                                   pdoc_object_2):
-        #local_lq = pdoc_object.get_localized_object(hl_value=2.)
-        #comp = compare_sol_ref_sol(local_lq, 2.)
-        # selector = lambda p: jnp.array([[0.5, 0.], [0.5, 0.], [0., 1.],
-        #                                 [0., 0.], [0., 0.]]).T
-        # selector_shape = (2, 5)
+    def test_sensitivities_augmented_full_selector(self, pdoc_object_2):
         sens = pdoc_object_2.get_sensitivities()
         sens.init_solver(abs_tol=1e-6, rel_tol=1e-6)
         sol = sens.solve(parameters=np.array([2., 1.]), tau=1.)(1.)
@@ -102,6 +97,26 @@ class TestPDOCObject:
         ref = np.block([[rsol[0]], [0], [rsol[1]], [0], [-rsol[0]]])
         ref = np.block([[ref, np.zeros((5, 1))]])
         assert np.allclose(ref, sol, rtol=1e-9, atol=1e-2)
+
+    def test_sensitivities_augmented_full_selector_inhom(self, pdoc_object_3):
+        sens = pdoc_object_3.get_sensitivities()
+        sens.init_solver(abs_tol=1e-4, rel_tol=1e-4)
+        sol = sens.solve(parameters=np.array([2., 1.]), tau=1.)(1.)
+        ref0 = -np.eye(5)[:, 3]
+        ref1 = np.zeros((5, 1))
+        assert np.allclose(ref0, sol[..., 0], rtol=1e-9, atol=1e-2)
+        assert np.allclose(ref1, sol[..., 1], rtol=1e-9, atol=1e-2)
+
+    def test_sensitivities_augmented_full_selector_inhom_fail(
+            self, pdoc_object_3):
+        sens = pdoc_object_3.get_sensitivities()
+        sens.init_solver(abs_tol=1e-4, rel_tol=1e-4)
+        sens.solver_instance.capital_f_class = SensInhomProjection
+        import ipdb
+        ipdb.set_trace()
+        sol = sens.solve(parameters=np.array([2., 1.]), tau=1.)(1.)
+        import ipdb
+        ipdb.set_trace()
 
     def test_forward_sensitivities(self, pdoc_object):
         sens = pdoc_object.get_sensitivities()

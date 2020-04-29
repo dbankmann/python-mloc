@@ -298,7 +298,8 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         temp1 = np.einsum('ijk, j->ik',
                           self._bvp_param.selector_theta(parameters),
                           solution(tau))
-        temp2 = self._capital_fs_instance.temp2_f_a_theta(capital_f_theta, tau)
+        temp2 = -self._capital_fs_instance.temp2_f_a_theta(
+            capital_f_theta, tau)  #TODO: Check sign in thesis!
         xi = self._get_xi(localized_bvp, adjoint_solution, tau)
         temp3 = np.einsum(
             'ij,ik->jk', xi,
