@@ -35,10 +35,10 @@ class SensitivitiesInhomogeneity(ABC):
         self._solution = solution
         self._localized_bvp = localized_bvp
         self._bvp_param = self._sensitivities.bvp_param
+        self._time_interval = self._localized_bvp.time_interval
 
         eplus = self._localized_bvp.dynamical_system.eplus
-        self.eplus_e_theta = self._get_eplus_e_der_theta(
-            self._parameter, self.e_dif, eplus)
+        self._set_eplus_e_derivatives(self._parameter)
 
     @property
     def solution(self):
@@ -66,8 +66,6 @@ class SensitivitiesInhomogeneity(ABC):
     def x_dot(self, t):
         raise NotImplementedError  #TODO: Implement
 
-    e_ddt_epluse_p = lambda self, t: np.zeros(((1, 1, 1)))  #TODO: Implement
-
     @abstractmethod
     def capital_f_theta(self, t):
         pass
@@ -82,26 +80,27 @@ class SensitivitiesInhomogeneity(ABC):
     def get_capital_fs(self):
         return self.capital_f_theta, self.capital_f_tilde, self.eplus_e_theta
 
-    def _get_eplus_e_der_theta(self, parameter, e_dif, eplus_t):
-        #similar to time derivative. #TODO: Replace by jax method
+    def _set_eplus_e_derivatives(self, parameter):
         dae = self._dynamical_system
-        nn = dae.nn
-        nparam = self._bvp_param.n_param
-        eplusetheta_arr = np.zeros((nn, nn, nparam))
+
+        epe = dae.p_z
+        epe_theta = jax.jacobian(epe)
+        epe_theta_t = jax.jacobian(epe_theta, argnums=1)
+        parameter = np.atleast_1d(parameter)
 
         def eplus_e_theta(t):
-            e = dae.e(parameter, t)
-            der_e = e_dif(t)
-            n = nn
-            eplus = eplus_t(t)
-            der_ep_e = -np.einsum(
-                'ij,jkp,kl->ilp', eplus, der_e, eplus @ e) + np.einsum(
-                    'ij,kjp,kl->ilp',
-                    (np.identity(n) - eplus @ e), der_e, eplus.T @ eplus @ e)
-            ep_der_e = np.einsum('ij,jkp->ikp', eplus, der_e)
-            return der_ep_e + ep_der_e
+            return epe_theta(parameter, t)
 
-        return eplus_e_theta
+        def eplus_e_theta_t(t):
+            return epe_theta_t(parameter, t)
+
+        def e_ddt_epluse_theta(t):
+            e = dae.e(parameter, t)
+            return np.einsum('ij, jkp->ikp', e, eplus_e_theta_t(t))
+
+        self.eplus_e_theta = eplus_e_theta
+        self.eplus_e_theta_t = eplus_e_theta_t
+        self.e_ddt_epluse_theta = e_ddt_epluse_theta
 
 
 class SensInhomWithTimeDerivative(SensitivitiesInhomogeneity):
@@ -121,31 +120,31 @@ class SensInhomWithTimeDerivative(SensitivitiesInhomogeneity):
 class SensInhomProjection(SensitivitiesInhomogeneity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._der_eplus_e_theta_is_zero = False
-        self._der_eplus_e_theta = None
-        self._der_warning()
-        self._check_subset()
+        self.capital_f_theta(
+            self._time_interval.t_0)  #To check subset. #TODO: Refactor
 
-    def _check_subset(self):
-        pass  #TODO: Check for forward sensitivities
-
-    def _der_warning(self):
-        if not self._der_eplus_e_theta_is_zero and self._der_eplus_e_theta is None:
-            logger.warning(
-                "Derivative of d/dt (eplus @ e )_p is not given explicitly and not confirmed to be zero."
+    def _check_subset(self, epe_theta, p_z):
+        epe_theta_pz = np.einsum('ijk, jl-> ilk', epe_theta, p_z)
+        if not np.allclose(epe_theta, epe_theta_pz):
+            raise ValueError(
+                "Approach not appropriate for systems, where (E^+E)_theta (E^+E) != (E^+E)_theta!"
             )
-            self.e_ddt_epluse_p = lambda t: np.zeros(1)
-        else:
-            raise NotImplementedError("Custom derivatives not implemented yet")
 
     def capital_f_theta(self, t):
+        dae = self._dynamical_system
         f_tilde = np.einsum('ijk,j->ik',
-                            self.a_dif(t) + self.e_ddt_epluse_p(t),
+                            self.a_dif(t) + self.e_ddt_epluse_theta(t),
                             self._solution(t)) - np.einsum(
                                 'ijk,j->ik', self.e_dif(t),
                                 self.x_d_dot(t)) + self.f_dif(t)
-        #TODO: Add terms for time derivatives
-        return f_tilde
+        e = self._dynamical_system.e(self._parameter, t)
+        p_z = dae.p_z(self._parameter, t)
+        e_pe_p_eval = self.eplus_e_theta(t)
+        self._check_subset(e_pe_p_eval, p_z)
+        tmp1 = np.einsum('ij, jkl, k ->il', e, e_pe_p_eval, self.x_d_dot(t))
+        tmp2 = np.einsum('ij, jkl, k ->il', e, self.e_ddt_epluse_theta(t),
+                         self.x_d(t))
+        return f_tilde - tmp1 - tmp2
 
     def _complement_f_tilde(self, t):
         return np.zeros(1)
@@ -168,8 +167,6 @@ class SensInhomProjection(SensitivitiesInhomogeneity):
         temp_bvp = self._get_f_tilde_dae(self._localized_bvp, capital_f_theta)
         temp12 = selector @ temp_bvp.f_a(tau)
         temp2 = selector @ da @ f_theta
-        import ipdb
-        ipdb.set_trace()
         return temp2 + temp12
 
 
@@ -184,9 +181,9 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
         f_tilde = -np.einsum('ijk,j->ik', self.e_dif(t),
                              self.x_d_dot(t)) + np.einsum(
                                  'ijk,j->ik',
-                                 self.a_dif(t) + self.e_ddt_epluse_p(t),
+                                 self.a_dif(t) + self.e_ddt_epluse_theta(t),
                                  self._solution(t)) + self.f_dif(t)
-        return f_tilde  #TODO: Asssumes that Si === 0 in Remark 8 of thesis for forward sensitivities.
+        return f_tilde
 
     def _complement_f_tilde(self, t):
         atepep = self.a_times_epluse_theta(t)

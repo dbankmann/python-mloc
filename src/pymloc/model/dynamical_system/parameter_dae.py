@@ -88,6 +88,9 @@ class LinearParameterDAE(ParameterDAE):
         p_check_z = e @ eplus
         return p_z, p_check_z
 
+    def p_z(self, *args):
+        return self.projectors(*args)[0]
+
     def _d_a_part(self, *args):
         p_z, p_check_z = self.projectors(*args)
         a = self.a(*args)

@@ -110,13 +110,10 @@ class TestPDOCObject:
     def test_sensitivities_augmented_full_selector_inhom_fail(
             self, pdoc_object_3):
         sens = pdoc_object_3.get_sensitivities()
-        sens.init_solver(abs_tol=1e-4, rel_tol=1e-4)
+        sens.init_solver(abs_tol=1e-0, rel_tol=1e-0)
         sens.solver_instance.capital_f_class = SensInhomProjection
-        import ipdb
-        ipdb.set_trace()
-        sol = sens.solve(parameters=np.array([2., 1.]), tau=1.)(1.)
-        import ipdb
-        ipdb.set_trace()
+        with pytest.raises(ValueError):
+            sol = sens.solve(parameters=np.array([2., 1.]), tau=1.)(1.)
 
     def test_forward_sensitivities(self, pdoc_object):
         sens = pdoc_object.get_sensitivities()
