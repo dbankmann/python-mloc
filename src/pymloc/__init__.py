@@ -9,9 +9,12 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+"""
+isort:skip_file
+"""
 __version__ = '0.0.1'
 
-#Enable 64 bit on startup
+# Enable 64 bit on startup
 import jax.config
 
 # Models have to be imported before solvers, because of the coupling between them in solver_container_factory
