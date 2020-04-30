@@ -41,6 +41,31 @@ def compare_sol_ref_sol(loc_opt, theta=2.):
 
 
 @pytest.fixture
+def dae_control_inhom():
+    variables = InputStateVariables(1, 1, time=Time(0., 2.))
+
+    def e(t):
+        return np.array([[1.]])
+
+    def a(t):
+        return np.array([[-1.]])
+
+    def b(t):
+        return np.array([[1.]])
+
+    def c(t):
+        return np.array([[1.]])
+
+    def d(t):
+        return np.array([[0.]])
+
+    def f(t):
+        return np.array([1.])
+
+    return LinearControlSystem(variables, e, a, b, c, d, f)
+
+
+@pytest.fixture
 def dae_control():
     variables = InputStateVariables(1, 1, time=Time(0., 2.))
 
@@ -85,6 +110,14 @@ class TestLQOptimalControl(TestLocalOptimizationObject):
         objective = LQRObjective(*lqr_obj_args)
         return LQOptimalControl(objective, constraint, variables)
 
+    @pytest.fixture
+    def loc_opt_inhom(self, dae_control_inhom, lqr_obj_args):
+        variables = InputStateVariables(1, 1)
+        x0 = np.array([2.])
+        constraint = LQRConstraint(dae_control_inhom, x0)
+        objective = LQRObjective(*lqr_obj_args)
+        return LQOptimalControl(objective, constraint, variables)
+
     def test_init_solver(self, loc_opt):
         return super().test_init_solver(loc_opt, stepsize=1e-3)
 
@@ -98,3 +131,8 @@ class TestLQOptimalControl(TestLocalOptimizationObject):
 
     def test_solve3(self, loc_opt):
         compare_sol_ref_sol(loc_opt)
+
+    def test_solve_inhom(self, loc_opt_inhom):
+        time = Time(0., 2.)
+        sol = super().test_solve2(loc_opt_inhom, time)
+        assert np.allclose(sol[0](0.)[0], 2.4809)

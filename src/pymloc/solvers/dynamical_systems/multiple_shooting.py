@@ -3,7 +3,6 @@ from copy import deepcopy
 
 import numpy as np
 import scipy.linalg as linalg
-from pygelda.pygelda import Gelda
 
 from ...misc import restack
 from ...misc import unstack

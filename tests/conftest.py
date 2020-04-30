@@ -41,6 +41,97 @@ def variables3():
     return hl_vars, loc_vars
 
 
+@pytest.fixture(params=[0., 1.])
+def param_control_3(variables3, request):
+    fix_p = request.param
+    ll_vars = NullVariables()
+
+    @jax.jit
+    def e(p, t):
+        q = p[1]
+        return jnp.array([[1., 0.], [q, 0.]])
+
+    @jax.jit
+    def a(p, t):
+        q = p[1]
+        return jnp.array([[-1., 0.], [-q, 1.]])
+
+    @jax.jit
+    def b(p, t):
+        q = p[1]
+        return jnp.array([[1.], [q]])
+
+    @jax.jit
+    def c(p, t):
+        return jnp.identity(2)
+
+    @jax.jit
+    def d(p, t):
+        return jnp.array([[0.]])
+
+    @jax.jit
+    def f(p, t):
+        q_0 = p[0]
+        q = p[1]
+        return jnp.array([1., q + fix_p + q_0])
+
+    return LinearParameterControlSystem(ll_vars, *variables3, e, a, b, c, d, f)
+
+
+@pytest.fixture
+def initial_value_3():
+    def ivp(p):
+        q = p[1]
+        return np.array([2., 0.])
+
+    return ivp
+
+
+@pytest.fixture
+def q_3():
+    def q(p, t):
+        return jnp.array([[3., 0.], [0., 0.]])
+
+    return q
+
+
+@pytest.fixture
+def s_3():
+    def s(p, t):
+        return np.zeros((2, 1))
+
+    return s
+
+
+@pytest.fixture
+def m_3():
+    def m(p):
+        return jnp.zeros((2, 2))
+
+    return m
+
+
+@pytest.fixture
+def pdoc_objective_3(q_3, s_3, r, m_3, variables3):
+    time = Time(0., 2.)
+    return ParameterLQRObjective(*variables3, time, q_3, s_3, r, m_3)
+
+
+@pytest.fixture
+def pdoc_constraint_3(variables3, param_control_3, initial_value_3):
+    return ParameterLQRConstraint(*variables3, param_control_3,
+                                  initial_value_3)
+
+
+@pytest.fixture
+def pdoc_object_3(variables3, pdoc_objective_3, pdoc_constraint_3):
+    return ParameterDependentOptimalControl(*variables3, pdoc_objective_3,
+                                            pdoc_constraint_3)
+
+
+#Next example
+
+
 @pytest.fixture
 def param_control_2(variables3):
 

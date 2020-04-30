@@ -105,7 +105,7 @@ class ParameterDependentOptimalControl(OptimizationObject):
 
         @jax.jit
         def fcal(p, t):
-            fcal = np.block([fcontr(p, t), zeros3])
+            fcal = jnp.block([fcontr(p, t), zeros3])
             return fcal
 
         @jax.jit
