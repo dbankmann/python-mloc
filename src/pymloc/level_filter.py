@@ -1,5 +1,4 @@
 import logging
-import re
 
 from .solvers.base_solver import solver_level
 
