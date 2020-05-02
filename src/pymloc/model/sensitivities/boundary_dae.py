@@ -34,7 +34,10 @@ class BVPSensitivities(Solvable):
         self._parameters = self._bvp.higher_level_variables
         self._n_param = n_param
         if selector is None:
-            selector = lambda p: np.identity(self._dynamical_system.nn)
+
+            def selector(p):
+                return np.identity(self._dynamical_system.nn)
+
             self._sel_shape = (self._dynamical_system.nn,
                                self._dynamical_system.nn)
         else:

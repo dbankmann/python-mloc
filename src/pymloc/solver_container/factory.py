@@ -23,12 +23,12 @@ class SolverContainerFactory:
 
     @staticmethod
     def get_instance():
-        if SolverContainerFactory.__instance == None:
+        if SolverContainerFactory.__instance is None:
             SolverContainerFactory()
         return SolverContainerFactory.__instance
 
     def __init__(self):
-        if SolverContainerFactory.__instance != None:
+        if SolverContainerFactory.__instance is not None:
             raise Exception("This class is a singleton!")
         else:
             SolverContainerFactory.__instance = self
@@ -57,7 +57,7 @@ class SolverContainerFactory:
                                                      creator_function)
         else:
             solver_container.add_solver(solver, default, creator_function)
-        #Also register solvers for all problem subclasses.
+        # TODO: Also register solvers for all problem subclasses.
         for subclass in problem.__subclasses__():
             self.register_solver(subclass, solver, False, creator_function)
 

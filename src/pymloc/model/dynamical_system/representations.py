@@ -48,7 +48,7 @@ class LinearFlowRepresentation(LinearDAE):
         return self._current_d_d
 
     def _compute_d_d(self, t):
-        #TODO: save intermediate
+        # TODO: save intermediate
         epa = self._compute_eplusa(t)
         self._current_d_d = epa @ self.cal_projection(t)
 

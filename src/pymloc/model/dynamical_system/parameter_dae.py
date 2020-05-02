@@ -21,7 +21,7 @@ from .representations import LinearFlowRepresentation
 logger = logging.getLogger(__name__)
 
 
-#TODO: Seems to be fixed in recent versions of jax
+# TODO: Seems to be fixed in recent versions of jax. Use library version!
 def jac_jax_reshaped(fun, shape, *args, **kwargs):
     def fun_raveled(*args_fun, **kwargs_fun):
         return fun(*args_fun, **kwargs_fun).ravel()
@@ -34,7 +34,7 @@ def jac_jax_reshaped(fun, shape, *args, **kwargs):
             jac_eval.shape))
         jac_eval_tmp = jac_eval.ravel(order='F').reshape(diff_dim, *shape)
         return np.einsum('i...->...i',
-                         jac_eval_tmp)  #Transpose for column major
+                         jac_eval_tmp)  # Transpose for column major
 
     return jac_reshaped
 
@@ -125,7 +125,7 @@ class LinearParameterDAE(ParameterDAE):
         return e @ xdot - a @ x
 
 
-#TODO: Automatic generation should take into consideration appropriate representations. For now LinearFlowRepresentation is general enough.
+# TODO: Automatic generation should take into consideration appropriate representations. For now LinearFlowRepresentation is general enough.
 class AutomaticLinearDAE(LinearFlowRepresentation):
     def __init__(self, parameter_dae):
         self._parameter_dae = parameter_dae

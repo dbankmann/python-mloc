@@ -12,7 +12,6 @@
 import inspect
 import logging
 from abc import ABC
-from abc import abstractmethod
 
 from .variables.container import VariablesContainer
 
@@ -21,7 +20,9 @@ logger = logging.getLogger(__name__)
 
 class MultiLevelObject(ABC):
     """
-    BaseObject for all classes that describe problems, with multiple variable levels. These can be both, higher level variables and lower level variables.
+    BaseObject for all classes that describe problems, with multiple variable
+    levels.
+    These can be both, higher level variables and lower level variables.
     """
     def __init__(self, lower_level_variables: VariablesContainer,
                  higher_level_variables: VariablesContainer,
@@ -33,7 +34,6 @@ class MultiLevelObject(ABC):
             if not isinstance(container, VariablesContainer):
                 raise TypeError(container)
 
-        self._localize_dict = dict()
         self._localize_id = None
         self._localize_val = None
 
@@ -76,8 +76,8 @@ class MultiLevelObject(ABC):
             return None
         logger.debug("Getting localized method for method: {}".format(method))
         nparam = len(inspect.signature(method).parameters)
-        #Signature 'guessing': For 2 parameters, only use hl_vars and loc_vars
-        #TODO: Generalize to more cases
+        # Signature 'guessing': For 2 parameters, only use hl_vars and loc_vars
+        # TODO: Generalize to more cases
         if nparam == 3:
 
             def localized_function(variables):

@@ -9,7 +9,6 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-import pytest
 
 from pymloc.model.optimization.local_optimization import LocalNullOptimization
 from pymloc.solver_container import solver_container_factory

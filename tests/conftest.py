@@ -38,7 +38,6 @@ from pymloc.model.variables import NullVariables
 from pymloc.model.variables import ParameterContainer
 from pymloc.model.variables.container import InputOutputStateVariables
 from pymloc.model.variables.container import StateVariablesContainer
-from pymloc.model.variables.time_function import StateVariables
 from pymloc.model.variables.time_function import Time
 from pymloc.solvers.dynamical_systems.adjoint_sensitivities import AdjointSensitivitiesSolver
 
@@ -92,7 +91,6 @@ def param_control_3(variables3, request):
 @pytest.fixture
 def initial_value_3():
     def ivp(p):
-        q = p[1]
         return np.array([2., 0.])
 
     return ivp
@@ -140,7 +138,7 @@ def pdoc_object_3(variables3, pdoc_objective_3, pdoc_constraint_3):
                                             pdoc_constraint_3)
 
 
-#Next example
+# Next example
 
 
 @pytest.fixture
@@ -181,7 +179,6 @@ def param_control_2(variables3):
 @pytest.fixture
 def initial_value_2():
     def ivp(p):
-        q = p[1]
         return np.array([2., 0.])
 
     return ivp
@@ -229,7 +226,7 @@ def pdoc_object_2(variables3, pdoc_objective_2, pdoc_constraint_2):
                                             pdoc_constraint_2)
 
 
-#Next example
+# Next example
 @pytest.fixture
 def variables2():
     loc_vars = InputStateVariables(1, 1, time=Time(0., 2.))
@@ -315,17 +312,12 @@ def pdoc_constraint(variables2, param_control, initial_value):
 
 
 @pytest.fixture
-def pdoc_constraint(variables2, param_control, initial_value):
-    return ParameterLQRConstraint(*variables2, param_control, initial_value)
-
-
-@pytest.fixture
 def pdoc_object(variables2, pdoc_objective, pdoc_constraint):
     return ParameterDependentOptimalControl(*variables2, pdoc_objective,
                                             pdoc_constraint)
 
 
-#Nonlinear Least Squres fixtures
+# Nonlinear Least Squres fixtures
 @pytest.fixture
 def f_nlsq():
     def f(ll_vars, hl_vars, loc_vars):
@@ -383,10 +375,12 @@ def localized_ivp(localized_bvp):
     return ivp
 
 
-#param dae
+# param dae
 @pytest.fixture
 def linear_param_bvp(linear_param_dae, param_vars):
-    initial_value = lambda p: jnp.array([p, 2., 1.])
+    def initial_value(p):
+        return jnp.array([p, 2., 1.])
+
     t = Time(0., 1., time_grid=np.linspace(0., 1., 10))
     return ParameterInitialValueProblem(*param_vars, initial_value, t,
                                         linear_param_dae, 1)
@@ -412,8 +406,7 @@ def param_vars():
 def initial_value_problem_dae(linear_real_dae):
     initial_value = np.array([1., 2., 0.])
     time_interval = Time(0., 1.)
-    return ParameterInitialValueProblem(initial_value, time_interval,
-                                        linear_real_dae)
+    return InitialValueProblem(initial_value, time_interval, linear_real_dae)
 
 
 @pytest.fixture
@@ -429,7 +422,6 @@ def e_lin_param_dae():
 def a_lin_param_dae():
     def a(p, t):
         return -jnp.array([[3., 0., 0.], [0., p, 0.], [0., 0., 10.]])
-        #return -np.diag((3., p, 10.))
 
     return a
 
@@ -442,7 +434,7 @@ def f_lin_param_dae():
     return f
 
 
-#real dae rank(e) < n
+# real dae rank(e) < n
 @pytest.fixture
 def linear_real_dae(variables, e_lin_dae, a_lin_dae, f_lin_dae):
     states = StateVariablesContainer(3)
@@ -454,13 +446,6 @@ def flow_problem_dae(linear_real_dae):
     time_interval = Time(0., 1.)
     flowprob = LinearFlow(time_interval, linear_real_dae)
     return flowprob
-
-
-@pytest.fixture
-def initial_value_problem_dae(linear_real_dae):
-    initial_value = np.array([1., 2., 0.])
-    time_interval = Time(0., 1.)
-    return InitialValueProblem(initial_value, time_interval, linear_real_dae)
 
 
 @pytest.fixture
@@ -488,10 +473,10 @@ def f_lin_dae():
     return f
 
 
-#ODE
+# ODE
 @pytest.fixture
 def linear_dae(variables, e_lin, a_lin, f_lin):
-    states = StateVariables(2)
+    states = StateVariablesContainer(2)
     return LinearFlowRepresentation(states, e_lin, a_lin, f_lin, 2)
 
 
@@ -531,12 +516,6 @@ def f_lin():
         return np.zeros((2, ))
 
     return f
-
-
-@pytest.fixture
-def linear_dae(variables, e_lin, a_lin, f_lin):
-    states = StateVariablesContainer(2)
-    return LinearFlowRepresentation(states, e_lin, a_lin, f_lin, 2)
 
 
 @pytest.fixture

@@ -13,7 +13,6 @@ import jax.numpy as jnp
 import numpy as np
 
 from ..dynamical_system.dae import LinearDAE
-from ..multilevel_object import MultiLevelObject
 from ..variables import InputOutputStateVariables
 from ..variables.container import StateVariablesContainer
 
@@ -38,7 +37,10 @@ class LinearControlSystem:
         dim = self._nn + self._nm
         self._augmented_dae = LinearDAE(StateVariablesContainer(dim), cal_e,
                                         cal_a, cal_f, dim)
-        _hom_f = lambda t: np.zeros((self._nn))
+
+        def _hom_f(t):
+            return np.zeros((self._nn))
+
         self._free_dae = LinearDAE(StateVariablesContainer(self._nn), e, a,
                                    _hom_f, self._nn)
 

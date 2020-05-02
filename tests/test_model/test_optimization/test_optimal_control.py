@@ -104,9 +104,9 @@ def dae_control():
 @pytest.fixture
 def lqr_obj_args():
     theta = 2.
-    q = lambda t: np.array([[theta**2 - 1]])
-    s = lambda t: np.array([[0.]])
-    r = lambda t: np.array([[1.]])
+    q = lambda t: np.array([[theta**2 - 1]])  # noqa: E731
+    s = lambda t: np.array([[0.]])  # noqa: E731
+    r = lambda t: np.array([[1.]])  # noqa: E731
     m = np.array([[0.]])
     time = Time(0., 2.)
     return time, q, s, r, m
@@ -137,8 +137,7 @@ class TestLQOptimalControl(TestLocalOptimizationObject):
 
     def test_solve2(self, loc_opt):
         time = Time(0., 2.)
-        sol = super().test_solve2(loc_opt, time, stepsize=1e-3)
-        ref_sol = None
+        sol = super().test_solve2(loc_opt, time, stepsize=1e-3)  # noqa: F841
 
     def test_solve3(self, loc_opt):
         compare_sol_ref_sol(loc_opt)

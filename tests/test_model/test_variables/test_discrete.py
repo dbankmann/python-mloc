@@ -9,9 +9,8 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-import pytest
-from pymloc.model.variables import Parameters
 from pymloc.model.domains import RNDomain
+from pymloc.model.variables import Parameters
 
 
 class TestParameters:

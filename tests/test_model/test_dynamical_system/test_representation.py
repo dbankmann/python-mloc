@@ -77,7 +77,7 @@ class TestFlowRepresentation(TestLinearDAE):
 
         assert np.allclose(proj_val, ref_val)
 
-    def test_projection(self, dae):
+    def test_projection_compl(self, dae):
         proj_val = dae.projection_complement(0.)
 
         ref_val = np.array([[0., 0., 0.], [0., 0., 0.], [0., 0., 1.]])

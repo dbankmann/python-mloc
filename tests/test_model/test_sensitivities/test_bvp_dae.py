@@ -13,7 +13,6 @@ import numpy as np
 import pytest
 
 from pymloc.model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
-from pymloc.model.dynamical_system.flow_problem import LinearFlow
 from pymloc.model.sensitivities.boundary_dae import BVPSensitivities
 from pymloc.model.variables.time_function import Time
 

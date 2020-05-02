@@ -20,8 +20,6 @@ from pymloc.model.dynamical_system.flow_problem import LinearFlow
 
 from ...misc import restack
 from ...misc import unstack
-from ...model.dynamical_system.boundary_value_problem import BoundaryValueProblem
-from ...model.dynamical_system.boundary_value_problem import BoundaryValues
 from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
 from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValues
 from ...model.dynamical_system.initial_value_problem import InitialValueProblem
@@ -30,7 +28,6 @@ from ...model.sensitivities.boundary_dae import BVPSensitivities
 from ...model.variables.container import StateVariablesContainer
 from ...model.variables.time_function import Time
 from ...solver_container import solver_container_factory
-from ..base_solver import BaseSolver
 from ..base_solver import TimeSolution
 from .sensitivities import SensInhomProjectionNoSubset
 from .sensitivities import SensitivitiesSolver
@@ -42,7 +39,6 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
     capital_f_default_class = SensInhomProjectionNoSubset
 
     def _compute_adjoint_boundary_values(self, localized_bvp):
-        n = self._dynamical_system.nn
         rank = localized_bvp.dynamical_system.rank
         t_0 = localized_bvp.time_interval.t_0
         t_f = localized_bvp.time_interval.t_f
@@ -71,12 +67,11 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         return e_check, a_check
 
     def _get_xi_small_inverse_part(self, small_gammas):
-        #TODO: QR
+        # TODO: QR
         return np.linalg.solve(small_gammas @ small_gammas.T, small_gammas)
 
     def _setup_adjoint_sensitivity_bvp(self, localized_bvp, parameters, tau):
         n = self._dynamical_system.nn
-        n_param = self._bvp_param.n_param
         t_0 = self._bvp_param.boundary_value_problem.time_interval.t_0
         t_f = self._bvp_param.boundary_value_problem.time_interval.t_f
         e_check, a_check = self._get_adjoint_dae_coeffs(localized_bvp)
@@ -178,7 +173,6 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         return e_dyn, a_dyn, f
 
     def _get_adjoint_sens_dae(self, e_check, a_check, n, sel_shape, tau):
-        time = self._time_interval
         nf = self._get_nf(tau, n)
         e_dyn, a_dyn, f = self._get_adjoint_sens_dae_coeffs(
             tau, e_check, a_check, nf, sel_shape)
@@ -207,7 +201,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
             localized_bvp, parameters, tau)
         flow_problem = self._get_adjoint_flow_problem(adjoint_bvp)
         iv_problem = self._get_adjoint_ivp_problem(adjoint_bvp)
-        #TODO: Make attribute
+        # TODO: Make attribute
         nodes = self._get_adjoint_nodes(tau)
         stepsize = self.abs_tol**(1 / 3)
 
@@ -231,7 +225,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
     def _collapsed_dynamic_update(self, adjoint_sol, tau):
         def _collapse_dynamic_update(sol, t):
             adjoint_solution = adjoint_sol(
-                t[0])  #TODO: Generalize for multiple time points
+                t[0])  # TODO: Generalize for multiple time points
             time = self._time_interval
             if time.at_bound(tau):
                 return adjoint_solution
@@ -249,12 +243,9 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         if time.at_bound(tau):
             return deepcopy(adjoint_solution)
         else:
-            n = self._nn
             grid = adjoint_solution.time_grid
             solution = adjoint_solution.solution
-            tsize = grid.size
             sshape = solution.shape
-
             idx = np.searchsorted(grid, tau)
             newn = sshape[0] // 2
             coll_solution = np.empty((newn, *sshape[1:]))
@@ -310,7 +301,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
                           self._bvp_param.selector_theta(parameters),
                           solution(tau))
         temp2 = -self._capital_fs_instance.temp2_f_a_theta(
-            capital_f_theta, tau)  #TODO: Check sign in thesis!
+            capital_f_theta, tau)  # TODO: Check sign in thesis!
         xi = self._get_xi(localized_bvp, adjoint_solution, tau)
         temp3 = np.einsum(
             'ij,ik->jk', xi,
@@ -372,7 +363,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
 
     def _compute_single_sensitivity(self, tau, localized_bvp, parameters):
         time = deepcopy(localized_bvp.time_interval)
-        stepsize = self.abs_tol**(1 / 3)  #Heuristics
+        stepsize = self.abs_tol**(1 / 3)  # Heuristics
         time.grid = np.hstack(
             (np.arange(time.t_0, tau,
                        stepsize), np.arange(tau, time.t_f, stepsize)))

@@ -55,7 +55,6 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
 
     def _run(self, x0):
         hom_flow = self.get_homogeneous_flows()
-        t0 = self.time_interval.t_0
         tf = self.time_interval.t_f
         fds = np.zeros((hom_flow.shape[1:]), order='F')
         for i, t in enumerate(self.time_interval):
@@ -78,7 +77,7 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
         intervals = self._intervals
         nflows = len(time_grid) - 1
         flows = np.zeros((n, n, nflows), order='F')
-        #TODO: Paralellize
+        # TODO: Paralellize
         for i, (t_i, t_ip1) in enumerate(intervals):
             logger.info("Computing solution in the interval ({}, {})".format(
                 t_i, t_ip1))
@@ -89,14 +88,13 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
         n = self._nn
         flow = np.zeros((n, n), order='F')
 
-        #TODO: Potentially Slow! implement a flow routine at low level routine or parallelize
+        # TODO: Potentially Slow! implement a flow routine at low level routine or parallelize
         def f(t, x):
             return self.model.flow_dae.d_d(t) @ x
 
         def jac(t, x):
             return self.model.flow_dae.d_d(t)
 
-        h = self.stepsize
         integrator = ode(f, jac).set_integrator('dopri5',
                                                 atol=self.abs_tol,
                                                 rtol=self.rel_tol)

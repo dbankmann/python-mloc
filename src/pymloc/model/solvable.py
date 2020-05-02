@@ -9,7 +9,6 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-import inspect
 import logging
 from abc import ABC
 
@@ -75,7 +74,7 @@ class Solvable(ABC):
         return self._solver_instance
 
     def has_solver_instance(self):
-        return not self._solver_instance is None
+        return self._solver_instance is not None
 
     def __get_class(self):
         if self._auto_generated:

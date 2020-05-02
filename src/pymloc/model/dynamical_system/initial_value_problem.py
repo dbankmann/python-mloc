@@ -9,7 +9,6 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-from abc import ABC
 
 import numpy as np
 

@@ -9,7 +9,8 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 
 
 class Domain(ABC):
@@ -22,7 +23,7 @@ class Domain(ABC):
                 assert self._in_domain_assertion(value)
             return True
         except AssertionError:
-            #TODO: Can be softened to only raise a warning
+            # TODO: Can be softened to only raise a warning
             raise ValueError("Variable value out of domain")
 
     @abstractmethod

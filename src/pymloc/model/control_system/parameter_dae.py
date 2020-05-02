@@ -47,7 +47,9 @@ class LinearParameterControlSystem(MultiLevelObject):
                                                  StateVariablesContainer(dim),
                                                  cal_e, cal_a, cal_f, dim)
 
-        _hom_f = lambda p, t: np.zeros((self._nn))
+        def _hom_f(p, t):
+            return np.zeros((self._nn))
+
         self._free_dae = LinearParameterDAE(ll_vars, hl_vars,
                                             StateVariablesContainer(self._nn),
                                             e, a, _hom_f, self._nn)
@@ -88,7 +90,7 @@ class LinearParameterControlSystem(MultiLevelObject):
     def free_dae(self):
         return self._free_dae
 
-    #TODO: Refactor. Identical to control dae
+    # TODO: Refactor. Identical to control dae
     def _get_cal_coeffs(self, e, a, b, c, d, f):
         nn = self._nn
         nm = self._nm

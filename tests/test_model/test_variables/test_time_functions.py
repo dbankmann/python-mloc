@@ -9,8 +9,9 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-from pymloc.model.variables.time_function import StateVariables, OutputVariables, InputVariables
-import pytest
+from pymloc.model.variables.time_function import InputVariables
+from pymloc.model.variables.time_function import OutputVariables
+from pymloc.model.variables.time_function import StateVariables
 
 
 class Variables():

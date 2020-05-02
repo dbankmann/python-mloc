@@ -9,6 +9,8 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+
+
 class LocalConstraint:
     def __init__(self):
         pass

@@ -10,8 +10,8 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 import pytest
+
 from pymloc.mloc import MultiLevelOptimalControl
-from pymloc.model.optimization.optimization import NullOptimization
 from pymloc.solvers import NullSolver
 
 

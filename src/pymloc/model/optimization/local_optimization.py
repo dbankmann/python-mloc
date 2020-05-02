@@ -10,7 +10,6 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 from abc import ABC
-from abc import abstractmethod
 
 from ..solvable import VariableSolvable
 from ..variables.container import VariablesContainer

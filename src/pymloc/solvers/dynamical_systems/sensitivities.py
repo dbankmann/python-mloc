@@ -1,39 +1,14 @@
-#
-# Copyright (c) 2019-2020
-#
-# @author: Daniel Bankmann
-# @company: Technische Universität Berlin
-#
-# This file is part of the python package pymloc
-# (see https://gitlab.tubit.tu-berlin.de/bankmann91/python-mloc )
-#
-# License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
-#
 import logging
 from abc import ABC
 from abc import abstractmethod
-from copy import deepcopy
 
 import jax
-import jax.numpy as jnp
 import numpy as np
-import scipy
-import scipy.linalg as linalg
 
-from pymloc.model.dynamical_system.flow_problem import LinearFlow
-
-from ...model.dynamical_system.boundary_value_problem import BoundaryValueProblem
-from ...model.dynamical_system.boundary_value_problem import BoundaryValues
-from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
-from ...model.dynamical_system.boundary_value_problem import MultipleBoundaryValues
-from ...model.dynamical_system.initial_value_problem import InitialValueProblem
 from ...model.dynamical_system.representations import LinearFlowRepresentation
 from ...model.sensitivities.boundary_dae import BVPSensitivities
 from ...model.variables.container import StateVariablesContainer
-from ...model.variables.time_function import Time
-from ...solver_container import solver_container_factory
 from ..base_solver import BaseSolver
-from ..base_solver import TimeSolution
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +22,6 @@ class SensitivitiesInhomogeneity(ABC):
         self._localized_bvp = localized_bvp
         self._bvp_param = self._sensitivities.bvp_param
         self._time_interval = self._localized_bvp.time_interval
-
-        eplus = self._localized_bvp.dynamical_system.eplus
         self._set_eplus_e_derivatives(self._parameter)
 
     @property
@@ -75,7 +48,7 @@ class SensitivitiesInhomogeneity(ABC):
         return ddxd + fd
 
     def x_dot(self, t):
-        raise NotImplementedError  #TODO: Implement
+        raise NotImplementedError  # TODO: Implement
 
     @abstractmethod
     def capital_f_theta(self, t):
@@ -132,7 +105,7 @@ class SensInhomProjection(SensitivitiesInhomogeneity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.capital_f_theta(
-            self._time_interval.t_0)  #To check subset. #TODO: Refactor
+            self._time_interval.t_0)  # For checking subset. #TODO: Refactor
 
     def _check_subset(self, epe_theta, p_z):
         epe_theta_pz = np.einsum('ijk, jl-> ilk', epe_theta, p_z)
@@ -182,12 +155,6 @@ class SensInhomProjection(SensitivitiesInhomogeneity):
 
 
 class SensInhomProjectionNoSubset(SensInhomProjection):
-    def a_times_epluse_theta(self, t):
-        a_times_epluse_p = np.einsum(
-            'ij,jkp->ikp', self._dynamical_system.a(self._parameter, t),
-            self.eplus_e_theta(t))
-        return a_times_epluse_p
-
     def capital_f_theta(self, t):
         f_tilde = -np.einsum('ijk,j->ik', self.e_dif(t),
                              self.x_d_dot(t)) + np.einsum(
@@ -197,7 +164,6 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
         return f_tilde
 
     def _complement_f_tilde(self, t):
-        atepep = self.a_times_epluse_theta(t)
         a = self._dynamical_system.a(self._parameter, t)
         epep = self.eplus_e_theta(t)
         compl = np.einsum('ij, jkp,k->ip', a, epep, self._solution(t))
@@ -214,7 +180,7 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
         temp = temp - np.einsum('ij,j...p->i...p', da, temp)
         da_th_eval = da_theta(self._parameter, tau)
         fa_th_eval = fa_theta(self._parameter, tau)
-        if da_th_eval.ndim == 2:  #TODO: Homogenize. Better always use arrays; also for float inputs
+        if da_th_eval.ndim == 2:  # TODO: Homogenize. Better always use arrays; also for float inputs
             da_th_eval = da_th_eval[..., np.newaxis]
             fa_th_eval = fa_th_eval[..., np.newaxis]
         temp2 = np.einsum('ijp, j...->i...p', da_th_eval, self.x_d(tau))
@@ -270,7 +236,8 @@ class SensitivitiesSolver(BaseSolver):
            c) b) is not fulfilled
 
         The forward approach can only be used in case a) and b).
-        The adjoint approach can be used in all cases. However, in the most general case c) additional derivatives of the original data are necessary
+        The adjoint approach can be used in all cases.
+        However, in the most general case c) additional derivatives of the original data are necessary
         Approach a) has the additional disadvantage that the product E_p @ x_dot may not be available directly from most DAE solvers.
         """
         fs_instance = self.capital_f_class(self, *args, **kwargs)

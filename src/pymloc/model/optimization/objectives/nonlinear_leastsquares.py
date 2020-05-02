@@ -11,9 +11,7 @@
 #
 import numpy as np
 
-from ....misc import restack
 from ....misc import unstack
-from ...multilevel_object import MultiLevelObject
 from ...multilevel_object import local_object_factory
 from .objective import AutomaticLocalObjective
 from .objective import Objective
@@ -35,10 +33,10 @@ class NonLinearLeastSquares(Objective):
         ll_sens_sol = self.lower_level_variables.get_sensitivities(
             **solver_args)
         ll_sens = unstack(ll_sens_sol.solution)
-        return ll_sens
+        return ll_sens + loc_sens
 
     def _get_loc_sens(self):
-        #TODO:Implement
+        # TODO:Implement
         return np.zeros(1)
 
     def _get_ll_solver_args(self):

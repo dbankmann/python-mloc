@@ -28,14 +28,8 @@ class Variables(ABC):
     def dimension(self, value):
         self._dimension = value
 
-    @property
     @abstractmethod
     def current_values(self):
-        pass
-
-    @current_values.setter
-    @abstractmethod
-    def current_values(self, value):
         pass
 
     def get_random_values(self):

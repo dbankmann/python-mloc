@@ -12,8 +12,6 @@
 import logging
 from abc import ABC
 
-import numpy as np
-
 from .discrete import Parameters
 from .time_function import InputVariables
 from .time_function import OutputVariables
@@ -58,18 +56,11 @@ class VariablesContainer(ABC):
 
     @property
     def current_values(self):
-        #TODO: Refactor
+        # TODO: Refactor
         if self._linked_variable is None:
             return self._local_values()
         else:
             return self._linked_variable.current_values
-
-    def _local_values(self):
-        if self._n_variables == 1:
-            return self.variables[0].current_values
-        else:
-            vals = [var.current_values for var in self.variables]
-            return vals
 
     @current_values.setter
     def current_values(self, values):
@@ -78,6 +69,13 @@ class VariablesContainer(ABC):
         else:
             for value, variable in zip(values, self.variables):
                 variable.current_values = value
+
+    def _local_values(self):
+        if self._n_variables == 1:
+            return self.variables[0].current_values
+        else:
+            vals = [var.current_values for var in self.variables]
+            return vals
 
     def get_random_values(self):
         vals = (var.get_random_values() for var in self.variables)
@@ -148,7 +146,7 @@ class InputOutputStateVariables(VariablesContainer):
         self._n_states = n_states
         self._m_inputs = m_inputs
         self._p_outputs = p_outputs
-        #TODO: Check consistency of times
+        # TODO: Check consistency of times
         self._states = StateVariables(n_states)
         self._inputs = InputVariables(m_inputs)
         self._outputs = OutputVariables(p_outputs)

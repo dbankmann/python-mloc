@@ -16,7 +16,6 @@ import numpy as np
 import pytest
 
 from pymloc.model.domains import RNDomain
-from pymloc.model.dynamical_system.boundary_value_problem import MultipleBoundaryValueProblem
 from pymloc.model.dynamical_system.flow_problem import LinearFlow
 from pymloc.model.dynamical_system.initial_value_problem import InitialValueProblem
 from pymloc.model.dynamical_system.parameter_bvp import ParameterBoundaryValueProblem
@@ -56,7 +55,7 @@ def sens_solver_sine2(bvp_sens_object):
 @pytest.fixture
 def sens_solver_sine3(bvp_sens_object):
     bvpsens2 = deepcopy(bvp_sens_object)
-    bound_f = lambda p: jnp.array([[0., 0.], [p, 0.]])
+    bound_f = lambda p: jnp.array([[0., 0.], [p, 0.]])  # noqa: E731
     bvpsens2.boundary_value_problem.boundary_values.boundary_f = bound_f
     bvs = bvpsens2.boundary_value_problem.boundary_values.boundary_values
     bvs = list(bvs)
@@ -64,15 +63,15 @@ def sens_solver_sine3(bvp_sens_object):
     bvpsens2.boundary_value_problem.boundary_values._boundary_values = bvs
 
     bvpsens2.boundary_value_problem.boundary_values.inhomogeneity = lambda p: jnp.array(
-        [0., 2.])
+        [0., 2.])  # noqa: E731
     return AdjointSensitivitiesSolver(bvpsens2, rel_tol=1e-1, abs_tol=1e-1)
 
 
 @pytest.fixture
 def linear_param_bvp(linear_param_dae, param_vars):
-    initial_value = lambda p: jnp.array([[1., 0.], [0., 0.]])
-    final_value = lambda p: jnp.array([[0., 0.], [1., 0.]])
-    inhomogeneity = lambda p: jnp.array([0., p])
+    initial_value = lambda p: jnp.array([[1., 0.], [0., 0.]])  # noqa: E731
+    final_value = lambda p: jnp.array([[0., 0.], [1., 0.]])  # noqa: E731
+    inhomogeneity = lambda p: jnp.array([0., p])  # noqa: E731
     t = Time(0., np.pi / 2., time_grid=np.linspace(0., np.pi / 2., 10))
     bvs = ParameterBoundaryValues(*param_vars, initial_value, final_value,
                                   inhomogeneity, 2)
@@ -136,6 +135,7 @@ class TestBVPSensitivitiesSolver:
                        stepsize), np.arange(tau, time.t_f, stepsize)))
         sol = sens_solver._get_adjoint_solution(localized_bvp, parameters, tau,
                                                 time)
+        assert sol
 
     @pytest.mark.parametrize("tau", np.arange(0.1, 1., 0.4))
     def test_f_tilde(self, sens_solver, localized_bvp, tau):
@@ -150,7 +150,6 @@ class TestBVPSensitivitiesSolver:
                                     localized_bvp.solve(time)[0],
                                     localized_bvp._localization_parameters[0])
 
-    #def test_compute_sensitivity(self, f_tilde, solution, adjoint_solution):
     @pytest.mark.parametrize("tau", np.arange(0.1, 1., 0.4))
     def test_run(self, sens_solver, localized_bvp, tau):
         sens_solver.run(localized_bvp._localization_parameters[0], tau)

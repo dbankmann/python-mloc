@@ -9,6 +9,8 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+""" isort:skip_file
+"""
 from .solvable import Solvable
-from . import variables
 from . import optimization
+from . import variables

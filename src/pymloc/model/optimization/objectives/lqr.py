@@ -10,7 +10,6 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 import numpy as np
-import scipy.integrate
 from scipy.integrate import trapz
 
 from . import LocalObjective
@@ -44,7 +43,7 @@ class LQRObjective(LocalObjective):
             weights = np.block([[q, s], [s.T.conj(), r]])
             self._current_integral_weights = weights
 
-    #TODO: Refactor dae and objective to time objects
+    # TODO: Refactor dae and objective to time objects
     def _check_current_time(self, t, method):
         if self._current_t.get(method) is None or self._current_t[method] != t:
             self._current_t[method] = t
@@ -61,9 +60,10 @@ class LQRObjective(LocalObjective):
         intweights = np.array(
             [self.integral_weights(t) for t in self._time.grid])
         integral = trapz(
-            np.einsum('ti,tij,tj->t', solution, intweights, solution), t0, tf)
+            np.einsum('ti,tij,tj->t', solmatrix, intweights, solmatrix), t0,
+            tf)
 
-        return integral + intweights
+        return integral + final
 
     @property
     def final_weight(self):

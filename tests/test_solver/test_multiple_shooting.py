@@ -16,7 +16,6 @@ import scipy
 from pymloc.misc import restack
 from pymloc.misc import unstack
 from pymloc.solvers.dynamical_systems.multiple_shooting import MultipleShooting
-from pymloc.solvers.dynamical_systems.pygelda import PyGELDA
 
 
 @pytest.fixture
@@ -72,7 +71,7 @@ class TestMultipleShooting:
         assert gis.shape == (nflows, rank, rank)
 
     def test_compute_jis(self, ms_object):
-        #rank initialization
+        # rank initialization
         jis = ms_object._compute_jis()
         rank = ms_object._dynamical_system.rank
         nflows = ms_object._flows.shape[0]
@@ -83,7 +82,6 @@ class TestMultipleShooting:
         shooting_matrix = ms_object._get_shooting_matrix()
         rank = ms_object._dynamical_system.rank
         nflows = ms_object._n_shooting_nodes
-        nn = ms_object._nn
         assert shooting_matrix.shape == (nflows * rank, nflows * rank)
         correct_result = np.array([[-0.22312958, 0., 1., 0., 0., 0.],
                                    [0., -0.60653091, 0., 1., 0., 0.],
@@ -120,6 +118,7 @@ class TestMultipleShooting:
     def test_run_dae(self, ms_object_dae):
         time_interval = ms_object_dae._ivp_problem.time_interval
         erg = ms_object_dae.run(time_interval)[1]
+        assert erg
 
     def test_unstack(self, rand_shape):
         a = rand_shape

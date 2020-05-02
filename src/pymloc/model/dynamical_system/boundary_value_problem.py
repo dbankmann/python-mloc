@@ -9,7 +9,6 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-from abc import ABC
 
 import numpy as np
 
@@ -22,14 +21,14 @@ class MultipleBoundaryValues:
         self._nnodes = len(boundary_values)
         self._boundary_values = self._set_bvs(boundary_values)
         self._inner_nodes = boundary_values[1:-1]
-        #TODO: Check size of inhomogeneity according to state dimension (vector or matrix)
+        # TODO: Check size of inhomogeneity according to state dimension (vector or matrix)
         self._inhomogeneity = inhomogeneity
         self._z_gamma = z_gamma
         # Get last dimension, if only a vector, set to1
         self._n_inhom = np.atleast_2d(inhomogeneity.T).T.shape[-1]
 
     def residual(self, node_values):
-        #TODO: Make more efficient (save intermediate products)
+        # TODO: Make more efficient (save intermediate products)
         residual = np.einsum(
             'hi,hjk,j...k->i...', self._z_gamma, self._boundary_values,
             node_values) - self._z_gamma.T @ self._inhomogeneity

@@ -9,9 +9,10 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+import pytest
+
 from pymloc.model.variables.multilevel import MultiLevelVariables
 from pymloc.model.variables.time_function import StateVariables
-import pytest
 
 
 class TestMultiLevelVariables(object):

@@ -15,8 +15,6 @@ from abc import abstractmethod
 
 import numpy as np
 
-from ..model.variables import Time
-
 logger = logging.getLogger(__name__)
 
 
@@ -70,7 +68,7 @@ class TimeSolution(Solution):
                  dynamic_update=None):
         super().__init__(solution)
         self._time_grid = time_grid
-        #TODO: Make more efficient
+        # TODO: Make more efficient
         solution_time_dict = {
             time_grid[i]: solution[..., i]
             for i in range(time_grid.size)
@@ -130,7 +128,7 @@ class TimeSolution(Solution):
         if self._check_current_time(t, "interpolate"):
             logger.warning("Interpolating value...\nPotentially slow!")
             idx = np.searchsorted(self._time_grid,
-                                  t)  #TODO: Improvable for sorted array?
+                                  t)  # TODO: Improvable for sorted array?
             t0, tf = self._time_grid[idx - 1:idx + 1]
             m = tf - t0
             x = self._solution_time_dict.get
@@ -150,12 +148,12 @@ class Level:
 
     @staticmethod
     def get_instance():
-        if Level.__instance == None:
+        if Level.__instance is None:
             Level()
         return Level.__instance
 
     def __init__(self):
-        if Level.__instance != None:
+        if Level.__instance is not None:
             raise Exception("This class is a singleton!")
         else:
             Level.__instance = self

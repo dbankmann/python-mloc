@@ -9,9 +9,10 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-from pymloc.model.variables.container import VariablesContainer
-from pymloc.model.multilevel_object import local_object_factory
 import pytest
+
+from pymloc.model.multilevel_object import local_object_factory
+from pymloc.model.variables.container import VariablesContainer
 
 
 class MultiLevelObject:

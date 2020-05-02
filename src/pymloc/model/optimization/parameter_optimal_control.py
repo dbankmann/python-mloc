@@ -11,14 +11,10 @@
 #
 import jax
 import jax.numpy as jnp
-import numpy as np
-import scipy.integrate
 
 from ..dynamical_system.parameter_bvp import ParameterBoundaryValueProblem
 from ..dynamical_system.parameter_bvp import ParameterBoundaryValues
 from ..dynamical_system.parameter_dae import LinearParameterDAE
-from ..dynamical_system.parameter_ivp import ParameterInitialValueProblem
-from ..multilevel_object import MultiLevelObject
 from ..multilevel_object import local_object_factory
 from ..sensitivities.boundary_dae import BVPSensitivities
 from ..variables import InputStateVariables
@@ -26,7 +22,6 @@ from ..variables import NullVariables
 from ..variables import ParameterContainer
 from ..variables.container import StateVariablesContainer
 from .constraints.parameter_lqr import ParameterLQRConstraint
-from .objectives import Objective
 from .objectives.parameter_lqr import ParameterLQRObjective
 from .optimal_control import LQOptimalControl
 from .optimization import AutomaticLocalOptimizationObject
@@ -82,7 +77,7 @@ class ParameterDependentOptimalControl(OptimizationObject):
         return BVPSensitivities(boundary_value_problem, n_param, *args,
                                 **kwargs)
 
-    #TODO: Refactor parameter and non-parameter functions
+    # TODO: Refactor parameter and non-parameter functions
     def get_bvp(self):
         nn = self._state_input.states.dimension
         nm = self._state_input.inputs.dimension

@@ -10,7 +10,6 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 import numpy as np
-import pytest
 
 from pymloc.model.dynamical_system.parameter_dae import jac_jax_reshaped
 

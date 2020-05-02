@@ -10,11 +10,9 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 import jax.numpy as jnp
-import numpy as np
 
 from ...multilevel_object import local_object_factory
 from ...variables import NullVariables
-from . import AutomaticLocalObjective
 from . import Objective
 from .lqr import LQRObjective
 

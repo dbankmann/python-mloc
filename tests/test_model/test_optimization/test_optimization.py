@@ -9,10 +9,12 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-from pymloc.model.optimization.optimization import OptimizationObject
-from pymloc.model.optimization.local_optimization import LocalOptimizationObject
-from ..test_multilevelobject import MultiLevelObject
 import pytest
+
+from pymloc.model.optimization.local_optimization import LocalOptimizationObject
+from pymloc.model.optimization.optimization import OptimizationObject
+
+from ..test_multilevelobject import MultiLevelObject
 
 
 class TestOptimizationObject(MultiLevelObject):

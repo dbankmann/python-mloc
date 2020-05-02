@@ -17,7 +17,6 @@ from pymloc.model.dynamical_system.parameter_dae import jac_jax_reshaped
 from pymloc.solvers.dynamical_systems.sensitivities import SensInhomProjection
 
 from .test_optimization.test_optimal_control import compare_sol_ref_sol
-from .test_optimization.test_optimal_control import compute_ref_sol
 
 
 def refsol(theta, t0, tf, t, x01):
@@ -74,6 +73,7 @@ class TestPDOCObject:
         intw = pdoc_object.objective.integral_weights
         jac = jac_jax_reshaped(intw, (2, 2))
         jac_val = jac(parameters, 2.)
+        assert jac_val is not None
 
     def test_sensitivities(self, pdoc_object):
         sens = pdoc_object.get_sensitivities()
@@ -84,10 +84,10 @@ class TestPDOCObject:
         assert np.allclose(ref, sol.solution, rtol=1e-9, atol=0.4)
 
     def test_sensitivities_augmented(self, pdoc_object, pdoc_object_2):
-        #local_lq = pdoc_object.get_localized_object(hl_value=2.)
-        #comp = compare_sol_ref_sol(local_lq, 2.)
-        selector = lambda p: jnp.array([[0.5, 0.], [0.5, 0.], [0., 1.],
-                                        [0., 0.], [0., 0.]]).T
+        def selector(p):
+            return jnp.array([[0.5, 0.], [0.5, 0.], [0., 1.], [0., 0.],
+                              [0., 0.]]).T
+
         selector_shape = (2, 5)
         sens = pdoc_object_2.get_sensitivities(selector, selector_shape)
         atol = 1e-3
@@ -124,7 +124,8 @@ class TestPDOCObject:
         sens.init_solver(abs_tol=1e-0, rel_tol=1e-0)
         sens.solver_instance.capital_f_class = SensInhomProjection
         with pytest.raises(ValueError):
-            sol = sens.solve(parameters=np.array([2., 1.]), tau=1.)(1.)
+            sol = sens.solve(  # noqa: F841
+                parameters=np.array([2., 1.]), tau=1.)(1.)
 
     def test_forward_sensitivities(self, pdoc_object):
         sens = pdoc_object.get_sensitivities()

@@ -52,7 +52,7 @@ class ParameterMultipleBoundaryValues(MultiLevelObject):
         self._inhomogeneity = value
 
     def get_inhomogeneity_theta(self, solution, parameters):
-        #Assumes exactly 2-bounds
+        # Assumes exactly 2-bounds
         sol = solution.solution
         inhom_theta = jac_jax_reshaped(self.inhomogeneity,
                                        self._inhomogeneity_shape)(parameters)
@@ -76,13 +76,13 @@ class ParameterMultipleBoundaryValueProblem(MultiLevelObject):
     _local_object_class = MultipleBoundaryValueProblem
 
     def __init__(
-        self,
-        lower_level_variables: VariablesContainer,
-        higher_level_variables: VariablesContainer,
-        local_level_variables: VariablesContainer,
-        time_intervals,
-        dynamical_system,
-        boundary_values,
+            self,
+            lower_level_variables: VariablesContainer,
+            higher_level_variables: VariablesContainer,
+            local_level_variables: VariablesContainer,
+            time_intervals,
+            dynamical_system,
+            boundary_values,
     ):
         super().__init__(lower_level_variables, higher_level_variables,
                          local_level_variables)
@@ -107,13 +107,13 @@ class ParameterMultipleBoundaryValueProblem(MultiLevelObject):
 
 class ParameterBoundaryValueProblem(ParameterMultipleBoundaryValueProblem):
     def __init__(
-        self,
-        lower_level_variables: VariablesContainer,
-        higher_level_variables: VariablesContainer,
-        local_level_variables: VariablesContainer,
-        time_interval,
-        dynamical_system,
-        boundary_values,
+            self,
+            lower_level_variables: VariablesContainer,
+            higher_level_variables: VariablesContainer,
+            local_level_variables: VariablesContainer,
+            time_interval,
+            dynamical_system,
+            boundary_values,
     ):
         self._time_interval = time_interval
         self._initial_time = time_interval.t_0

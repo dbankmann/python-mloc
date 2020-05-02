@@ -67,10 +67,10 @@ class LinearDAE(DAE):
         self._f = f
         self._rank = None
         self.reset()
-        #TODO: Make more general!
+        # TODO: Make more general!
         self.init_rank()
         if der_e is None:
-            der_e = lambda t: self._der_e_numerical(t)
+            der_e = self._der_e_numerical
         self._der_e = der_e
         self._current_ahat = np.zeros((n, n), order='F')
         self._current_ehat = np.zeros((n, n), order='F')
@@ -96,7 +96,7 @@ class LinearDAE(DAE):
         return self._rank
 
     def init_rank(self):
-        #TODO: Choose meaningful timepoint
+        # TODO: Choose meaningful timepoint
         self._compute_rank(0.)
 
     def _compute_rank(self, t):
@@ -112,8 +112,7 @@ class LinearDAE(DAE):
         return self._der_e(t)
 
     def _der_e_numerical(self, t):
-        #Use tools like jax
-        n = self._nn
+        # Use tools like jax
         h = 10e-5
         e_h = self.e(t + h)
         e = self.e(t)
@@ -200,7 +199,6 @@ class LinearDAE(DAE):
         if self._check_current_time(t, "quantities"):
             e = self.e(t)
             a = self.a(t)
-            n = self.nn
             zzprime, sigma, ttprime_h = jnp.linalg.svd(e)
             rank = self.rank
             self._current_ttprime_h = ttprime_h.T

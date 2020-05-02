@@ -9,9 +9,9 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-from pymloc.model.optimization.objectives.objective import Objective
-from ...test_multilevelobject import MultiLevelObject
 import pytest
+
+from ...test_multilevelobject import MultiLevelObject
 
 
 class TestObjective(MultiLevelObject):

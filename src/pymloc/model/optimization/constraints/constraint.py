@@ -9,7 +9,8 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-from ...multilevel_object import MultiLevelObject, local_object_factory
+from ...multilevel_object import MultiLevelObject
+from ...multilevel_object import local_object_factory
 from .local_constraint import LocalConstraint
 
 

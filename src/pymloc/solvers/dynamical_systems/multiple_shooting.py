@@ -62,9 +62,7 @@ class MultipleShooting(BaseSolver):
         self._stepsize = stepsize
         super().__init__(*args, **kwargs)
 
-    def _init_solver(self,
-                     time_interval,
-                     flow_abs_tol=None,
+    def _init_solver(self, time_interval, flow_abs_tol=None,
                      flow_rel_tol=None):
         self._set_t2s()
         self._set_d_as()
@@ -121,7 +119,7 @@ class MultipleShooting(BaseSolver):
 
     def _check_shooting_nodes(self):
         for node in self._bvp_nodes:
-            if not node in self._shooting_nodes:
+            if node not in self._shooting_nodes:
                 raise ValueError(
                     "Shooting nodes {}\nhave to include boundary value nodes {}"
                     .format(self._shooting_nodes, self._bvp_nodes))
@@ -133,10 +131,9 @@ class MultipleShooting(BaseSolver):
     def _get_shooting_matrix(self):
         gis = self._gis
         jis = self._compute_jis()
-        bc = self._boundary_values
         dim = self._dynamical_system.rank * self._n_shooting_nodes
         shooting_matrix = np.zeros((dim, dim), order='F')
-        #TODO: Inefficient, probably needs low level implementation
+        # TODO: Inefficient, probably needs low level implementation
         diag = linalg.block_diag(*(gis[..., i] for i in range(gis.shape[-1])))
         shooting_matrix[:diag.shape[0], :diag.shape[1]] = -diag
         for i in range(self._n_shooting_nodes)[:-1]:
@@ -160,7 +157,7 @@ class MultipleShooting(BaseSolver):
         self._gis = gis
 
     def _compute_jis(self):
-        #TODO: only works in the linear case
+        # TODO: only works in the linear case
         rank = self._dynamical_system.rank
         ntemp = self._n_shooting_nodes - 1
         return np.array(ntemp * (np.identity(rank), )).T
@@ -255,7 +252,7 @@ class MultipleShooting(BaseSolver):
                                       f_columns=f_columns,
                                       abs_tol=self.abs_tol,
                                       rel_tol=self.abs_tol)
-        #TODO: Also compute backwards for better stability / difference to node points
+        # TODO: Also compute backwards for better stability / difference to node points
         for i, node in enumerate(node_solution.time_grid):
             loweridx = idx[i]
             upperidx = idx[i + 1]
