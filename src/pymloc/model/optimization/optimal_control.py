@@ -72,19 +72,26 @@ class LQOptimalControl(LocalOptimizationObject):
             fcal_arr[:self._nn] = fcontr(t)
             return fcal_arr
 
+        variables = StateVariablesContainer(dim)
+        self.variables.link_variable(variables, overwrite=True)
+        dyn_sys = LinearFlowRepresentation(variables, ecal, acal, fcal, dim)
+        free_dae = self.constraint.control_system.free_dae
+
         gamma_0 = np.zeros((dim, dim))
         gamma_f = np.zeros((dim, dim))
         gamma_0[:self._nn, self._nn:] = econtr(self._time.t_0)
         gamma_f[self._nn:2 * self._nn, :self._nn] = np.identity(self._nn)
-        gamma_f[self._nn:2 * self._nn,
-                self._nn:2 * self._nn] = self.objective.final_weight
+        gamma_f[self._nn:2 * self._nn, self._nn:2 * self._nn] = free_dae.eplus(
+            self._time.t_f).T @ self.objective.final_weight
         gamma_rhs = np.zeros((dim, ))
-        gamma_rhs[:self._nn] = self.constraint.initial_value
+        gamma_rhs[:self._nn] = free_dae.e(
+            self._time.t_0) @ self.constraint.initial_value
+        rank = free_dae.rank
+        z_gamma = np.zeros((dim, 2 * rank))
+        z_gamma[:self._nn, :rank] = free_dae.z1(self._time.t_f)
+        z_gamma[self._nn:2 * self._nn, rank:] = free_dae.t2(self._time.t_0)
 
-        variables = StateVariablesContainer(dim)
-        self.variables.link_variable(variables, overwrite=True)
-        dyn_sys = LinearFlowRepresentation(variables, ecal, acal, fcal, dim)
-        bvs = BoundaryValues(gamma_0, gamma_f, gamma_rhs)
+        bvs = BoundaryValues(gamma_0, gamma_f, gamma_rhs, z_gamma)
         flow_prob = LinearFlow(self._time, dyn_sys)
         ivp_prob = InitialValueProblem(self.constraint.initial_value,
                                        self._time, dyn_sys)

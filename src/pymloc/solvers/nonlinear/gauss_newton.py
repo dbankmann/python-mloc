@@ -70,14 +70,14 @@ class GaussNewton(BaseSolver):
         logger.info("Current residual: {}".format(residual))
         logger.info("Current allowed lower level tolerance: {}".format(
             self._get_lower_tolerance(jac, f)))
+        q, r = linalg.qr(jac)
+        x_new = x - linalg.solve(r.T @ r, r.T) @ q.T @ f
         if not self.abort(residual):
-            q, r = linalg.qr(jac)
-            x_new = x - linalg.solve(r.T @ r, r.T) @ q.T @ f
             logger.info("New x value:\n{}\nNew jac value:\n{}".format(
                 x_new, jac))
             return x_new, True
         else:
-            return x, False
+            return x_new, False
 
     def _get_jacobian(self, x):
         if self._jac is None:

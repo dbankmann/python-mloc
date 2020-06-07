@@ -62,7 +62,9 @@ class MultipleShooting(BaseSolver):
         self._stepsize = stepsize
         super().__init__(*args, **kwargs)
 
-    def _init_solver(self, time_interval, flow_abs_tol=None,
+    def _init_solver(self,
+                     time_interval,
+                     flow_abs_tol=None,
                      flow_rel_tol=None):
         self._set_t2s()
         self._set_d_as()

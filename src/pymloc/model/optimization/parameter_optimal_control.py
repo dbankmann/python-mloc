@@ -71,9 +71,10 @@ class ParameterDependentOptimalControl(OptimizationObject):
     def constraint(self):
         return self._constraint
 
-    def get_sensitivities(self, *args, **kwargs):
+    def get_sensitivities(self, **kwargs):
         boundary_value_problem = self.get_bvp()
         n_param = self._parameters.parameters.dimension
+        args = (self.ll_sens_selector, self.ll_sens_selector_shape)
         return BVPSensitivities(boundary_value_problem, n_param, *args,
                                 **kwargs)
 

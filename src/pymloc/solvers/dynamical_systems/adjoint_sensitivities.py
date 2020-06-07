@@ -280,8 +280,8 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
             incr_0 = self._sel_times_projector
 
         xi = self._xi_part @ np.block([[
-            e0.T @ adjoint_solution.solution[..., 0] + incr_0
-        ], [ef.T @ adjoint_solution.solution[..., -1] + incr_f]])
+            e0.T @ adjoint_solution.solution[..., 0] + incr_0.T
+        ], [ef.T @ adjoint_solution.solution[..., -1] + incr_f.T]])
 
         return xi
 

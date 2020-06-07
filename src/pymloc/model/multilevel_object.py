@@ -36,6 +36,8 @@ class MultiLevelObject(ABC):
 
         self._localize_id = None
         self._localize_val = None
+        self.ll_sens_selector = None
+        self.ll_sens_selector_shape = None
 
     @property
     def lower_level_variables(self):
