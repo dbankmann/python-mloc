@@ -22,6 +22,7 @@ from ...model.dynamical_system.representations import LinearFlowRepresentation
 from ...model.sensitivities.boundary_dae import BVPSensitivities
 from ...model.variables.container import StateVariablesContainer
 from ...solver_container import solver_container_factory
+from ..base_solver import TimeSolution
 from .sensitivities import SensInhomProjection
 from .sensitivities import SensitivitiesSolver
 
@@ -31,8 +32,9 @@ logger = logging.getLogger(__name__)
 class ForwardSensitivitiesSolver(SensitivitiesSolver):
     capital_f_default_class = SensInhomProjection
 
-    def _get_forward_system(self, localized_bvp, parameters, f_tilde,
-                            solution):
+    def _get_forward_system(self, localized_bvp: BoundaryValueProblem,
+                            parameters: np.ndarray, f_tilde,
+                            solution: TimeSolution):
         dyn_sys = localized_bvp.dynamical_system
 
         n = self._nn

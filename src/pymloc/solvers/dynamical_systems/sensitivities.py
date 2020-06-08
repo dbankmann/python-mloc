@@ -1,20 +1,28 @@
 import logging
 from abc import ABC
 from abc import abstractmethod
+from typing import Type
 
 import jax
 import numpy as np
 
+from ...model.dynamical_system.boundary_value_problem import BoundaryValueProblem
 from ...model.dynamical_system.representations import LinearFlowRepresentation
 from ...model.sensitivities.boundary_dae import BVPSensitivities
 from ...model.variables.container import StateVariablesContainer
 from ..base_solver import BaseSolver
+from ..base_solver import TimeSolution
 
 logger = logging.getLogger(__name__)
 
 
 class SensitivitiesInhomogeneity(ABC):
-    def __init__(self, sensitivities, localized_bvp, solution, parameter):
+    """Baseclass for the inhomogeneity used in both -- forward and adjoint --
+    sensitivity computations"""
+    @abstractmethod
+    def __init__(self, sensitivities: SensitivitiesSolver,
+                 localized_bvp: BoundaryValueProblem, solution: TimeSolution,
+                 parameter: np.ndarray):
         self._sensitivities = sensitivities
         self._dynamical_system = self._sensitivities.dynamical_system
         self._parameter = parameter
@@ -66,6 +74,7 @@ class SensitivitiesInhomogeneity(ABC):
         return self.capital_f_theta, self.capital_f_tilde, self.eplus_e_theta
 
     def _set_eplus_e_derivatives(self, parameter):
+        """Sets several derivative functions wrt. parameters"""
         dae = self._dynamical_system
 
         epe = dae.p_z
@@ -74,12 +83,15 @@ class SensitivitiesInhomogeneity(ABC):
         parameter = np.atleast_1d(parameter)
 
         def eplus_e_theta(t):
+            "Computes the derivative dp(E^+E)"
             return epe_theta(parameter, t)
 
         def eplus_e_theta_t(t):
+            "Computes the derivative dpdt(E^+E)"
             return epe_theta_t(parameter, t)
 
         def e_ddt_epluse_theta(t):
+            "Computes the quantity E @ dpdt(E^+E)"
             e = dae.e(parameter, t)
             return np.einsum('ij, jkp->ikp', e, eplus_e_theta_t(t))
 
@@ -89,20 +101,24 @@ class SensitivitiesInhomogeneity(ABC):
 
 
 class SensInhomWithTimeDerivative(SensitivitiesInhomogeneity):
-    def capital_f_theta(self, t):
+    "Subclass for case a) described in SensitivitiesSolver class"
+
+    def capital_f_theta(self, t: np.float):
         f_tilde = np.einsum(
             'ijk,j->ik', self.a_dif(t), self._solution(t)) - np.einsum(
                 'ijk,j->ik', self.e_dif(t), self.x_dot(t)) + self.f_dif(t)
         return f_tilde
 
-    def capital_f_tilde(self, t):
+    def capital_f_tilde(self, t: np.float):
         return self.capital_f_theta(t)
 
-    def _complement_f_tilde(self, t):
+    def _complement_f_tilde(self, t: np.float):
         return np.zeros(0)
 
 
 class SensInhomProjection(SensitivitiesInhomogeneity):
+    "Subclass for case b) described in SensitivitiesSolver class"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.capital_f_theta(
@@ -156,6 +172,8 @@ class SensInhomProjection(SensitivitiesInhomogeneity):
 
 
 class SensInhomProjectionNoSubset(SensInhomProjection):
+    "Subclass for case c) described in SensitivitiesSolver class"
+
     def capital_f_theta(self, t):
         f_tilde = -np.einsum('ijk,j->ik', self.e_dif(t),
                              self.x_d_dot(t)) + np.einsum(
@@ -201,11 +219,14 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
         return projector_cal_theta_eval
 
 
-class SensitivitiesSolver(BaseSolver):
+class SensitivitiesSolver(BaseSolver, ABC):
+    """Baseclass for both Sensitivity solvers."""
+    capital_f_default_class: Type[SensitivitiesInhomogeneity]
     _capital_f_classes = (SensInhomWithTimeDerivative, SensInhomProjection,
                           SensInhomProjectionNoSubset)
 
-    def __init__(self, bvp_param, *args, **kwargs):
+    @abstractmethod
+    def __init__(self, bvp_param: BVPSensitivities, *args, **kwargs):
         if not isinstance(bvp_param, BVPSensitivities):
             raise TypeError(bvp_param)
         self._bvp_param = bvp_param

@@ -19,7 +19,7 @@ logger = logging.getLogger()
 
 
 class Solvable(ABC):
-    _auto_generated = False
+    _auto_generated: bool = False
 
     def __init__(self):
         self.__get_class()
@@ -84,7 +84,7 @@ class Solvable(ABC):
 
 
 class VariableSolvable(Solvable, ABC):
-    def __init__(self, variables):
+    def __init__(self, variables: VariablesContainer):
         super().__init__()
         if not isinstance(variables, VariablesContainer):
             raise TypeError(variables)

@@ -9,15 +9,27 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+from __future__ import annotations
+
 import logging
 from abc import ABC
 from abc import abstractmethod
+from typing import Dict
 
 import numpy as np
 
+from ..model.solvable import Solvable
+
+logger = logging.getLogger(__name__)
+
 
 class BaseSolver(ABC):
-    def __init__(self, model=None, abs_tol=1.e-3, rel_tol=1.e-3, max_iter=10):
+    @abstractmethod
+    def __init__(self,
+                 model: Solvable = None,
+                 abs_tol: float = 1.e-3,
+                 rel_tol: float = 1.e-3,
+                 max_iter: int = 10):
         self.abs_tol = abs_tol
         self.model = model
         self.rel_tol = rel_tol
@@ -46,12 +58,12 @@ class BaseSolver(ABC):
     def output(self):
         raise NotImplementedError
 
-    def abort(self, residual):
+    def abort(self, residual: np.ndarray) -> np.float:
         return np.allclose(residual, 0., atol=self.abs_tol, rtol=self.rel_tol)
 
 
 class Solution:
-    def __init__(self, solution, params=None):
+    def __init__(self, solution: np.ndarray, params=None):
         self._solution = solution
         self._solver_params = params
 
@@ -66,9 +78,9 @@ class Solution:
 
 class TimeSolution(Solution):
     def __init__(self,
-                 time_grid,
-                 solution,
-                 interpolation=False,
+                 time_grid: np.ndarray,
+                 solution: np.ndarray,
+                 interpolation: bool = False,
                  dynamic_update=None,
                  params=None):
         super().__init__(solution, params)
@@ -82,7 +94,7 @@ class TimeSolution(Solution):
         self._interpolation = interpolation
         self._dynamic_update = dynamic_update
 
-        self._current_t = dict()
+        self._current_t: Dict[np.float, str] = dict()
 
     @property
     def dynamic_update(self):
@@ -104,7 +116,7 @@ class TimeSolution(Solution):
     def time_grid(self):
         return self._time_grid
 
-    def __call__(self, t):
+    def __call__(self, t: float):
         sol = self._solution_time_dict.get(t)
         if sol is None:
             if self._interpolation:
@@ -152,9 +164,10 @@ class Level:
     __instance = None
 
     @staticmethod
-    def get_instance():
+    def get_instance() -> None:
         if Level.__instance is None:
             Level()
+        assert Level.__instance is not None
         return Level.__instance
 
     def __init__(self):
