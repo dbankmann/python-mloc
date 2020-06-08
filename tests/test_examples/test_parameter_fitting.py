@@ -174,8 +174,10 @@ class TestParameterFitting:
         mloc = MultiLevelOptimalControl(optimizations, variables)
 
         np.set_printoptions(precision=8)
-        mloc.init_solver(abs_tol=1e-3, rel_tol=1e-3)
+        mloc.init_solver(abs_tol=1e-6, rel_tol=1e-6)
+        mloc.highest_opt.local_level_variables.associated_problem.solver_instance.upper_eta = 0.1
         solution = mloc.solve()
+        logger.info("Solution: {}".format(solution.solution))
         assert np.allclose(solution.solution, 2., atol=9e-2)
 
     def test_mloc_solver_at_final(self, pdoc_object, nlsq, variables2):

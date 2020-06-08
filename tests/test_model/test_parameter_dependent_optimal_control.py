@@ -9,6 +9,8 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+import logging
+
 import jax.numpy as jnp
 import numpy as np
 import pytest
@@ -17,6 +19,8 @@ from pymloc.model.dynamical_system.parameter_dae import jac_jax_reshaped
 from pymloc.solvers.dynamical_systems.sensitivities import SensInhomProjection
 
 from .test_optimization.test_optimal_control import compare_sol_ref_sol
+
+logger = logging.getLogger(__name__)
 
 
 def refsol(theta, t0, tf, t, x01):
@@ -77,11 +81,19 @@ class TestPDOCObject:
 
     def test_sensitivities(self, pdoc_object):
         sens = pdoc_object.get_sensitivities()
-        sens.init_solver(abs_tol=1e-2, rel_tol=1e-2)
+        tol = 1e-2
+        logger.info("Initialized with tol = {}".format(tol))
+        sens.init_solver(abs_tol=tol, rel_tol=tol)
         sol = sens.solve(parameters=np.array(2.), tau=1.)
+        import ipdb
+        ipdb.set_trace()
         rsol = refsol(2., 0., 2., 1., 2.)
         ref = np.block([[rsol], [-rsol[0]]])
-        assert np.allclose(ref, sol.solution, rtol=1e-9, atol=0.4)
+        atol = np.linalg.norm(ref - sol(1.))
+        rtol = np.linalg.norm((ref - sol(1.)) / ref)
+        logger.info("Solution tolerances:\nrtol: {}\natol: {}".format(
+            rtol, atol))
+        assert np.allclose(ref, sol(1.), rtol=rtol, atol=tol)
 
     def test_sensitivities_augmented(self, pdoc_object, pdoc_object_2):
         def selector(p):
