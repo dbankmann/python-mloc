@@ -15,8 +15,6 @@ from abc import abstractmethod
 
 import numpy as np
 
-logger = logging.getLogger(__name__)
-
 
 class BaseSolver(ABC):
     def __init__(self, model=None, abs_tol=1.e-3, rel_tol=1.e-3, max_iter=10):
@@ -24,8 +22,14 @@ class BaseSolver(ABC):
         self.model = model
         self.rel_tol = rel_tol
         self.max_iter = max_iter
+        self._solver_params = dict({
+            "abs_tol": abs_tol,
+            "rel_tol": rel_tol,
+            "max_iter": max_iter
+        })
 
     def run(self, *args, **kwargs):
+        logger = logging.getLogger(self.__class__.__module__)
         solver_level.level += 1
         logger.info("Starting solver {}".format(self.__class__.__name__))
         logger.info(
@@ -65,8 +69,9 @@ class TimeSolution(Solution):
                  time_grid,
                  solution,
                  interpolation=False,
-                 dynamic_update=None):
-        super().__init__(solution)
+                 dynamic_update=None,
+                 params=None):
+        super().__init__(solution, params)
         self._time_grid = time_grid
         # TODO: Make more efficient
         solution_time_dict = {

@@ -117,6 +117,12 @@ class LinearParameterDAE(ParameterDAE):
         f = self.f(*args)
         return self._d_a_part(*args) @ f
 
+    def projector_cal(self, *args):
+        p_z = self.p_z(*args)
+        d_a = self.d_a(*args)
+        ident = np.identity(self.nn)
+        return (ident - d_a) @ p_z
+
     def residual(self, hl_vars, loc_vars, ll_vars):
         p, = hl_vars.current_value
         xdot, x, t = loc_vars.current_value

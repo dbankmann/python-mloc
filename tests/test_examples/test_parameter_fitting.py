@@ -193,7 +193,7 @@ class TestParameterFitting:
         mloc.init_solver(abs_tol=1e-1, rel_tol=1e-1)
         variables[0].associated_problem._solver_instance.upper_eta = 1.
         solution = mloc.solve()
-        assert np.allclose(solution.solution, 2., atol=1e-12)
+        assert np.allclose(solution.solution, 2., atol=1e-4)
 
     @pytest.mark.xfail
     def test_mloc_solver_2(self, pdoc_object_2, nlsq_2, variables3):

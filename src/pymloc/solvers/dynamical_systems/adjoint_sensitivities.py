@@ -33,6 +33,8 @@ from .sensitivities import SensInhomProjectionNoSubset
 from .sensitivities import SensitivitiesSolver
 
 logger = logging.getLogger(__name__)
+logging.getLogger("pymloc.solvers.dynamical_systems.pygelda").setLevel(
+    logging.WARNING)
 
 
 class AdjointSensitivitiesSolver(SensitivitiesSolver):
@@ -297,26 +299,28 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         time = self._time_interval
         t0 = time.t_0
         tf = time.t_f
-        temp1 = np.einsum('ijk, j->ik',
-                          self._bvp_param.selector_theta(parameters),
-                          solution(tau))
-        temp2 = -self._capital_fs_instance.temp2_f_a_theta(
-            capital_f_theta, tau)  # TODO: Check sign in thesis!
+        selector = self._bvp_param.selector(parameters)
+        selector_theta = self._bvp_param.selector_theta(parameters)
+
+        summand1 = np.einsum('ijk, j->ik', selector_theta, solution(tau))
+        summand2 = self._capital_fs_instance.summand_2(tau)
+        summand3 = selector @ self._capital_fs_instance.f_a_theta(tau)
         xi = self._get_xi(localized_bvp, adjoint_solution, tau)
-        temp3 = np.einsum(
+        summand4 = np.einsum(
             'ij,ik->jk', xi,
             self._boundary_values.get_inhomogeneity_theta(
                 solution, parameters))
-        temp4 = self._compute_temp4_integral(adjoint_solution, capital_f_tilde,
-                                             tau)
-        temp5 = self._compute_temp5_quant(
+        summand5 = self._compute_temp5_quant(
             localized_bvp, adjoint_solution,
             eplus_e_theta, solution, tf) - self._compute_temp5_quant(
                 localized_bvp, adjoint_solution, eplus_e_theta, solution, t0)
+        summand6 = self._compute_temp4_integral(adjoint_solution,
+                                                capital_f_tilde, tau)
 
-        temp6 = np.einsum('ij, jkp, k->ip', self._sel_times_projector,
-                          eplus_e_theta(tau), solution(tau))
-        return temp1 - temp2 - temp3 - temp4 - temp5 - temp6
+        logger.info("All summands:\n{}".format(
+            np.array(
+                [summand1, summand2, summand3, summand4, summand5, summand6])))
+        return summand1 + summand2 - summand3 - summand4 - summand5 + summand6
 
     def _compute_temp4_integral(self, adjoint_solution, capital_f_tilde, tau):
         time = self._time_interval
@@ -388,9 +392,12 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
                                                 capital_f_tilde, localized_bvp,
                                                 solution, adjoint_solution,
                                                 epluse_theta, parameters, tau)
+        self._solver_params["time_grid"] = adjoint_solution.time_grid
         return sensitivity
 
     def _run(self, parameters=None, tau=None):
+        self.abs_tol /= 6.
+        self.rel_tol /= 6.
         if parameters is None:
             parameters = self._bvp_param.parameters.current_values
         localized_bvp = self._bvp_param.get_sensitivity_bvp(parameters)
@@ -409,7 +416,9 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
             solution[..., i] = self._compute_single_sensitivity(
                 tau_val, localized_bvp, parameters)
 
-        return TimeSolution(tau.grid, solution)
+        self.abs_tol *= 6
+        self.rel_tol *= 6
+        return TimeSolution(tau.grid, solution, params=self._solver_params)
 
 
 solver_container_factory.register_solver(BVPSensitivities,

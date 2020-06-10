@@ -48,6 +48,10 @@ def refsol(theta, t0, tf, t, x01):
     return refsol
 
 
+results = np.zeros((8, 2))
+iresults = np.zeros((8, 2), dtype=np.int)
+
+
 class TestPDOCObject:
     def test_eval_weights(self, pdoc_object):
         random_p, = pdoc_object.parameters.get_random_values()
@@ -79,21 +83,29 @@ class TestPDOCObject:
         jac_val = jac(parameters, 2.)
         assert jac_val is not None
 
-    def test_sensitivities(self, pdoc_object):
+    @pytest.mark.parametrize("tol_exp", range(8))
+    def test_sensitivities(self, pdoc_object, tol_exp):
         sens = pdoc_object.get_sensitivities()
-        tol = 1e-2
+        tol = 10**(-tol_exp)
         logger.info("Initialized with tol = {}".format(tol))
         sens.init_solver(abs_tol=tol, rel_tol=tol)
         sol = sens.solve(parameters=np.array(2.), tau=1.)
-        import ipdb
-        ipdb.set_trace()
         rsol = refsol(2., 0., 2., 1., 2.)
         ref = np.block([[rsol], [-rsol[0]]])
         atol = np.linalg.norm(ref - sol(1.))
-        rtol = np.linalg.norm((ref - sol(1.)) / ref)
-        logger.info("Solution tolerances:\nrtol: {}\natol: {}".format(
-            rtol, atol))
-        assert np.allclose(ref, sol(1.), rtol=rtol, atol=tol)
+        rtol = np.linalg.norm((ref - sol(1.))) / np.linalg.norm(ref)
+        evals = len(sol.params["time_grid"]) - 3
+        logger.info(
+            "Solution tolerances:\nrtol: {}\natol: {}\nadditional_evaluations: {}"
+            .format(rtol, atol, evals))
+        results[tol_exp] = [rtol, atol]
+        iresults[tol_exp] = [-tol_exp, evals]
+        logger.info("Print results:\n{}".format(results))
+        if tol_exp == 7:
+            from tabulate import tabulate
+            logger.info(tabulate(results, tablefmt='latex'))
+            logger.info(tabulate(iresults, tablefmt='latex'))
+        assert np.allclose(ref, sol(1.), rtol=rtol, atol=atol)
 
     def test_sensitivities_augmented(self, pdoc_object, pdoc_object_2):
         def selector(p):
@@ -101,7 +113,9 @@ class TestPDOCObject:
                               [0., 0.]]).T
 
         selector_shape = (2, 5)
-        sens = pdoc_object_2.get_sensitivities(selector, selector_shape)
+        pdoc_object_2.ll_sens_selector = selector
+        pdoc_object_2.ll_sens_selector_shape = selector_shape
+        sens = pdoc_object_2.get_sensitivities()
         atol = 1e-3
         rtol = atol
         sens.init_solver(abs_tol=atol, rel_tol=rtol)
