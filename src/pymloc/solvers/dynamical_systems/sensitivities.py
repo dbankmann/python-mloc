@@ -169,23 +169,31 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
         compl = np.einsum('ij, jkp,k->ip', a, epep, self._solution(t))
         return compl
 
-    def temp2_f_a_theta(self, capital_f_theta, tau):
+    def summand_2(self, tau):
         selector = self._bvp_param.selector(self._parameter)
-        da = self._localized_bvp.dynamical_system.d_a(tau)
         dyn_param = self._bvp_param.dynamical_system
-        da_theta = jax.jacobian(dyn_param.d_a)
+        proj_cal_theta = self.projector_cal_theta(tau)
+        temp = np.einsum('ijp,j...->i...p', proj_cal_theta, self.x_d(tau))
+        return selector @ temp
+
+    def f_a_theta(self, tau):
+        dyn_param = self._bvp_param.dynamical_system
         fa_theta = jax.jacobian(dyn_param.f_a)
-        temp = np.einsum('ijp,j...->i...p', self.eplus_e_theta(tau),
-                         self.solution(tau))
-        temp = temp - np.einsum('ij,j...p->i...p', da, temp)
-        da_th_eval = da_theta(self._parameter, tau)
         fa_th_eval = fa_theta(self._parameter, tau)
-        if da_th_eval.ndim == 2:  # TODO: Homogenize. Better always use arrays; also for float inputs
-            da_th_eval = da_th_eval[..., np.newaxis]
+        if fa_th_eval.ndim == 2:  # TODO: Homogenize. Better always use arrays; also for float inputs
             fa_th_eval = fa_th_eval[..., np.newaxis]
-        temp2 = np.einsum('ijp, j...->i...p', da_th_eval, self.x_d(tau))
-        val = temp - temp2 - fa_th_eval
-        return selector @ val
+
+        return fa_th_eval
+
+    def projector_cal_theta(self, tau):
+        dyn_param = self._bvp_param.dynamical_system
+        projector_cal = dyn_param.projector_cal
+        projector_cal_theta = jax.jacobian(projector_cal)
+        projector_cal_theta_eval = projector_cal_theta(tau)
+        if projector_cal_theta_eval.ndim == 2:  # TODO: Homogenize. Better always use arrays; also for float inputs
+            projector_cal_theta_eval = projector_cal_theta_eval[...,
+                                                                np.newaxis]
+        return projector_cal_theta_eval
 
 
 class SensitivitiesSolver(BaseSolver):
