@@ -250,8 +250,8 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
         projector_cal_theta = jax.jacobian(projector_cal)
         projector_cal_theta_eval = projector_cal_theta(self._parameter, tau)
         if projector_cal_theta_eval.ndim == 2:  # TODO: Homogenize. Better always use arrays; also for float inputs
-            projector_cal_theta_eval = projector_cal_theta_eval[..., np.
-                                                                newaxis]
+            projector_cal_theta_eval = projector_cal_theta_eval[...,
+                                                                np.newaxis]
         return projector_cal_theta_eval
 
 
