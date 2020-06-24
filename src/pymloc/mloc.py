@@ -10,21 +10,29 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 
+from typing import List
+
 from .model import Solvable
+from .model.optimization.optimization import OptimizationObject
+from .model.variables.container import VariablesContainer
 
 
 """
 Definition of multilevel optimization problems as in thesis.
-We assume that the constraint function G_i are equal for all i.
 """
 
 
 class MultiLevelOptimalControl(Solvable):
-    """Driver routine that initializes and handles all the solvers.
+    """Main object for multilevel optimal control object. Initialization and handling of the
+    respective solvers of the optimizations is left to the solver object of
+    MultiLevelOptimalControl.
     """
-    def __init__(self, optimizations, variables):
+    is_bilevel: bool
+
+    def __init__(self, optimizations: List[OptimizationObject],
+                 variables: List[VariablesContainer]):
         self.optimizations = optimizations
-        self.levels = len(self.optimizations)
+        self.levels: int = len(self.optimizations)
         assert self.levels > 0
         self.variables = variables
         assert len(variables) == self.levels

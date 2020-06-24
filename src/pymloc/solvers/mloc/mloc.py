@@ -10,11 +10,18 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 from ...mloc import MultiLevelOptimalControl
+from ...model import Solvable
 from ...solver_container import solver_container_factory
 from .. import BaseSolver
 
 
 class MultiLevelIterativeSolver(BaseSolver):
+    """Main driver solver object for multilevel optimal control problems.
+
+    Its purpose is to initialize all solvers and establish a mapping between variables and optimizations
+    or the corresponding sensitivity computation.
+
+    Also, it runs the solver at the uppermost level."""
     def __init__(self, model, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
         self._opts = model.optimizations
@@ -50,7 +57,7 @@ class MultiLevelIterativeSolver(BaseSolver):
     def _init_upper_level(self):
         self._hopt.init_solver()
 
-    def _init_solver(self, associated_problem):
+    def _init_solver(self, associated_problem: Solvable):
         associated_problem.init_solver(abs_tol=self.abs_tol,
                                        rel_tol=self.rel_tol)
 
