@@ -15,6 +15,9 @@ from . import BaseSolver
 
 
 class NullSolver(BaseSolver):
+    def __init__(self):
+        pass
+
     def _run(self, *args, **kwargs):
         pass
 

@@ -20,7 +20,7 @@ class SensitivitiesInhomogeneity(ABC):
     """Baseclass for the inhomogeneity used in both -- forward and adjoint --
     sensitivity computations"""
     @abstractmethod
-    def __init__(self, sensitivities: SensitivitiesSolver,
+    def __init__(self, sensitivities: 'SensitivitiesSolver',
                  localized_bvp: BoundaryValueProblem, solution: TimeSolution,
                  parameter: np.ndarray):
         self._sensitivities = sensitivities

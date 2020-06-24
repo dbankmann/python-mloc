@@ -12,6 +12,7 @@
 import pytest
 
 from pymloc.mloc import MultiLevelOptimalControl
+from pymloc.model.variables import NullVariables
 from pymloc.solvers import NullSolver
 
 
@@ -20,8 +21,8 @@ class TestCreationOptimization(object):
     @pytest.fixture
     def mloc_object(self, opt):
         optimizations = [opt[0], opt[0]]
-        solvers = [NullSolver(optimizations[0]), NullSolver(optimizations[0])]
-        mloc = MultiLevelOptimalControl(optimizations, solvers)
+        variableslist = [NullVariables(), NullVariables()]
+        mloc = MultiLevelOptimalControl(optimizations, variableslist)
         return mloc
 
     def test_mloc_object(self, mloc_object):
