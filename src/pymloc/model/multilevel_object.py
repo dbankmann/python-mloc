@@ -12,7 +12,12 @@
 import inspect
 import logging
 from abc import ABC
+from typing import Callable
+from typing import Tuple
+from typing import Type
+from typing import Union
 
+from . import Solvable
 from .variables.container import VariablesContainer
 
 logger = logging.getLogger(__name__)
@@ -24,6 +29,8 @@ class MultiLevelObject(ABC):
     levels.
     These can be both, higher level variables and lower level variables.
     """
+    _local_object_class: Type[Solvable]
+
     def __init__(self, lower_level_variables: VariablesContainer,
                  higher_level_variables: VariablesContainer,
                  local_level_variables: VariablesContainer):
@@ -34,10 +41,14 @@ class MultiLevelObject(ABC):
             if not isinstance(container, VariablesContainer):
                 raise TypeError(container)
 
-        self._localize_id = None
-        self._localize_val = None
-        self.ll_sens_selector = None
-        self.ll_sens_selector_shape = None
+        self._localize_id: Union[int, None] = None
+        self._localize_val: Union[float, None] = None
+        self.ll_sens_selector: Union[Callable, None] = None
+        self.ll_sens_selector_shape: Union[Tuple[int], None] = None
+
+    @property
+    def local_object_class(self):
+        return self._local_object_class
 
     @property
     def lower_level_variables(self):
@@ -124,15 +135,19 @@ class MultiLevelObject(ABC):
 
 
 class LocalObjectFactory:
+    "Class for maintaining mappings between global multilevel and localized objects."
+
     def __init__(self):
         self._localizer_objects = {}
 
-    def register_localizer(self, global_object, localizer_object):
+    def register_localizer(self, global_object: Type[MultiLevelObject],
+                           localizer_object):
         if not issubclass(global_object, MultiLevelObject):
             raise ValueError(global_object)
         self._localizer_objects[global_object] = localizer_object
 
-    def get_localized_object(self, global_object, *args, **kwargs):
+    def get_localized_object(self, global_object: Type[MultiLevelObject],
+                             *args, **kwargs):
         localizer_object = self._localizer_objects.get(global_object.__class__)
         if not localizer_object:
             raise ValueError(

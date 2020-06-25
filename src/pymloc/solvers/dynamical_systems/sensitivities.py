@@ -59,15 +59,14 @@ class SensitivitiesInhomogeneity(ABC):
         raise NotImplementedError  # TODO: Implement
 
     @abstractmethod
-    def capital_f_theta(self, t):
+    def capital_f_theta(self, t: float):
         pass
 
     @abstractmethod
-    def _complement_f_tilde(self, t):
+    def _complement_f_tilde(self, t: float):
         pass
 
-    def capital_f_tilde(self, t):
-        return self._complement_f_tilde(t) - self.capital_f_theta(t)
+    def capital_f_tilde(self, t: float):
         return self.capital_f_theta(t) - self._complement_f_tilde(t)
 
     def get_capital_fs(self):
@@ -220,12 +219,11 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
 
 
 class SensitivitiesSolver(BaseSolver, ABC):
-    """Baseclass for both Sensitivity solvers."""
+    """Baseclass for both Sensitivity solvers. The Forward and the Adjoint solver."""
     capital_f_default_class: Type[SensitivitiesInhomogeneity]
     _capital_f_classes = (SensInhomWithTimeDerivative, SensInhomProjection,
                           SensInhomProjectionNoSubset)
 
-    @abstractmethod
     def __init__(self, bvp_param: BVPSensitivities, *args, **kwargs):
         if not isinstance(bvp_param, BVPSensitivities):
             raise TypeError(bvp_param)

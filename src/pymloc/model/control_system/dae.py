@@ -12,12 +12,13 @@
 import jax.numpy as jnp
 import numpy as np
 
+from .. import Solvable
 from ..dynamical_system.dae import LinearDAE
 from ..variables import InputOutputStateVariables
 from ..variables.container import StateVariablesContainer
 
 
-class LinearControlSystem:
+class LinearControlSystem(Solvable):
     def __init__(self, variables, e, a, b, c, d, f):
         self._e = e
         self._a = a

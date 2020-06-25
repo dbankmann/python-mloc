@@ -13,17 +13,20 @@ import logging
 from abc import ABC
 
 from ..model.variables.container import VariablesContainer
+from ..solver_container import SolverContainer
 from ..solver_container import solver_container_factory
 
 logger = logging.getLogger()
 
 
 class Solvable(ABC):
+    """Abstract base class for solvable problems.
+    Needs at least one solver registered via solver_container_factory"""
     _auto_generated: bool = False
 
     def __init__(self):
         self.__get_class()
-        self._available_solvers = solver_container_factory.get_solver_container(
+        self._available_solvers: SolverContainer = solver_container_factory.get_solver_container(
             self)
         self.set_default_solver()
         self._solver_instance = None
@@ -78,7 +81,7 @@ class Solvable(ABC):
 
     def __get_class(self):
         if self._auto_generated:
-            self._class = self._global_object._local_object_class
+            self._class = self._global_object.local_object_class
         else:
             self._class = self.__class__
 

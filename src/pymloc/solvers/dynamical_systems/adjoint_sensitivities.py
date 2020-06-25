@@ -38,9 +38,12 @@ logging.getLogger("pymloc.solvers.dynamical_systems.pygelda").setLevel(
 
 
 class AdjointSensitivitiesSolver(SensitivitiesSolver):
+    """Subsolver for computing sensitivities via the adjoint method.
+    """
     capital_f_default_class = SensInhomProjectionNoSubset
 
-    def _compute_adjoint_boundary_values(self, localized_bvp):
+    def _compute_adjoint_boundary_values(
+            self, localized_bvp: MultipleBoundaryValueProblem):
         rank = localized_bvp.dynamical_system.rank
         t_0 = localized_bvp.time_interval.t_0
         t_f = localized_bvp.time_interval.t_f
@@ -50,7 +53,7 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         gamma_0, gamma_f = localized_bvp.boundary_values.boundary_values.transpose(
             2, 0, 1)
         temp = z_gamma.T @ np.block([-gamma_0 @ t20, gamma_f @ t2f])
-        self._xi_part = z_gamma @ self._get_xi_small_inverse_part(
+        self._xi_part: np.ndarray = z_gamma @ self._get_xi_small_inverse_part(
             temp) @ linalg.block_diag(t20.T, t2f.T)
         small_new_gammas = linalg.null_space(temp)
         gamma_check_0 = z_gamma @ small_new_gammas[:rank, :].T @ t20.T

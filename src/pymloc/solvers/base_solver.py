@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 class BaseSolver(ABC):
+    """Base class for all solvers.
+    Sets common attributes and handles running the solver.
+    """
     @abstractmethod
     def __init__(self,
                  model: Solvable = None,
@@ -63,6 +66,7 @@ class BaseSolver(ABC):
 
 
 class Solution:
+    """Class for the solution of a solver run"""
     def __init__(self, solution: np.ndarray, params=None):
         self._solution = solution
         self._solver_params = params
@@ -77,6 +81,7 @@ class Solution:
 
 
 class TimeSolution(Solution):
+    """Solution subclass that allows for solutions on a time-grid"""
     def __init__(self,
                  time_grid: np.ndarray,
                  solution: np.ndarray,
@@ -161,6 +166,8 @@ class TimeSolution(Solution):
 
 
 class Level:
+    """Class provides the current level of a solver inside the multilevel approach.
+    Used by loggers to filter and format the output."""
     __instance = None
 
     @staticmethod
