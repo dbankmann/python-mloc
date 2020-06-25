@@ -17,8 +17,11 @@ from ..solvable import Solvable
 
 
 class BVPSensitivities(Solvable):
-    def __init__(self, boundary_value_problem: ParameterBoundaryValueProblem,
-                 n_param, selector, selector_shape):
+    def __init__(self,
+                 boundary_value_problem: ParameterBoundaryValueProblem,
+                 n_param: int,
+                 selector=None,
+                 selector_shape=None):
         super().__init__()
         if not isinstance(boundary_value_problem,
                           ParameterBoundaryValueProblem):
