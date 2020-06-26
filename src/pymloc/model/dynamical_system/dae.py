@@ -10,17 +10,23 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 import logging
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import jax.numpy as jnp
 import numpy as np
 
 from ...model.variables.container import StateVariablesContainer
 
+TimeCallable = Callable[[float], np.ndarray]
+
 logger = logging.getLogger(__name__)
 
 
 class DAE:
-    def __init__(self, variables, n):
+    def __init__(self, variables: StateVariablesContainer, n: int):
         if not isinstance(variables, StateVariablesContainer):
             raise TypeError(variables)
         self._variables = variables
@@ -29,10 +35,10 @@ class DAE:
             raise ValueError(
                 "Number of variables is {}, but has to equal number of equations, which is {}"
                 .format(self._nm, n))
-        self._nn = n
-        self._index = None
-        self._current_t = None
-        self._current_rank = None
+        self._nn: int = n
+        self._index: Optional[int] = None
+        self._current_t: Dict[str, float] = dict()
+        self._current_rank: Optional[int] = None
 
     @property
     def nm(self):
@@ -53,13 +59,13 @@ class DAE:
 
 class LinearDAE(DAE):
     def __init__(self,
-                 variables,
-                 e,
-                 a,
-                 f,
-                 n,
-                 der_e=None,
-                 constant_coefficients=True):
+                 variables: StateVariablesContainer,
+                 e: TimeCallable,
+                 a: TimeCallable,
+                 f: TimeCallable,
+                 n: int,
+                 der_e: Optional[TimeCallable] = None,
+                 constant_coefficients: bool = True):
         self._constant_coefficients = constant_coefficients
         super().__init__(variables, n)
         self._e = e
@@ -77,7 +83,7 @@ class LinearDAE(DAE):
         var_shape = self._variables.n_states
         self._current_fhat = np.zeros(var_shape, order='F')
 
-    def reset(self):
+    def reset(self) -> None:
         logger.debug("Current a:\n{}\n{}".format(self._a, self._a(0.)))
         self._current_t = dict()
 
@@ -95,11 +101,11 @@ class LinearDAE(DAE):
             raise ValueError("Rank has to be initialized first.")
         return self._rank
 
-    def init_rank(self):
+    def init_rank(self) -> None:
         # TODO: Choose meaningful timepoint
         self._compute_rank(0.)
 
-    def _compute_rank(self, t):
+    def _compute_rank(self, t: float):
         e = self.e(t)
         rank = jnp.linalg.matrix_rank(e)
         if self._current_rank is not None and rank != self._current_rank:
@@ -108,17 +114,20 @@ class LinearDAE(DAE):
             )
         self._rank = rank
 
-    def der_e(self, t):
+    def der_e(self, t: float) -> np.ndarray:
         return self._der_e(t)
 
-    def _der_e_numerical(self, t):
+    def _der_e_numerical(self, t: float) -> np.ndarray:
         # Use tools like jax
         h = 10e-5
         e_h = self.e(t + h)
         e = self.e(t)
         return (e_h - e) / h
 
-    def _check_current_time(self, t, method, time_varying=False):
+    def _check_current_time(self,
+                            t: float,
+                            method: str,
+                            time_varying: bool = False) -> bool:
         if self._current_t.get(method) is None or (
             (time_varying or not self.constant_coefficients)
                 and self._current_t[method] != t):
@@ -127,75 +136,75 @@ class LinearDAE(DAE):
         else:
             return False
 
-    def e(self, t):
+    def e(self, t: float) -> np.ndarray:
         self._recompute_coefficients(t)
         return self._current_e
 
-    def a(self, t):
+    def a(self, t: float) -> np.ndarray:
         self._recompute_coefficients(t)
         return self._current_a
 
-    def f(self, t):
+    def f(self, t: float) -> np.ndarray:
         self._recompute_inhomogeinity(t)
         return self._current_f
 
-    def eplus(self, t):
+    def eplus(self, t: float) -> np.ndarray:
         self._recompute_quantities(t)
         return self._current_eplus
 
-    def t2(self, t):
+    def t2(self, t: float) -> np.ndarray:
         self._recompute_quantities(t)
         return self._current_ttprime_h[:, :self.rank]
 
-    def t2prime(self, t):
+    def t2prime(self, t: float) -> np.ndarray:
         self._recompute_quantities(t)
         return self._current_ttprime_h[:, self.rank:]
 
-    def z1(self, t):
+    def z1(self, t: float) -> np.ndarray:
         self._recompute_quantities(t)
         return self._current_zzprime[:, :self.rank]
 
-    def z1prime(self, t):
+    def z1prime(self, t: float) -> np.ndarray:
         self._recompute_quantities(t)
         return self._current_zzprime[:, self.rank:]
 
-    def ehat_1(self, t):
+    def ehat_1(self, t: float) -> np.ndarray:
         self._recompute_quantities(t)
         return self._current_ehat[:self.rank, :]
 
-    def ehat_2(self, t):
+    def ehat_2(self, t: float) -> np.ndarray:
         self._recompute_quantities(t)
         return self._current_ehat[self.rank:, :]
 
-    def ahat_1(self, t):
+    def ahat_1(self, t: float) -> np.ndarray:
         self._recompute_quantities(t)
         return self._current_ahat[:self.rank, :]
 
-    def ahat_2(self, t):
+    def ahat_2(self, t: float) -> np.ndarray:
         self._recompute_quantities(t)
         return self._current_ahat[self.rank:, :]
 
-    def fhat_1(self, t):
+    def fhat_1(self, t: float) -> np.ndarray:
         self._recompute_fhat(t)
         return self._current_fhat[:self.rank, ...]
 
-    def fhat_2(self, t):
+    def fhat_2(self, t: float) -> np.ndarray:
         self._recompute_fhat(t)
         return self._current_fhat[self.rank:, ...]
 
-    def _recompute_coefficients(self, t):
+    def _recompute_coefficients(self, t: float) -> None:
         if self._check_current_time(t, "coefficients"):
             e = self._e(t)
             a = self._a(t)
             self._current_e = e
             self._current_a = a
 
-    def _recompute_inhomogeinity(self, t):
+    def _recompute_inhomogeinity(self, t: float) -> None:
         if self._check_current_time(t, "inhomogeinity", time_varying=True):
             f = self._f(t)
             self._current_f = f
 
-    def _recompute_quantities(self, t):
+    def _recompute_quantities(self, t: float) -> None:
         if self._check_current_time(t, "quantities"):
             e = self.e(t)
             a = self.a(t)
@@ -213,7 +222,7 @@ class LinearDAE(DAE):
             self._current_ahat[:rank, :] = ahat_1
             self._current_ahat[rank:, :] = ahat_2
 
-    def _recompute_fhat(self, t):
+    def _recompute_fhat(self, t: float) -> None:
         self._recompute_quantities(t)
         if self._check_current_time(t, "fhat", time_varying=True):
             rank = self.rank
