@@ -1,6 +1,9 @@
 import logging
 from abc import ABC
 from abc import abstractmethod
+from typing import Callable
+from typing import Sequence
+from typing import Tuple
 from typing import Type
 
 import jax
@@ -18,11 +21,23 @@ logger = logging.getLogger(__name__)
 
 class SensitivitiesInhomogeneity(ABC):
     """Baseclass for the inhomogeneity used in both -- forward and adjoint --
-    sensitivity computations"""
+        sensitivity computations.
+
+        Concrete implementations depend on the chosen algorithm.
+    """
     @abstractmethod
     def __init__(self, sensitivities: 'SensitivitiesSolver',
                  localized_bvp: BoundaryValueProblem, solution: TimeSolution,
                  parameter: np.ndarray):
+        """
+
+        Parameters
+        ----------
+        sensitivities: SensitivitiesSolver object blabla
+        localized_bvp: localized BoundaryValueProblem object
+        solution
+        parameter
+        """
         self._sensitivities = sensitivities
         self._dynamical_system = self._sensitivities.dynamical_system
         self._parameter = parameter
@@ -36,26 +51,44 @@ class SensitivitiesInhomogeneity(ABC):
     def solution(self):
         return self._solution
 
-    def a_dif(self, t):
+    def a_dif(self, t: float) -> np.ndarray:
+        r"""
+        Computes the derivative :math:`A_{\theta}(t)`.
+        """
         return self._dynamical_system.a_theta(self._parameter, t)
 
-    def e_dif(self, t):
+    def e_dif(self, t: float) -> np.ndarray:
+        r"""
+        Computes the derivative :math:`E_{\theta}(t)`.
+        """
         return self._dynamical_system.e_theta(self._parameter, t)
 
-    def f_dif(self, t):
+    def f_dif(self, t: float) -> np.ndarray:
+        r"""
+        Computes the derivative :math:`f_{\theta}(t)`.
+        """
         return self._dynamical_system.f_theta(self._parameter, t)
 
-    def x_d(self, t):
+    def x_d(self, t: float) -> np.ndarray:
+        r"""
+        Computes the projected solution :math:`x_{\mathrm d}(t) = E^+E(t)`.
+        """
         return self._localized_bvp.dynamical_system.x_d(t, self._solution(t))
 
-    def x_d_dot(self, t):
+    def x_d_dot(self, t: float) -> np.ndarray:
+        r"""
+        Computes the time derivative :math:`\dot{x}_{\mathrm d}(t)`.
+        """
         fd = self._localized_bvp.dynamical_system.f_d(t)
         ddxd = np.einsum('ij,j->i',
                          self._localized_bvp.dynamical_system.d_d(t),
                          self.x_d(t))
         return ddxd + fd
 
-    def x_dot(self, t):
+    def x_dot(self, t: float) -> np.ndarray:
+        r"""
+        Computes the time derivative :math:`\dot{x}(t)`.
+        """
         raise NotImplementedError  # TODO: Implement
 
     @abstractmethod
@@ -66,14 +99,23 @@ class SensitivitiesInhomogeneity(ABC):
     def _complement_f_tilde(self, t: float):
         pass
 
-    def capital_f_tilde(self, t: float):
+    def capital_f_tilde(self, t: float) -> np.ndarray:
+        r"""
+        Computes the quantity :math:`\tilde F^{(i)}`, where :math:`i` depends on the chosen method.
+        """
         return self.capital_f_theta(t) - self._complement_f_tilde(t)
 
-    def get_capital_fs(self):
+    def get_capital_fs(self) -> Sequence[Callable[[float], np.ndarray]]:
+        """
+        Returns relevant functions for in the computation of the sensitivities
+        """
         return self.capital_f_theta, self.capital_f_tilde, self.eplus_e_theta
 
-    def _set_eplus_e_derivatives(self, parameter):
-        """Sets several derivative functions wrt. parameters"""
+    def _set_eplus_e_derivatives(self, parameter: np.ndarray):
+        """Sets several derivative functions wrt. parameters.
+
+            :meta public:
+        """
         dae = self._dynamical_system
 
         epe = dae.p_z
@@ -81,16 +123,16 @@ class SensitivitiesInhomogeneity(ABC):
         epe_theta_t = jax.jacobian(epe_theta, argnums=1)
         parameter = np.atleast_1d(parameter)
 
-        def eplus_e_theta(t):
-            "Computes the derivative dp(E^+E)"
+        def eplus_e_theta(t: float) -> np.ndarray:
+            r"""Computes the derivative :math:`(E^+E)_{\theta}`"""
             return epe_theta(parameter, t)
 
         def eplus_e_theta_t(t):
-            "Computes the derivative dpdt(E^+E)"
+            r"""Computes the derivative :math:`\frac{\mathrm d}{\mathrm dt}(E^+E)_{\theta}`"""
             return epe_theta_t(parameter, t)
 
         def e_ddt_epluse_theta(t):
-            "Computes the quantity E @ dpdt(E^+E)"
+            r"""Computes the quantity :math:`E\frac{\mathrm d}{\mathrm dt}(E^+E)_{\theta}`"""
             e = dae.e(parameter, t)
             return np.einsum('ij, jkp->ikp', e, eplus_e_theta_t(t))
 
@@ -100,8 +142,7 @@ class SensitivitiesInhomogeneity(ABC):
 
 
 class SensInhomWithTimeDerivative(SensitivitiesInhomogeneity):
-    "Subclass for case a) described in SensitivitiesSolver class"
-
+    """Subclass for case a) described in :class:`.SensitivitiesSolver` class"""
     def capital_f_theta(self, t: np.float):
         f_tilde = np.einsum(
             'ijk,j->ik', self.a_dif(t), self._solution(t)) - np.einsum(
@@ -116,8 +157,7 @@ class SensInhomWithTimeDerivative(SensitivitiesInhomogeneity):
 
 
 class SensInhomProjection(SensitivitiesInhomogeneity):
-    "Subclass for case b) described in SensitivitiesSolver class"
-
+    """Subclass for case b) described in :class:`.SensitivitiesSolver` class"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.capital_f_theta(
@@ -171,8 +211,7 @@ class SensInhomProjection(SensitivitiesInhomogeneity):
 
 
 class SensInhomProjectionNoSubset(SensInhomProjection):
-    "Subclass for case c) described in SensitivitiesSolver class"
-
+    """Subclass for case c) described in :class:`.SensitivitiesSolver` class"""
     def capital_f_theta(self, t):
         f_tilde = -np.einsum('ijk,j->ik', self.e_dif(t),
                              self.x_d_dot(t)) + np.einsum(
@@ -207,7 +246,7 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
 
         return fa_th_eval
 
-    def projector_cal_theta(self, tau):
+    def projector_cal_theta(self, tau: float):
         dyn_param = self._bvp_param.dynamical_system
         projector_cal = dyn_param.projector_cal
         projector_cal_theta = jax.jacobian(projector_cal)
@@ -219,15 +258,24 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
 
 
 class SensitivitiesSolver(BaseSolver, ABC):
-    """Baseclass for both Sensitivity solvers. The Forward and the Adjoint solver."""
-    capital_f_default_class: Type[SensitivitiesInhomogeneity]
-    _capital_f_classes = (SensInhomWithTimeDerivative, SensInhomProjection,
-                          SensInhomProjectionNoSubset)
+    """Baseclass for both Sensitivity solvers. The Forward and the Adjoint solver.
 
+    .. autoattribute:: _capital_f_classes
+    """
+    capital_f_default_class: Type[SensitivitiesInhomogeneity]
+    r"""attribute that must be defined in subclasses to determine the appropriate subclass of :class:`.SensitivitiesInhomogeneity` for the computation of :math:`\tilde F^{(i)}`.
+
+    Available subclasses are listed in :py:attr:`_capital_f_classes`.
+    """
+
+    _capital_f_classes: Sequence[Type[SensitivitiesInhomogeneity]] = (
+        SensInhomWithTimeDerivative, SensInhomProjection,
+        SensInhomProjectionNoSubset)
+    """Hard coded tuple of allowed subclasses"""
     def __init__(self, bvp_param: BVPSensitivities, *args, **kwargs):
         if not isinstance(bvp_param, BVPSensitivities):
             raise TypeError(bvp_param)
-        self._bvp_param = bvp_param
+        self._bvp_param: BVPSensitivities = bvp_param
         self._dynamical_system = bvp_param.dynamical_system
         self._nn = self._dynamical_system.nn
         self._time_interval = self._bvp_param.time_interval
@@ -238,7 +286,7 @@ class SensitivitiesSolver(BaseSolver, ABC):
         super().__init__(*args, **kwargs)
 
     @property
-    def bvp_param(self):
+    def bvp_param(self) -> BVPSensitivities:
         return self._bvp_param
 
     @property
@@ -257,20 +305,26 @@ class SensitivitiesSolver(BaseSolver, ABC):
             raise ValueError(value)
 
     def _get_capital_fs(self, *args, **kwargs):
-        """
-        Computes the capital_f_tilde quantity, that is used in the computation of both, forward and adjoint sensitivities.
+        r"""
+        Computes the capital_f_tilde quantity :math:`\tilde F^{(i)}`, that is used in the computation of both, forward and adjoint sensitivities.
         The concrete result depends on certain conditions.
 
         1. Compute forward or adjoint sensitivities?
+
         2. Regularity level
+
            a) Time derivative of the algebraic variables exist
-           b) dp(E^+E) E^+E = dp(E^+E)
+
+           b) :math:`(E^+E)_{\theta} E^+E = (E^+E)_{\theta}`
+
            c) b) is not fulfilled
 
         The forward approach can only be used in case a) and b).
         The adjoint approach can be used in all cases.
         However, in the most general case c) additional derivatives of the original data are necessary
-        Approach a) has the additional disadvantage that the product E_p @ x_dot may not be available directly from most DAE solvers.
+        Approach a) has the additional disadvantage that the product :math:`E_{\theta}  \dot{x}` may not be available directly from most DAE solvers.
+
+        :meta public:
         """
         fs_instance = self.capital_f_class(self, *args, **kwargs)
         self._capital_fs_instance = fs_instance

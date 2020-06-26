@@ -17,3 +17,5 @@ from . import dynamical_systems
 from . import linear
 from . import mloc
 from . import nonlinear
+from .dynamical_systems.adjoint_sensitivities import AdjointSensitivitiesSolver
+from .dynamical_systems.forward_sensitivities import ForwardSensitivitiesSolver

@@ -10,6 +10,10 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 
+from typing import List
+from typing import Optional
+from typing import Tuple
+
 import numpy as np
 
 from ..solvable import VariableSolvable
@@ -17,18 +21,38 @@ from ..variables.time_function import Time
 
 
 class MultipleBoundaryValues:
-    def __init__(self, boundary_values, inhomogeneity, z_gamma=None):
-        self._nnodes = len(boundary_values)
-        self._boundary_values = self._set_bvs(boundary_values)
-        self._inner_nodes = boundary_values[1:-1]
-        # TODO: Check size of inhomogeneity according to state dimension (vector or matrix)
-        self._inhomogeneity = inhomogeneity
-        self._z_gamma = z_gamma
-        # Get last dimension, if only a vector, set to1
-        self._n_inhom = np.atleast_2d(inhomogeneity.T).T.shape[-1]
+    r"""Base class for all boundary values of a bounday value problem of the form :class:`.MultipleBoundaryValueProblem`
+    The boundary conditions have the general form
 
-    def residual(self, node_values):
+    .. math::
+    	\sum_{i=0}^{q}{\Gamma_{i}x(t_{i})}=\gamma.
+    """
+    def __init__(self,
+                 boundary_coefficients: Tuple[np.ndarray, ...],
+                 inhomogeneity: np.ndarray,
+                 z_gamma: Optional[np.ndarray] = None):
+        """
+
+        Parameters
+        ----------
+        boundary_coefficients: Boundary coefficients for every corresponding boundary node
+        inhomogeneity: righthandside of the boundary condition
+        z_gamma: Selector matrix of the boundary condition
+        """
+        self._nnodes: int = len(boundary_coefficients)
+        self._boundary_values: np.ndarray = self._set_bvs(
+            boundary_coefficients)
+        self._inner_nodes: np.ndarray = boundary_coefficients[1:-1]
+        # TODO: Check size of inhomogeneity according to state dimension (vector or matrix)
+        self._inhomogeneity: np.ndarray = inhomogeneity
+        self._z_gamma: Optional[np.ndarray] = z_gamma
+        # Get last dimension, if only a vector, set to1
+        self._n_inhom: int = np.atleast_2d(inhomogeneity.T).T.shape[-1]
+
+    def residual(self, node_values: np.ndarray) -> np.ndarray:
+        """Computes the residual of the boundary values by inserting the current values at the nodes"""
         # TODO: Make more efficient (save intermediate products)
+        assert isinstance(self._z_gamma, np.ndarray)
         residual = np.einsum(
             'hi,hjk,j...k->i...', self._z_gamma, self._boundary_values,
             node_values) - self._z_gamma.T @ self._inhomogeneity
@@ -58,20 +82,34 @@ class MultipleBoundaryValues:
     def z_gamma(self):
         return self._z_gamma
 
-    def set_z_gamma(self, rank, n):
+    def set_z_gamma(self, rank: int, n: int) -> None:
         if self.z_gamma is None:
             z_gamma = np.zeros((n, rank), order='F')
             z_gamma[:rank, :rank] = np.identity(rank)
             self._z_gamma = z_gamma
 
-    def _set_bvs(self, bvs):
+    def _set_bvs(self, bvs: np.ndarray) -> np.ndarray:
         return np.array(list(bv.T for bv in bvs)).T
 
 
 class BoundaryValues(MultipleBoundaryValues):
-    def __init__(self, boundary_0, boundary_f, inhomogeneity, z_gamma=None):
-        self.boundary_0 = boundary_0
-        self.boundary_f = boundary_f
+    """MultipleBoundaryValues subclass for the case of exactly two boundary values and :math:`q=2`."""
+    def __init__(self,
+                 boundary_0: np.ndarray,
+                 boundary_f: np.ndarray,
+                 inhomogeneity: np.ndarray,
+                 z_gamma=None):
+        """
+
+        Parameters
+        ----------
+        boundary_0: boundary coefficient at :math:`t=t_0`
+        boundary_f: boundary coefficient at :math:`t=t_f`
+        inhomogeneity
+        z_gamma
+        """
+        self.boundary_0: np.ndarray = boundary_0
+        self.boundary_f: np.ndarray = boundary_f
         super().__init__((
             boundary_0,
             boundary_f,
@@ -79,14 +117,16 @@ class BoundaryValues(MultipleBoundaryValues):
 
 
 class MultipleBoundaryValueProblem(VariableSolvable):
-    def __init__(self, time_intervals, dynamical_system, boundary_values):
+    """Baseclass for boundary value problems with multiple boundary values, possibly more than 2."""
+    def __init__(self, time_intervals: Tuple[Time, ...], dynamical_system,
+                 boundary_values: MultipleBoundaryValues):
         self._initial_time = time_intervals[0].t_0
         self._final_time = time_intervals[-1].t_f
         self._time_interval = Time(self._initial_time, self._final_time)
         self._time_intervals = time_intervals
         self._dynamical_system = dynamical_system
-        self.nn = dynamical_system.nn
-        self.nm = dynamical_system.nm
+        self.nn: int = dynamical_system.nn
+        self.nm: int = dynamical_system.nm
         self._boundary_values = boundary_values
         boundary_values.set_z_gamma(dynamical_system.rank, self.nn)
         if len(time_intervals) + 1 != self._boundary_values.nnodes:
@@ -98,14 +138,17 @@ class MultipleBoundaryValueProblem(VariableSolvable):
 
     @property
     def dynamical_system(self):
+        """The corresponding dynamical system of the boundary value problem."""
         return self._dynamical_system
 
     @property
-    def boundary_values(self):
+    def boundary_values(self) -> MultipleBoundaryValues:
+        """The corresponding object storing the boundary condition"""
         return self._boundary_values
 
     @property
-    def time_points(self):
+    def time_points(self) -> List[float]:
+        """A list of time points at which the boundary condition needs evaluations."""
         return self._timepoints
 
     def _get_and_check_nodes(self):
@@ -126,19 +169,23 @@ class MultipleBoundaryValueProblem(VariableSolvable):
         return self._nodes
 
     @property
-    def initial_time(self):
+    def initial_time(self) -> float:
+        """initial time of the boundary value problem"""
         return self._initial_time
 
     @property
-    def final_time(self):
+    def final_time(self) -> float:
+        """final time of the boundary value problem"""
         return self._final_time
 
     @property
-    def time_interval(self):
+    def time_interval(self) -> Time:
+        """Time interval object."""
         return self._time_interval
 
 
 class BoundaryValueProblem(MultipleBoundaryValueProblem):
+    """Subclass for the case of exactly 2 boundary values."""
     def __init__(self, time_interval, dynamical_system,
                  boundary_values: BoundaryValues):
         super().__init__((time_interval, ), dynamical_system, boundary_values)

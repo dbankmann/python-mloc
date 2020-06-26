@@ -20,6 +20,9 @@ import jax.config
 # Models have to be imported before solvers, because of the coupling between them in solver_container_factory
 from . import logger
 from . import model
+from .model import optimization
+from .model import sensitivities
+from .model import variables
 from . import solver_container
 from . import solvers
 from . import level_filter

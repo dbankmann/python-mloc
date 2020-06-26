@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class DAE:
+    """Base class for differential algebraic systems.
+
+    Currently, only the linear case is functional."""
     def __init__(self, variables: StateVariablesContainer, n: int):
         if not isinstance(variables, StateVariablesContainer):
             raise TypeError(variables)
@@ -42,22 +45,50 @@ class DAE:
 
     @property
     def nm(self):
+        """
+        nm: number of variables
+        """
         return self._nm
 
     @property
     def nn(self):
+        """
+        nn: number of equations
+        """
         return self._nn
 
     @property
     def index(self):
+        """
+        index: differentiation index of the DAE.
+
+        Currently only support strangeness-free DAEs, i.e. differentiation index of up to 1.
+        """
         return self._index
 
     @property
     def variables(self):
+        """
+        variables: Variables instance
+        """
         return self._variables
 
 
 class LinearDAE(DAE):
+    r"""Class for linear differential algebraic equations of the form
+
+.. math::
+    E\dot{x} = Ax + f
+
+    or
+
+.. math::
+    E(\frac{\mathrm d}{\mathrm dt}E^+E{x}) = Ax + f.
+
+
+    All coefficients are assumed sufficiently smooth. The system is assumed to be strangeness-free.
+    All quantities according to the definitions in Kunkel, Mehrmann (2006).
+    """
     def __init__(self,
                  variables: StateVariablesContainer,
                  e: TimeCallable,
@@ -66,7 +97,8 @@ class LinearDAE(DAE):
                  n: int,
                  der_e: Optional[TimeCallable] = None,
                  constant_coefficients: bool = True):
-        self._constant_coefficients = constant_coefficients
+        self._constant_coefficients: bool = constant_coefficients
+        """bla"""
         super().__init__(variables, n)
         self._e = e
         self._a = a
@@ -88,7 +120,14 @@ class LinearDAE(DAE):
         self._current_t = dict()
 
     @property
-    def constant_coefficients(self):
+    def constant_coefficients(self) -> bool:
+        """
+        Describes, whether we have a constant (in time) coefficients system.
+
+        If True, many computations are only necessary once.
+
+        :type: bool
+        """
         return self._constant_coefficients
 
     @constant_coefficients.setter
@@ -96,12 +135,18 @@ class LinearDAE(DAE):
         self._constant_coefficients = value
 
     @property
-    def rank(self):
+    def rank(self) -> int:
+        """
+        Describes the rank of the matrix E and is assumed to be constant.
+
+        :type: int
+        """
         if self._rank is None:
             raise ValueError("Rank has to be initialized first.")
         return self._rank
 
     def init_rank(self) -> None:
+        """Computes rank initially."""
         # TODO: Choose meaningful timepoint
         self._compute_rank(0.)
 
@@ -115,6 +160,7 @@ class LinearDAE(DAE):
         self._rank = rank
 
     def der_e(self, t: float) -> np.ndarray:
+        r"""Returns the derivative :math:`\dot{E}(t)`."""
         return self._der_e(t)
 
     def _der_e_numerical(self, t: float) -> np.ndarray:
@@ -137,58 +183,72 @@ class LinearDAE(DAE):
             return False
 
     def e(self, t: float) -> np.ndarray:
+        r"""Computes :math:`E(t)`."""
         self._recompute_coefficients(t)
         return self._current_e
 
     def a(self, t: float) -> np.ndarray:
+        r"""Computes :math:`A(t)`."""
         self._recompute_coefficients(t)
         return self._current_a
 
     def f(self, t: float) -> np.ndarray:
+        r"""Computes :math:`f(t)`."""
         self._recompute_inhomogeinity(t)
         return self._current_f
 
     def eplus(self, t: float) -> np.ndarray:
+        r"""Computes the pseudo inverse :math:`E^+(t)`."""
         self._recompute_quantities(t)
         return self._current_eplus
 
     def t2(self, t: float) -> np.ndarray:
+        r"""Computes the selector matrix :math:`T_2(t)`."""
         self._recompute_quantities(t)
         return self._current_ttprime_h[:, :self.rank]
 
     def t2prime(self, t: float) -> np.ndarray:
+        r"""Computes the selector matrix :math:`T_2^{\prime}(t)`."""
         self._recompute_quantities(t)
         return self._current_ttprime_h[:, self.rank:]
 
     def z1(self, t: float) -> np.ndarray:
+        r"""Computes the selector matrix :math:`Z_1(t)`."""
         self._recompute_quantities(t)
         return self._current_zzprime[:, :self.rank]
 
     def z1prime(self, t: float) -> np.ndarray:
+        r"""Computes the selector matrix :math:`Z_1^{\prime}(t)`."""
         self._recompute_quantities(t)
         return self._current_zzprime[:, self.rank:]
 
     def ehat_1(self, t: float) -> np.ndarray:
+        r"""Computes the reduced system matrix :math:`\hat E_1(t)`."""
         self._recompute_quantities(t)
         return self._current_ehat[:self.rank, :]
 
     def ehat_2(self, t: float) -> np.ndarray:
+        r"""Computes the reduced system matrix :math:`\hat E_2(t)`."""
         self._recompute_quantities(t)
         return self._current_ehat[self.rank:, :]
 
     def ahat_1(self, t: float) -> np.ndarray:
+        r"""Computes the reduced system matrix :math:`\hat A_1(t)`."""
         self._recompute_quantities(t)
         return self._current_ahat[:self.rank, :]
 
     def ahat_2(self, t: float) -> np.ndarray:
+        r"""Computes the reduced system matrix :math:`\hat A_2(t)`."""
         self._recompute_quantities(t)
         return self._current_ahat[self.rank:, :]
 
     def fhat_1(self, t: float) -> np.ndarray:
+        r"""Computes the reduced system matrix :math:`\hat{f}_1(t)`."""
         self._recompute_fhat(t)
         return self._current_fhat[:self.rank, ...]
 
     def fhat_2(self, t: float) -> np.ndarray:
+        r"""Computes the reduced system matrix :math:`\hat{f}_2(t)`."""
         self._recompute_fhat(t)
         return self._current_fhat[self.rank:, ...]
 
