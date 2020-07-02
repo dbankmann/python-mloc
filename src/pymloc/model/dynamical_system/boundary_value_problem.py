@@ -10,11 +10,13 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 
-from typing import List
 from typing import Optional
 from typing import Tuple
 
+import jax.numpy as jnp
 import numpy as np
+
+import pymloc
 
 from ..solvable import VariableSolvable
 from ..variables.time_function import Time
@@ -25,7 +27,7 @@ class MultipleBoundaryValues:
     The boundary conditions have the general form
 
     .. math::
-    	\sum_{i=0}^{q}{\Gamma_{i}x(t_{i})}=\gamma.
+        \sum_{i=0}^{q}{\Gamma_{i}x(t_{i})}=\gamma.
     """
     def __init__(self,
                  boundary_coefficients: Tuple[np.ndarray, ...],
@@ -52,7 +54,7 @@ class MultipleBoundaryValues:
     def residual(self, node_values: np.ndarray) -> np.ndarray:
         """Computes the residual of the boundary values by inserting the current values at the nodes"""
         # TODO: Make more efficient (save intermediate products)
-        assert isinstance(self._z_gamma, np.ndarray)
+        assert isinstance(self._z_gamma, jnp.ndarray)
         residual = np.einsum(
             'hi,hjk,j...k->i...', self._z_gamma, self._boundary_values,
             node_values) - self._z_gamma.T @ self._inhomogeneity
@@ -127,7 +129,7 @@ class MultipleBoundaryValueProblem(VariableSolvable):
         self._dynamical_system = dynamical_system
         self.nn: int = dynamical_system.nn
         self.nm: int = dynamical_system.nm
-        self._boundary_values = boundary_values
+        self.boundary_values = boundary_values
         boundary_values.set_z_gamma(dynamical_system.rank, self.nn)
         if len(time_intervals) + 1 != self._boundary_values.nnodes:
             raise ValueError(
@@ -135,6 +137,11 @@ class MultipleBoundaryValueProblem(VariableSolvable):
         self._nodes = self._get_and_check_nodes()
         variables = dynamical_system.variables
         super().__init__(variables)
+
+    def solve(self, *args, **kwargs) -> 'pymloc.solvers.TimeSolution':
+        retval = super().solve(*args, **kwargs)
+        assert isinstance(retval, pymloc.solvers.TimeSolution)
+        return retval
 
     @property
     def dynamical_system(self):
@@ -146,10 +153,9 @@ class MultipleBoundaryValueProblem(VariableSolvable):
         """The corresponding object storing the boundary condition"""
         return self._boundary_values
 
-    @property
-    def time_points(self) -> List[float]:
-        """A list of time points at which the boundary condition needs evaluations."""
-        return self._timepoints
+    @boundary_values.setter
+    def boundary_values(self, value) -> None:
+        self._boundary_values = value
 
     def _get_and_check_nodes(self):
         nodes = ()
@@ -189,3 +195,12 @@ class BoundaryValueProblem(MultipleBoundaryValueProblem):
     def __init__(self, time_interval, dynamical_system,
                  boundary_values: BoundaryValues):
         super().__init__((time_interval, ), dynamical_system, boundary_values)
+
+    @property
+    def boundary_values(self) -> BoundaryValues:
+        """The corresponding object storing the boundary condition"""
+        return self._boundary_values
+
+    @boundary_values.setter
+    def boundary_values(self, value) -> None:
+        self._boundary_values = value

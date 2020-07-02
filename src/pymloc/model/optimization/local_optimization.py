@@ -29,19 +29,28 @@ class LocalOptimizationObject(VariableSolvable, ABC):
             raise TypeError(loc_objective_obj)
         if not isinstance(loc_constraint_obj, LocalConstraint):
             raise TypeError(loc_constraint_obj)
-        self._objective = loc_objective_obj
-        self._constraint = loc_constraint_obj
+        self.objective = loc_objective_obj
+        self.constraint = loc_constraint_obj
         super().__init__(variables_obj)
 
     @property
-    def objective(self):
+    def objective(self) -> LocalObjective:
         return self._objective
 
+    @objective.setter
+    def objective(self, value):
+        self._objective = value
+
     @property
-    def constraint(self):
+    def constraint(self) -> LocalConstraint:
         return self._constraint
+
+    @constraint.setter
+    def constraint(self, value):
+        self._constraint = value
 
 
 class LocalNullOptimization(LocalOptimizationObject):
+    """Dummy implementation of a local optimization."""
     def residual(self):
         return 0.

@@ -146,8 +146,7 @@ class TestBVPSensitivitiesSolver:
         nodes = np.linspace(time.t_0, time.t_f, 3)
         stepsize = 0.5e-0
         localized_bvp.init_solver(flow_prob, ivp_prob, nodes, stepsize)
-        sens_solver._get_capital_fs(localized_bvp,
-                                    localized_bvp.solve(time)[0],
+        sens_solver._get_capital_fs(localized_bvp, localized_bvp.solve(time),
                                     localized_bvp._localization_parameters[0])
 
     @pytest.mark.parametrize("tau", np.arange(0.1, 1., 0.4))

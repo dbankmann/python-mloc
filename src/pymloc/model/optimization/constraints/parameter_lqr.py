@@ -9,6 +9,8 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+import numpy as np
+
 from ...control_system.parameter_dae import LinearParameterControlSystem
 from ...multilevel_object import local_object_factory
 from ...variables import NullVariables
@@ -18,8 +20,11 @@ from .lqr import LQRConstraint
 
 
 class ParameterLQRConstraint(Constraint):
+    """Constraint implementation for linear quadratic optimal control problems
+    depending on multiple levels of variables."""
     def __init__(self, higher_level_variables, local_level_variables,
-                 parameter_dae_control, initial_value):
+                 parameter_dae_control: LinearParameterControlSystem,
+                 initial_value: np.ndarray):
         lower_level_variables = NullVariables()
         super().__init__(lower_level_variables, higher_level_variables,
                          local_level_variables)
@@ -31,16 +36,16 @@ class ParameterLQRConstraint(Constraint):
         self._initial_value = initial_value
 
     @property
-    def control_system(self):
+    def control_system(self) -> LinearParameterControlSystem:
         return self._dae
 
     @property
-    def initial_value(self):
+    def initial_value(self) -> np.ndarray:
         return self._initial_value
 
 
 class AutomaticLocalLQRConstraint(AutomaticLocalConstraint, LQRConstraint):
-    def __init__(self, global_object, *args, **kwargs):
+    def __init__(self, global_object: ParameterLQRConstraint, *args, **kwargs):
         self._global_object = global_object
         local_control_dae = global_object.control_system.get_localized_object()
         local_initial_value = global_object.localize_method(

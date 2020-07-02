@@ -16,12 +16,13 @@ import numpy as np
 
 
 class Variables(ABC):
-    def __init__(self, dimension):
+    """Baseclass for variables."""
+    def __init__(self, dimension: int):
         self._dimension = dimension
         self._current_values = None
 
     @property
-    def dimension(self):
+    def dimension(self) -> int:
         return self._dimension
 
     @dimension.setter
@@ -29,8 +30,8 @@ class Variables(ABC):
         self._dimension = value
 
     @abstractmethod
-    def current_values(self):
+    def current_values(self) -> np.ndarray:
         pass
 
-    def get_random_values(self):
+    def get_random_values(self) -> np.ndarray:
         return np.random.random(self.dimension)

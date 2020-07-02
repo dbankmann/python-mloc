@@ -88,7 +88,7 @@ class ForwardSensitivitiesSolver(SensitivitiesSolver):
                                   stepsize,
                                   abs_tol=self.abs_tol,
                                   rel_tol=self.rel_tol)
-        solution, node_solution = localized_bvp.solve(time)
+        solution = localized_bvp.solve(time)
         solution.interpolation = True
         f_tilde = self._get_capital_fs(localized_bvp, solution, parameters)[0]
         sensitivity = self._compute_sensitivity(localized_bvp, parameters,

@@ -9,10 +9,20 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+from __future__ import annotations
+
+from typing import Optional
+from typing import Sequence
+from typing import Tuple
+
 import numpy as np
 
+import pymloc
+
+from ...types import ParameterCallable
 from ..multilevel_object import MultiLevelObject
 from ..multilevel_object import local_object_factory
+from ..variables import Time
 from ..variables.container import VariablesContainer
 from .boundary_value_problem import MultipleBoundaryValueProblem
 from .boundary_value_problem import MultipleBoundaryValues
@@ -20,15 +30,16 @@ from .parameter_dae import jac_jax_reshaped
 
 
 class ParameterMultipleBoundaryValues(MultiLevelObject):
+    """Parameter dependent version of :class:`MultipleBoundaryValues`"""
     def __init__(self,
                  lower_level_variables: VariablesContainer,
                  higher_level_variables: VariablesContainer,
                  local_level_variables: VariablesContainer,
-                 boundary_values,
-                 inhomogeneity,
-                 nn,
-                 n_param=1,
-                 z_gamma=None):
+                 boundary_values: Sequence[ParameterCallable],
+                 inhomogeneity: ParameterCallable,
+                 nn: int,
+                 n_param: int = 1,
+                 z_gamma: ParameterCallable = None):
         super().__init__(lower_level_variables, higher_level_variables,
                          local_level_variables)
         self._nnodes = len(boundary_values)
@@ -40,19 +51,25 @@ class ParameterMultipleBoundaryValues(MultiLevelObject):
         self._inhomogeneity_shape = (self._nn, )
 
     @property
-    def boundary_values(self):
+    def boundary_values(self) -> Sequence[ParameterCallable]:
         return self._boundary_values
 
     @property
-    def inhomogeneity(self):
+    def inhomogeneity(self) -> ParameterCallable:
         return self._inhomogeneity
 
     @inhomogeneity.setter
     def inhomogeneity(self, value):
         self._inhomogeneity = value
 
-    def get_inhomogeneity_theta(self, solution, parameters):
-        # Assumes exactly 2-bounds
+    def get_inhomogeneity_theta(self, solution: pymloc.solvers.TimeSolution,
+                                parameters: np.ndarray) -> np.ndarray:
+        """Computes the inhomogeneous part of the boundary conditions after
+        differentiation with respect to parameters.
+
+        Corresponds to the term :math:`\\tilde\\Gamma` in thesis."""
+        # Assumes exactly 2-bounds. TODO: fix
+        assert len(self.boundary_values) == 2
         sol = solution.solution
         inhom_theta = jac_jax_reshaped(self.inhomogeneity,
                                        self._inhomogeneity_shape)(parameters)
@@ -66,13 +83,12 @@ class ParameterMultipleBoundaryValues(MultiLevelObject):
         return inhom_theta
 
     @property
-    def z_gamma(self):
+    def z_gamma(self) -> Optional[ParameterCallable]:
         return self._z_gamma
 
 
 class ParameterMultipleBoundaryValueProblem(MultiLevelObject):
-    """
-    """
+    """Parameter dependent version of :class:`MultipleBoundaryValueProblem`"""
     _local_object_class = MultipleBoundaryValueProblem
 
     def __init__(
@@ -80,9 +96,9 @@ class ParameterMultipleBoundaryValueProblem(MultiLevelObject):
             lower_level_variables: VariablesContainer,
             higher_level_variables: VariablesContainer,
             local_level_variables: VariablesContainer,
-            time_intervals,
+            time_intervals: Tuple[Time, ...],
             dynamical_system,
-            boundary_values,
+            boundary_values: ParameterMultipleBoundaryValues,
     ):
         super().__init__(lower_level_variables, higher_level_variables,
                          local_level_variables)
@@ -97,11 +113,11 @@ class ParameterMultipleBoundaryValueProblem(MultiLevelObject):
         return self._dynamical_system
 
     @property
-    def time_intervals(self):
+    def time_intervals(self) -> Tuple[Time, ...]:
         return self._time_intervals
 
     @property
-    def boundary_values(self):
+    def boundary_values(self) -> ParameterMultipleBoundaryValues:
         return self._boundary_values
 
 
@@ -111,9 +127,9 @@ class ParameterBoundaryValueProblem(ParameterMultipleBoundaryValueProblem):
             lower_level_variables: VariablesContainer,
             higher_level_variables: VariablesContainer,
             local_level_variables: VariablesContainer,
-            time_interval,
+            time_interval: Time,
             dynamical_system,
-            boundary_values,
+            boundary_values: ParameterBoundaryValues,
     ):
         self._time_interval = time_interval
         self._initial_time = time_interval.t_0
@@ -129,18 +145,16 @@ class ParameterBoundaryValueProblem(ParameterMultipleBoundaryValueProblem):
 
 
 class ParameterBoundaryValues(ParameterMultipleBoundaryValues):
-    """
-    """
     def __init__(self,
                  lower_level_variables: VariablesContainer,
                  higher_level_variables: VariablesContainer,
                  local_level_variables: VariablesContainer,
-                 boundary_0,
-                 boundary_f,
-                 inhomogeneity,
-                 nn,
-                 n_param=1,
-                 z_gamma=None):
+                 boundary_0: ParameterCallable,
+                 boundary_f: ParameterCallable,
+                 inhomogeneity: ParameterCallable,
+                 nn: int,
+                 n_param: int = 1,
+                 z_gamma: Optional[ParameterCallable] = None):
         self.boundary_0 = boundary_0
         self.boundary_f = boundary_f
         super().__init__(lower_level_variables, higher_level_variables,
@@ -153,9 +167,10 @@ class ParameterBoundaryValues(ParameterMultipleBoundaryValues):
 class AutomaticMultipleBoundaryValues(MultipleBoundaryValues):
     _auto_generated = True
 
-    def __init__(self, global_object, *args, **kwargs):
+    def __init__(self, global_object: ParameterMultipleBoundaryValues, *args,
+                 **kwargs):
         self._global_object = global_object
-        boundary_values = list(
+        boundary_values = tuple(
             global_object.localize_method(method)
             for method in global_object.boundary_values)
         inhomogeneity = global_object.localize_method(
@@ -174,7 +189,8 @@ local_object_factory.register_localizer(ParameterBoundaryValues,
 class AutomaticMultipleBoundaryValueProblem(MultipleBoundaryValueProblem):
     _auto_generated = True
 
-    def __init__(self, global_object, **kwargs):
+    def __init__(self, global_object: ParameterMultipleBoundaryValueProblem,
+                 *args, **kwargs):
         parameters = kwargs.get('parameters')
         if parameters is not None:
             global_object.higher_level_variables.current_values = parameters

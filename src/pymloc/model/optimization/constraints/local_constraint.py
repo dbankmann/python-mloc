@@ -12,9 +12,11 @@
 
 
 class LocalConstraint:
-    def __init__(self):
+    """"Base class for all local constraint."""
+    def __init__(self, *args, **kwargs):
         pass
 
 
 class LocalNullConstraint(LocalConstraint):
+    """"Dummy class of a local constraint."""
     pass

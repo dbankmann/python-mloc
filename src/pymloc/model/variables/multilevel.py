@@ -11,6 +11,7 @@
 #
 
 
+# TODO: Check if can be removed
 class MultiLevelVariables(object):
     def __init__(self, variables_list=None):
         if variables_list is not None:

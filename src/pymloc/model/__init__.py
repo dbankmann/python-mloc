@@ -9,8 +9,11 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-""" isort:skip_file
-"""
+"""Contains all modules defining models and solvable object, which can be solved by
+running the corresponding solvers."""
 from .solvable import Solvable
 from . import optimization
 from . import variables
+from .multilevel_object import MultiLevelObject
+from . import domains
+"isort:skip_file"

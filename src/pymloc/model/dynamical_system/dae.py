@@ -10,17 +10,14 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 import logging
-from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
 
 import jax.numpy as jnp
 import numpy as np
 
 from ...model.variables.container import StateVariablesContainer
-
-TimeCallable = Callable[[float], np.ndarray]
+from ...types import TimeCallable
 
 logger = logging.getLogger(__name__)
 
@@ -77,13 +74,13 @@ class DAE:
 class LinearDAE(DAE):
     r"""Class for linear differential algebraic equations of the form
 
-.. math::
-    E\dot{x} = Ax + f
+    .. math::
+        E\dot{x} = Ax + f
 
     or
 
-.. math::
-    E(\frac{\mathrm d}{\mathrm dt}E^+E{x}) = Ax + f.
+    .. math::
+        E\frac{\mathrm d}{\mathrm dt}(E^+E{x}) = Ax + f.
 
 
     All coefficients are assumed sufficiently smooth. The system is assumed to be strangeness-free.
@@ -116,6 +113,7 @@ class LinearDAE(DAE):
         self._current_fhat = np.zeros(var_shape, order='F')
 
     def reset(self) -> None:
+        """Resets all DAE objects. Removes stored current values."""
         logger.debug("Current a:\n{}\n{}".format(self._a, self._a(0.)))
         self._current_t = dict()
 

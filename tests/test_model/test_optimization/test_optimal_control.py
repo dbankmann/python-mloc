@@ -44,7 +44,7 @@ def compare_sol_ref_sol(loc_opt, theta=2.):
     loc_opt.init_solver(stepsize=1e-3, abs_tol=1e-12, rel_tol=1e-12)
     time = Time(0., 2.)
     time.grid = np.linspace(0., 2., 100)
-    sol = loc_opt.solve(time, flow_abs_tol=1e-12, flow_rel_tol=1e-12)[0]
+    sol = loc_opt.solve(time, flow_abs_tol=1e-12, flow_rel_tol=1e-12)
     x0 = loc_opt.constraint.initial_value
     for t in sol.time_grid:
         refsol = compute_ref_sol(theta, time, x0, t)
@@ -145,4 +145,4 @@ class TestLQOptimalControl(TestLocalOptimizationObject):
     def test_solve_inhom(self, loc_opt_inhom):
         time = Time(0., 2.)
         sol = super().test_solve2(loc_opt_inhom, time)
-        assert np.allclose(sol[0](0.)[0], 2.4809)
+        assert np.allclose(sol(0.)[0], 2.4809)

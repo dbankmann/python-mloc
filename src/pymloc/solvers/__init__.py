@@ -9,9 +9,8 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-"""isort:skip_file
-"""
-from .base_solver import BaseSolver
+"""Contains solvers, that can be used to obtain solutions of :class:`pymloc.model.Solvable` objects."""
+from .base_solver import BaseSolver, Solution, TimeSolution
 from .null_solver import NullSolver
 from . import dynamical_systems
 from . import linear
@@ -19,3 +18,4 @@ from . import mloc
 from . import nonlinear
 from .dynamical_systems.adjoint_sensitivities import AdjointSensitivitiesSolver
 from .dynamical_systems.forward_sensitivities import ForwardSensitivitiesSolver
+"isort:skip_file"

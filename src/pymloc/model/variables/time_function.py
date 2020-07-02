@@ -11,6 +11,8 @@
 #
 import logging
 from abc import ABC
+from typing import Optional
+from typing import Tuple
 
 import numpy as np
 
@@ -20,17 +22,18 @@ logger = logging.getLogger(__name__)
 
 
 class TimeVariables(Variables, ABC):
-    def __init__(self, dimension, time_domain):
+    """Subclass for variables that depend on time."""
+    def __init__(self, dimension: int, time_domain: np.ndarray):
         self._time_domain = time_domain
         self._current_time = time_domain[0]
         super().__init__(dimension)
 
     @property
-    def time_domain(self):
+    def time_domain(self) -> np.ndarray:
         return self._time_domain
 
     @property
-    def current_values(self):
+    def current_values(self) -> np.ndarray:
         return self._current_values
 
     @current_values.setter
@@ -38,7 +41,7 @@ class TimeVariables(Variables, ABC):
         self._current_values = value
 
     @property
-    def current_time(self):
+    def current_time(self) -> float:
         return self._current_time
 
     @current_time.setter
@@ -46,7 +49,7 @@ class TimeVariables(Variables, ABC):
         self._current_time = value
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple[int, ...]:
         return np.empty(self.dimension).shape
 
 
@@ -66,13 +69,18 @@ class OutputVariables(TimeVariables):
 
 
 class Time(TimeVariables):
-    def __init__(self, t_0, t_f, time_grid=None):
+    """The time variable."""
+    def __init__(self,
+                 t_0: float,
+                 t_f: float,
+                 time_grid: Optional[np.ndarray] = None):
         self.t_0 = t_0
         self.t_f = t_f
         super().__init__(dimension=1, time_domain=[t_0, t_f])
         self.grid = time_grid
 
-    def add_to_grid(self, tp):
+    def add_to_grid(self, tp: float):
+        """Adds a timepoint tp to the current grid."""
         if not self.t_0 < tp < self.t_f:
             raise ValueError(tp)
         elif tp in self.grid:
@@ -82,7 +90,7 @@ class Time(TimeVariables):
         self.grid = np.insert(self.grid, idx, tp)
 
     @property
-    def grid(self):
+    def grid(self) -> np.ndarray:
         return self._grid
 
     @grid.setter
@@ -102,20 +110,23 @@ class Time(TimeVariables):
                     value = np.append(value, self.t_f)
             self._grid = value
 
-    def at_bound(self, tau):
+    def at_bound(self, tau: float) -> bool:
+        """Tests whether tau is at the upper or lower bound of time_grid"""
         return self.at_lower_bound(tau) or self.at_upper_bound(tau)
 
-    def at_upper_bound(self, tau):
+    def at_upper_bound(self, tau: float) -> bool:
+        """Tests whether tau is at the upper bound of time_grid"""
         if self.t_f == tau:
             return True
         else:
             return False
 
-    def at_lower_bound(self, tau):
+    def at_lower_bound(self, tau: float) -> bool:
+        """Tests whether tau is at the lower bound of time_grid"""
         if self.t_0 == tau:
             return True
         else:
             return False
 
-    def get_random_values(self):
+    def get_random_values(self) -> float:
         return np.random.random(1)[0]

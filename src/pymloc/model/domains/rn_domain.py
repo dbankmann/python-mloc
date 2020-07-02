@@ -12,12 +12,17 @@
 from abc import ABC
 from abc import abstractmethod
 
+import numpy as np
+
+from ..variables import VariablesContainer
+
 
 class Domain(ABC):
+    """Baseclass for all domains."""
     def __init__(self):
         pass
 
-    def in_domain(self, variable):
+    def in_domain(self, variable: VariablesContainer) -> bool:
         try:
             for value in variable.current_values:
                 assert self._in_domain_assertion(value)
@@ -27,12 +32,13 @@ class Domain(ABC):
             raise ValueError("Variable value out of domain")
 
     @abstractmethod
-    def _in_domain_assertion(self):
+    def _in_domain_assertion(self, value: np.ndarray) -> bool:
         pass
 
 
 class RNDomain(Domain):
-    def __init__(self, dimension):
+    r"""Domain :math:`\mathbb R^n`"""
+    def __init__(self, dimension: int):
         self._dimension = dimension
 
     def _in_domain_assertion(self, value):

@@ -9,22 +9,46 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+from typing import Tuple
+
 import jax
 import jax.numpy as jnp
 import numpy as np
 
+from ...types import ParameterTimeCallable
 from ..dynamical_system.parameter_dae import LinearParameterDAE
 from ..multilevel_object import MultiLevelObject
 from ..multilevel_object import local_object_factory
 from ..variables import InputOutputStateVariables
+from ..variables import Time
 from ..variables.container import StateVariablesContainer
 from .dae import LinearControlSystem
 
 
 class LinearParameterControlSystem(MultiLevelObject):
+    r"""Class for parameter dependent linear differential algebraic control systems of the form
+
+.. math::
+    E(t, \theta)\dot{x} &= A(t, \theta)x + B(t, \theta)u + f(t, \theta)\\
+    y (t, \theta) &= C(t, \theta)x + D(t, \theta)u
+
+    or (ommiting time and parameter arguments)
+
+.. math::
+    E(\frac{\mathrm d}{\mathrm dt}E^+E{x}) &= Ax +Bu + f\\
+    y  &= Cx + Du.
+
+
+    All coefficients are assumed sufficiently smooth.
+    The system is assumed to be strangeness-free.
+    All quantities according to the definitions in Kunkel, Mehrmann (2006) for every fixed parameter value."""
+
     _local_object_class = LinearControlSystem
 
-    def __init__(self, ll_vars, hl_vars, loc_vars, e, a, b, c, d, f):
+    def __init__(self, ll_vars, hl_vars, loc_vars: InputOutputStateVariables,
+                 e: ParameterTimeCallable, a: ParameterTimeCallable,
+                 b: ParameterTimeCallable, c: ParameterTimeCallable,
+                 d: ParameterTimeCallable, f: ParameterTimeCallable):
         super().__init__(ll_vars, hl_vars, loc_vars)
         self._e = e
         self._a = a
@@ -55,43 +79,55 @@ class LinearParameterControlSystem(MultiLevelObject):
                                             e, a, _hom_f, self._nn)
 
     @property
-    def e(self):
+    def local_level_variables(self) -> InputOutputStateVariables:
+        return self._local_level_variables
+
+    @local_level_variables.setter
+    def local_level_variables(self, value):
+        self._local_level_variables = value
+
+    @property
+    def e(self) -> ParameterTimeCallable:
         return self._e
 
     @property
-    def a(self):
+    def a(self) -> ParameterTimeCallable:
         return self._a
 
     @property
-    def b(self):
+    def b(self) -> ParameterTimeCallable:
         return self._b
 
     @property
-    def c(self):
+    def c(self) -> ParameterTimeCallable:
         return self._c
 
     @property
-    def d(self):
+    def d(self) -> ParameterTimeCallable:
         return self._d
 
     @property
-    def f(self):
+    def f(self) -> ParameterTimeCallable:
         return self._f
 
     @property
-    def time(self):
+    def time(self) -> Time:
         return self._time
 
     @property
-    def augmented_dae(self):
+    def augmented_dae(self) -> LinearParameterDAE:
         return self._augmented_dae
 
     @property
-    def free_dae(self):
+    def free_dae(self) -> LinearParameterDAE:
         return self._free_dae
 
     # TODO: Refactor. Identical to control dae
-    def _get_cal_coeffs(self, e, a, b, c, d, f):
+    def _get_cal_coeffs(self, e: ParameterTimeCallable,
+                        a: ParameterTimeCallable, b: ParameterTimeCallable,
+                        c: ParameterTimeCallable, d: ParameterTimeCallable,
+                        f: ParameterTimeCallable
+                        ) -> Tuple[ParameterTimeCallable, ...]:
         nn = self._nn
         nm = self._nm
 
@@ -114,13 +150,14 @@ class LinearParameterControlSystem(MultiLevelObject):
 
 
 class AutomaticLinearControlSystem(LinearControlSystem):
-    def __init__(self, parameter_dae):
+    def __init__(self, parameter_dae: LinearParameterControlSystem):
         self._parameter_dae = parameter_dae
-        variables = parameter_dae.local_level_variables
+        variables: InputOutputStateVariables = parameter_dae.local_level_variables
         e, a, b, c, d, f = (parameter_dae.localize_method(method)
                             for method in (parameter_dae.e, parameter_dae.a,
                                            parameter_dae.b, parameter_dae.c,
                                            parameter_dae.d, parameter_dae.f))
+
         super().__init__(variables, e, a, b, c, d, f)
 
 

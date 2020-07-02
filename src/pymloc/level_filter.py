@@ -15,6 +15,7 @@ from .solvers.base_solver import solver_level
 
 
 class LevelFilter(logging.Filter):
+    """Adds indentation to every logger according to the current solver hierarchy."""
     def filter(self, record):
         level = solver_level.level
 

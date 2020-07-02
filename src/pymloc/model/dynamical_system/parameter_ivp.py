@@ -11,7 +11,9 @@
 #
 import numpy as np
 
+from ...types import ParameterCallable
 from ..multilevel_object import local_object_factory
+from ..variables import Time
 from .parameter_bvp import AutomaticMultipleBoundaryValueProblem
 from .parameter_bvp import ParameterBoundaryValueProblem
 from .parameter_bvp import ParameterBoundaryValues
@@ -22,17 +24,17 @@ class ParameterInitialValueProblem(ParameterBoundaryValueProblem):
                  ll_vars,
                  hl_vars,
                  loc_vars,
-                 initial_value,
-                 time_interval,
+                 initial_value: ParameterCallable,
+                 time_interval: Time,
                  dynamical_system,
-                 n_param=1):
+                 n_param: int = 1):
         self._initial_value = initial_value
-        n = dynamical_system.nn
+        n: int = dynamical_system.nn
 
-        def boundary_0(p):
+        def boundary_0(p: np.ndarray) -> np.ndarray:
             return np.identity(n)
 
-        def boundary_f(p):
+        def boundary_f(p: np.ndarray) -> np.ndarray:
             return np.zeros((n, n))
 
         bound_values = ParameterBoundaryValues(ll_vars, hl_vars, loc_vars,

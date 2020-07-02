@@ -3,7 +3,6 @@ from abc import ABC
 from abc import abstractmethod
 from typing import Callable
 from typing import Sequence
-from typing import Tuple
 from typing import Type
 
 import jax
@@ -228,7 +227,6 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
 
     def summand_2(self, tau):
         selector = self._bvp_param.selector(self._parameter)
-        dyn_param = self._bvp_param.dynamical_system
         proj_cal_theta = self.projector_cal_theta(tau)
         if self._time_interval.at_bound(tau):
             sol = self._solution(tau)
@@ -252,8 +250,8 @@ class SensInhomProjectionNoSubset(SensInhomProjection):
         projector_cal_theta = jax.jacobian(projector_cal)
         projector_cal_theta_eval = projector_cal_theta(self._parameter, tau)
         if projector_cal_theta_eval.ndim == 2:  # TODO: Homogenize. Better always use arrays; also for float inputs
-            projector_cal_theta_eval = projector_cal_theta_eval[...,
-                                                                np.newaxis]
+            projector_cal_theta_eval = projector_cal_theta_eval[..., np.
+                                                                newaxis]
         return projector_cal_theta_eval
 
 
@@ -263,7 +261,8 @@ class SensitivitiesSolver(BaseSolver, ABC):
     .. autoattribute:: _capital_f_classes
     """
     capital_f_default_class: Type[SensitivitiesInhomogeneity]
-    r"""attribute that must be defined in subclasses to determine the appropriate subclass of :class:`.SensitivitiesInhomogeneity` for the computation of :math:`\tilde F^{(i)}`.
+    r"""attribute that must be defined in subclasses to determine the appropriate subclass of
+    :class:`.SensitivitiesInhomogeneity` for the computation of :math:`\tilde F^{(i)}`.
 
     Available subclasses are listed in :py:attr:`_capital_f_classes`.
     """
@@ -306,7 +305,8 @@ class SensitivitiesSolver(BaseSolver, ABC):
 
     def _get_capital_fs(self, *args, **kwargs):
         r"""
-        Computes the capital_f_tilde quantity :math:`\tilde F^{(i)}`, that is used in the computation of both, forward and adjoint sensitivities.
+        Computes the capital_f_tilde quantity :math:`\tilde F^{(i)}`, that is used in the computation
+        of both, forward and adjoint sensitivities.
         The concrete result depends on certain conditions.
 
         1. Compute forward or adjoint sensitivities?
@@ -322,7 +322,8 @@ class SensitivitiesSolver(BaseSolver, ABC):
         The forward approach can only be used in case a) and b).
         The adjoint approach can be used in all cases.
         However, in the most general case c) additional derivatives of the original data are necessary
-        Approach a) has the additional disadvantage that the product :math:`E_{\theta}  \dot{x}` may not be available directly from most DAE solvers.
+        Approach a) has the additional disadvantage that the product :math:`E_{\theta}  \dot{x}` may not
+        be available directly from most DAE solvers.
 
         :meta public:
         """

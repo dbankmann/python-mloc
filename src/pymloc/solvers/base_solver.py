@@ -14,7 +14,9 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from abc import abstractmethod
+from typing import Callable
 from typing import Dict
+from typing import Optional
 
 import numpy as np
 
@@ -29,7 +31,7 @@ class BaseSolver(ABC):
     """
     @abstractmethod
     def __init__(self,
-                 model: Solvable = None,
+                 model: Optional[Solvable] = None,
                  abs_tol: float = 1.e-3,
                  rel_tol: float = 1.e-3,
                  max_iter: int = 10):
@@ -43,7 +45,15 @@ class BaseSolver(ABC):
             "max_iter": max_iter
         })
 
-    def run(self, *args, **kwargs):
+    @property
+    def model(self) -> Optional[Solvable]:
+        return self._model
+
+    @model.setter
+    def model(self, value):
+        self._model = value
+
+    def run(self, *args, **kwargs) -> Solution:
         logger = logging.getLogger(self.__class__.__module__)
         solver_level.level += 1
         logger.info("Starting solver {}".format(self.__class__.__name__))
@@ -55,7 +65,7 @@ class BaseSolver(ABC):
         return sol
 
     @abstractmethod
-    def _run(self, *args, **kwargs):
+    def _run(self, *args, **kwargs) -> Solution:
         pass
 
     def output(self):
@@ -91,7 +101,7 @@ class TimeSolution(Solution):
         super().__init__(solution, params)
         self._time_grid = time_grid
         # TODO: Make more efficient
-        solution_time_dict = {
+        solution_time_dict: Dict[float, np.ndarray] = {
             time_grid[i]: solution[..., i]
             for i in range(time_grid.size)
         }
@@ -99,10 +109,10 @@ class TimeSolution(Solution):
         self._interpolation = interpolation
         self._dynamic_update = dynamic_update
 
-        self._current_t: Dict[np.float, str] = dict()
+        self._current_t: Dict[str, float] = dict()
 
     @property
-    def dynamic_update(self):
+    def dynamic_update(self) -> Callable:
         return self._dynamic_update
 
     @dynamic_update.setter
@@ -110,7 +120,7 @@ class TimeSolution(Solution):
         self._dynamic_update = value
 
     @property
-    def interpolation(self):
+    def interpolation(self) -> bool:
         return self._interpolation
 
     @interpolation.setter
@@ -118,10 +128,10 @@ class TimeSolution(Solution):
         self._interpolation = value
 
     @property
-    def time_grid(self):
+    def time_grid(self) -> np.ndarray:
         return self._time_grid
 
-    def __call__(self, t: float):
+    def __call__(self, t: float) -> np.ndarray:
         sol = self._solution_time_dict.get(t)
         if sol is None:
             if self._interpolation:
@@ -134,7 +144,7 @@ class TimeSolution(Solution):
         else:
             return sol
 
-    def _add_solution(self, t):
+    def _add_solution(self, t: float) -> None:
         grid = self.time_grid
         idx = grid.searchsorted(t)
         time_grid = np.array([t])
@@ -146,7 +156,7 @@ class TimeSolution(Solution):
         self._solution_time_dict[t] = sol
         return sol
 
-    def _recompute_interpolated(self, t):
+    def _recompute_interpolated(self, t: float) -> None:
         if self._check_current_time(t, "interpolate"):
             logger.warning("Interpolating value...\nPotentially slow!")
             idx = np.searchsorted(self._time_grid,
@@ -154,10 +164,14 @@ class TimeSolution(Solution):
             t0, tf = self._time_grid[idx - 1:idx + 1]
             m = tf - t0
             x = self._solution_time_dict.get
-            sol = x(t0) + (t - t0) * (x(tf) - x(t0)) / m
+            xt0 = x(t0)
+            xtf = x(tf)
+            assert xt0 is not None
+            assert xtf is not None
+            sol = xt0 + (t - t0) * (xtf - xt0) / m
             self._current_interpolated = sol
 
-    def _check_current_time(self, t, method):
+    def _check_current_time(self, t: float, method: str) -> bool:
         if self._current_t.get(method) is None or self._current_t[method] != t:
             self._current_t[method] = t
             return True
@@ -182,7 +196,7 @@ class Level:
             raise Exception("This class is a singleton!")
         else:
             Level.__instance = self
-        self.level = 0
+        self.level: int = 0
 
 
 solver_level = Level()

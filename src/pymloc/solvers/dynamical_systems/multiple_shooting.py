@@ -11,6 +11,7 @@
 #
 import logging
 from copy import deepcopy
+from typing import Optional
 
 import numpy as np
 import scipy.linalg as linalg
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class MultipleShooting(BaseSolver):
+    """Solver for solving MultipleBoundaryValueProblems with a multiple shooting approach."""
     def __init__(self,
                  bvp: MultipleBoundaryValueProblem,
                  flow_problem: LinearFlow,
@@ -63,9 +65,9 @@ class MultipleShooting(BaseSolver):
         super().__init__(*args, **kwargs)
 
     def _init_solver(self,
-                     time_interval,
-                     flow_abs_tol=None,
-                     flow_rel_tol=None):
+                     time_interval: Optional[Time],
+                     flow_abs_tol: Optional[float] = None,
+                     flow_rel_tol: Optional[float] = None) -> None:
         self._set_t2s()
         self._set_d_as()
         self._init_flow_solver()
@@ -79,7 +81,7 @@ class MultipleShooting(BaseSolver):
             time_interval.grid = self._shooting_nodes
         self._solution_time_grid = time_interval.grid
 
-    def _init_flow_solver(self):
+    def _init_flow_solver(self) -> None:
         time_interval = deepcopy(self._bvp.time_interval)
         time_interval.grid = self._shooting_nodes
         stepsize = 1. / (self._n_shooting_nodes - 1)
@@ -92,7 +94,9 @@ class MultipleShooting(BaseSolver):
                                                       rel_tol=self.rel_tol,
                                                       abs_tol=self.abs_tol)
 
-    def _get_homogeneous_flows(self, abs_tol=None, rel_tol=None):
+    def _get_homogeneous_flows(self,
+                               abs_tol: Optional[float] = None,
+                               rel_tol: Optional[float] = None) -> np.ndarray:
         flow_solver = self._flow_solver
         if abs_tol is not None:
             flow_solver.abs_tol = abs_tol
@@ -100,7 +104,7 @@ class MultipleShooting(BaseSolver):
             flow_solver.rel_tol = rel_tol
         return flow_solver.get_homogeneous_flows()
 
-    def _get_shooting_values(self):
+    def _get_shooting_values(self) -> np.ndarray:
         n = self._nn
         rank = self._dynamical_system.rank
         shooting_values = np.zeros((n, n, self._n_shooting_nodes), order='F')
@@ -119,7 +123,7 @@ class MultipleShooting(BaseSolver):
                                         rank * self._n_shooting_nodes,
                                         order='F')
 
-    def _check_shooting_nodes(self):
+    def _check_shooting_nodes(self) -> None:
         for node in self._bvp_nodes:
             if node not in self._shooting_nodes:
                 raise ValueError(
@@ -127,10 +131,10 @@ class MultipleShooting(BaseSolver):
                     .format(self._shooting_nodes, self._bvp_nodes))
 
     @property
-    def bvp(self):
+    def bvp(self) -> MultipleBoundaryValueProblem:
         return self._bvp
 
-    def _get_shooting_matrix(self):
+    def _get_shooting_matrix(self) -> np.ndarray:
         gis = self._gis
         jis = self._compute_jis()
         dim = self._dynamical_system.rank * self._n_shooting_nodes
@@ -146,39 +150,40 @@ class MultipleShooting(BaseSolver):
         shooting_matrix[sizep1:, :] = self._shooting_values
         return shooting_matrix
 
-    def _get_mesh(self, stepsize):
+    def _get_mesh(self, stepsize: float) -> np.ndarray:
         mesh = np.concatenate((np.arange(t_lower, t_upper, stepsize)
                                for t_lower, t_upper in self._intervals))
         return mesh
 
-    def _set_gis(self):
+    def _set_gis(self) -> None:
         t2 = self._t2s
         t2_1 = t2[:, :, 1:]
         t2_e = t2[:, :, :-1]
         gis = np.einsum('jir,jkr,klr->ilr', t2_1, self._flows, t2_e)
-        self._gis = gis
+        self._gis: np.ndarray = gis
 
-    def _compute_jis(self):
+    def _compute_jis(self) -> np.ndarray:
         # TODO: only works in the linear case
         rank = self._dynamical_system.rank
         ntemp = self._n_shooting_nodes - 1
         return np.array(ntemp * (np.identity(rank), )).T
 
-    def _set_t2s(self):
+    def _set_t2s(self) -> None:
         rank = self._dynamical_system.rank
         t2s = np.zeros((self._nn, rank, self._n_shooting_nodes), order='F')
         for i, node in enumerate(self._shooting_nodes):
             t2s[:, :, i] = self._dynamical_system.t2(node)
         self._t2s = t2s
 
-    def _newton_step(self, current_node_states, rhs):
+    def _newton_step(self, current_node_states: np.ndarray,
+                     rhs: np.ndarray) -> np.ndarray:
         shooting_matrix = self._get_shooting_matrix()
         lin_sys_sol = np.linalg.solve(shooting_matrix, rhs)
         next_nodes = current_node_states - restack(lin_sys_sol,
                                                    current_node_states.shape)
         return next_nodes
 
-    def _get_newton_rhs(self, current_node_states):
+    def _get_newton_rhs(self, current_node_states: np.ndarray) -> np.ndarray:
         current_x_d = self._get_x_d(current_node_states)
         boundary_node_states = current_x_d[..., self._boundary_indices]
         bound_res = self._bvp.boundary_values.residual(boundary_node_states)
@@ -188,13 +193,14 @@ class MultipleShooting(BaseSolver):
         res_b = unstack(diffs)
         return np.concatenate((res_b, bound_res), axis=0)
 
-    def _forward_projected_nodes(self, node_values):
+    def _forward_projected_nodes(self, node_values: np.ndarray) -> np.ndarray:
         solver = self._flow_solver
         lift_up = self._get_x_d(node_values)
         sol = solver.forward_solve_differential(lift_up)
         return self._project_values(sol)
 
-    def _get_initial_guess(self, initial_guess=None):
+    def _get_initial_guess(self, initial_guess: Optional[np.ndarray] = None
+                           ) -> np.ndarray:
         shape = self._dynamical_system.variables.shape + (
             self._n_shooting_nodes, )
         if initial_guess is None:
@@ -205,7 +211,7 @@ class MultipleShooting(BaseSolver):
                     initial_guess.shape, shape))
         return initial_guess
 
-    def _project_values(self, values):
+    def _project_values(self, values: np.ndarray) -> np.ndarray:
         return np.einsum('ijr,i...r->j...r', self._t2s, values)
 
     def _run(self,
@@ -213,7 +219,7 @@ class MultipleShooting(BaseSolver):
              initial_guess=None,
              dynamic_update=False,
              *args,
-             **kwargs):
+             **kwargs) -> TimeSolution:
         logger.info('''MultipleShooting solver initialized with\n
         shooting_nodes: {}\n
         boundary_nodes: {}\n'''.format(self._shooting_nodes, self._bvp_nodes))
@@ -236,9 +242,10 @@ class MultipleShooting(BaseSolver):
             time_grid_solution = self._get_intermediate_values(
                 node_solution, self._solution_time_grid)
         self._bvp.variables.current_values = time_grid_solution
-        return time_grid_solution, node_solution
+        return time_grid_solution
 
-    def _get_intermediate_values(self, node_solution, time_grid):
+    def _get_intermediate_values(self, node_solution: np.ndarray,
+                                 time_grid: np.ndarray) -> TimeSolution:
         # this is rather slow, but it's an inherent disadvantage of the shooting approach
         logger.debug(
             "Getting intermediate values on time grid of size: {}".format(
@@ -275,10 +282,10 @@ class MultipleShooting(BaseSolver):
                 x0_times.solution.T).T[..., idx_increment:]
         return TimeSolution(time_grid, solution)
 
-    def _get_x_d(self, projected_values):
+    def _get_x_d(self, projected_values: np.ndarray) -> np.ndarray:
         return np.einsum('ijr,j...r->i...r', self._t2s, projected_values)
 
-    def _set_d_as(self):
+    def _set_d_as(self) -> None:
         das = np.zeros((self._nn, self._nn, self._n_shooting_nodes), order='F')
         shape = self._dynamical_system.variables.shape
         fas = np.zeros((*shape, self._n_shooting_nodes), order='F')

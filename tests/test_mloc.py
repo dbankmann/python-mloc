@@ -13,7 +13,6 @@ import pytest
 
 from pymloc.mloc import MultiLevelOptimalControl
 from pymloc.model.variables import NullVariables
-from pymloc.solvers import NullSolver
 
 
 @pytest.mark.incremental

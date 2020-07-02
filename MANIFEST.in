@@ -14,10 +14,11 @@ include CONTRIBUTING.rst
 include LICENSE
 include README.rst
 
+include licenser_template
+
 exclude .gitmodules
 exclude submodules
 recursive-exclude submodules *
 include tox.ini .travis.yml .appveyor.yml .readthedocs.yml mypy.ini
 
-global-exclude *.py[cod] __pycache__/* *.so *.dylib
-
+global-exclude *.py[cod] __pycache__/* *.so *.dylib .mypy_cache/** _autosummary/* reference/*

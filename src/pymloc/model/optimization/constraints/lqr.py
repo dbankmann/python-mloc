@@ -9,11 +9,16 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+import numpy as np
+
+from ...control_system import dae
 from . import LocalConstraint
 
 
 class LQRConstraint(LocalConstraint):
-    def __init__(self, dae_control, initial_value):
+    """Local constraint implementation for linear quadratic optimal control problems."""
+    def __init__(self, dae_control: dae.LinearControlSystem,
+                 initial_value: np.ndarray):
         self._dae = dae_control
         self._initial_value = initial_value
 
@@ -21,9 +26,9 @@ class LQRConstraint(LocalConstraint):
         self._dae.reset()
 
     @property
-    def control_system(self):
+    def control_system(self) -> dae.LinearControlSystem:
         return self._dae
 
     @property
-    def initial_value(self):
+    def initial_value(self) -> np.ndarray:
         return self._initial_value

@@ -11,12 +11,20 @@
 #
 from abc import ABC
 
+import numpy as np
+
 
 class LocalObjective(ABC):
+    """Base class for all localized objectives."""
+
+    # TODO: Create interface
     def __init__(self):
-        pass
+        ...
+
+    def value(self, solution) -> np.ndarray:
+        ...
 
 
 class LocalNullObjective(LocalObjective):
     def value(self):
-        pass
+        return np.zeros((0))

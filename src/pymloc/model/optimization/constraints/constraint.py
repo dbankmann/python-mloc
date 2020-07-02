@@ -15,11 +15,13 @@ from .local_constraint import LocalConstraint
 
 
 class Constraint(MultiLevelObject):
+    """Baseclass for all optimization constraints depending on multiple levels
+    of variables."""
     pass
 
 
 class AutomaticLocalConstraint(LocalConstraint):
-    def __init__(self, global_constraint, *args, **kwargs):
+    def __init__(self, global_constraint: Constraint, *args, **kwargs):
         self._global_constraint = global_constraint
         super().__init__(*args, **kwargs)
 
@@ -28,10 +30,12 @@ local_object_factory.register_localizer(Constraint, AutomaticLocalConstraint)
 
 
 class NullConstraint(Constraint):
+    """Dummy test constraint."""
     pass
 
 
 class AutomaticLocalNullConstraint(AutomaticLocalConstraint):
+    """Dummy test localized constraint."""
     pass
 
 

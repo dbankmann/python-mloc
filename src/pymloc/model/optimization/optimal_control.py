@@ -10,6 +10,7 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 import logging
+from typing import Tuple
 
 import numpy as np
 
@@ -27,10 +28,37 @@ logger = logging.getLogger()
 
 
 class LQOptimalControl(LocalOptimizationObject):
+    """Linear quadratic regulator optimization problem. Needs LQRObjective
+    and LQRConstraint.
+    """
     def __init__(self, objective: LQRObjective, constraint: LQRConstraint,
-                 variables):
+                 variables: StateVariablesContainer):
         super().__init__(objective, constraint, variables)
         self._init_local()
+
+    @property
+    def variables(self) -> StateVariablesContainer:
+        return self._variables
+
+    @variables.setter
+    def variables(self, value):
+        self._variables = value
+
+    @property
+    def objective(self) -> LQRObjective:
+        return self._objective
+
+    @objective.setter
+    def objective(self, value):
+        self._objective = value
+
+    @property
+    def constraint(self) -> LQRConstraint:
+        return self._constraint
+
+    @constraint.setter
+    def constraint(self, value):
+        self._constraint = value
 
     def _init_local(self):
         self._nm = self.constraint.control_system.nm
@@ -39,10 +67,16 @@ class LQOptimalControl(LocalOptimizationObject):
         self.reset()
 
     def reset(self):
+        """Resets all quantities of objective and constraint."""
         self._objective.reset()
         self._constraint.reset()
 
-    def get_bvp(self):
+    def get_bvp(
+        self
+    ) -> Tuple[BoundaryValueProblem, LinearFlow, InitialValueProblem,
+               np.ndarray]:
+        """Method for obtaining the boundary value problem object corresponding
+        to the necessary conditions for the linear quadratic optimal regulator."""
         self.reset()
         dim = self._nm + 2 * self._nn
         acal_arr = np.zeros((dim, dim))

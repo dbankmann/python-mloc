@@ -106,7 +106,7 @@ class TestMultipleShooting:
         time_interval = ms_object._ivp_problem.time_interval
         erg = ms_object.run(time_interval,
                             flow_abs_tol=1e-6,
-                            flow_rel_tol=1e-6)[1]
+                            flow_rel_tol=1e-6)
         scipy_flow = scipy.linalg.expm(0.5 * ms_object._dynamical_system._a(0))
         iv = ms_object._bvp.initial_value
         comp = np.block([iv, scipy_flow @ iv,
@@ -117,7 +117,7 @@ class TestMultipleShooting:
 
     def test_run_dae(self, ms_object_dae):
         time_interval = ms_object_dae._ivp_problem.time_interval
-        erg = ms_object_dae.run(time_interval)[1]
+        erg = ms_object_dae.run(time_interval)
         assert erg
 
     def test_unstack(self, rand_shape):
@@ -139,6 +139,8 @@ class TestMultipleShooting:
     def test_intermediate(self, ms_object):
         time_interval = ms_object._ivp_problem.time_interval
         time_interval.time_grid = np.linspace(0, 1, 3)
-        erg, node_erg = ms_object.run(time_interval)
+        node_erg = ms_object.run(time_interval, dynamic_update=True)
+        erg = ms_object._get_intermediate_values(node_erg,
+                                                 time_interval.time_grid)
         for node in node_erg.time_grid:
             assert np.allclose(node_erg(node), erg(node), atol=1e-6)

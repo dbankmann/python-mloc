@@ -9,8 +9,16 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+from __future__ import annotations
+
 import logging
 from abc import ABC
+from typing import List
+from typing import Optional
+
+import numpy as np
+
+import pymloc
 
 from .discrete import Parameters
 from .time_function import InputVariables
@@ -23,29 +31,25 @@ logger = logging.getLogger(__name__)
 
 
 class VariablesContainer(ABC):
+    """Base class for all variable containers."""
     def __init__(self):
-        self._variables = []
-        self._n_variables = 0
-        self._linked_variable = None
+        self._variables: List = []
+        self._n_variables: int = 0
+        self._linked_variable: Optional[VariablesContainer] = None
 
     @property
-    def variables(self):
+    def variables(self) -> List[Variables]:
         return self._variables
 
     @property
-    def linked_variable(self):
+    def linked_variable(self) -> Optional[VariablesContainer]:
         return self._linked_variable
 
     @linked_variable.setter
     def linked_variable(self, value):
         self._linked_variable = value
 
-    def link_variable(self, variable, overwrite=False):
-        self.linked_variable = variable
-        if overwrite:
-            variable.time = self._time
-
-    def merge(self, *args):
+    def merge(self, *args: Variables) -> None:
         for variables in args:
             if isinstance(variables, Variables):
                 self._variables.append(variables)
@@ -55,7 +59,7 @@ class VariablesContainer(ABC):
                     "{} must be a subclass of Variables".format(variables))
 
     @property
-    def current_values(self):
+    def current_values(self) -> np.ndarray:
         # TODO: Refactor
         if self._linked_variable is None:
             return self._local_values()
@@ -70,18 +74,19 @@ class VariablesContainer(ABC):
             for value, variable in zip(values, self.variables):
                 variable.current_values = value
 
-    def _local_values(self):
+    def _local_values(self) -> np.ndarray:
         if self._n_variables == 1:
             return self.variables[0].current_values
         else:
             vals = [var.current_values for var in self.variables]
             return vals
 
-    def get_random_values(self):
+    def get_random_values(self) -> np.ndarrray:
         vals = (var.get_random_values() for var in self.variables)
         return vals
 
-    def _check_and_init(self, problem, **kwargs):
+    def _check_and_init(self, problem: 'pymloc.model.Solvable',
+                        **kwargs) -> None:
         if len(kwargs) == 0:
             return
         if not problem.has_solver_instance():
@@ -90,7 +95,7 @@ class VariablesContainer(ABC):
                 .format(problem))
         problem.init_solver(**kwargs)
 
-    def update_values(self, **kwargs):
+    def update_values(self, **kwargs) -> Optional['pymloc.solvers.Solution']:
         try:
             problem = self.associated_problem
         except AttributeError:
@@ -101,14 +106,16 @@ class VariablesContainer(ABC):
             solution = problem.solve()
             return solution
 
-    def get_sensitivities(self, **kwargs):
+        return None
+
+    def get_sensitivities(self, **kwargs) -> np.ndarray:
         sens_obj = self.sensitivity_problem
         self._check_and_init(sens_obj, **kwargs)
         sens = sens_obj.solve()
         return sens
 
     @property
-    def associated_problem(self):
+    def associated_problem(self) -> 'pymloc.model.Solvable':
         return self._associated_problem
 
     @associated_problem.setter
@@ -116,7 +123,7 @@ class VariablesContainer(ABC):
         self._associated_problem = value
 
     @property
-    def sensitivity_problem(self):
+    def sensitivity_problem(self) -> 'pymloc.model.Solvable':
         return self._sensitivity_problem
 
     @sensitivity_problem.setter
@@ -125,6 +132,7 @@ class VariablesContainer(ABC):
 
 
 class UniqueVariablesContainer(VariablesContainer, ABC):
+    """Subclass, with only one variable object in the container"""
     @property
     def current_values(self):
         vals = self.variables[0].current_values
@@ -141,7 +149,12 @@ class UniqueVariablesContainer(VariablesContainer, ABC):
 
 
 class InputOutputStateVariables(VariablesContainer):
-    def __init__(self, n_states, m_inputs, p_outputs, time=Time(0., 1.)):
+    """VariablesContainer with states, inputs and outputs."""
+    def __init__(self,
+                 n_states: int,
+                 m_inputs: int,
+                 p_outputs: int,
+                 time: Time = Time(0., 1.)):
         super().__init__()
         self._n_states = n_states
         self._m_inputs = m_inputs
@@ -155,6 +168,13 @@ class InputOutputStateVariables(VariablesContainer):
 
     def _check_time_domains(self, *args):
         pass
+
+    def link_variable(self,
+                      variable: InputOutputStateVariables,
+                      overwrite: bool = False) -> None:
+        self.linked_variable = variable
+        if overwrite:
+            variable.time = self._time
 
     def _merge(self):
         self.merge(self.states, self.inputs, self.outputs, self.time)
@@ -196,6 +216,7 @@ class InputOutputStateVariables(VariablesContainer):
 
 
 class InputStateVariables(InputOutputStateVariables):
+    """VariablesContainer with states and inputs."""
     def __init__(self, n_states, m_inputs, **kwargs):
         super().__init__(n_states, m_inputs, 0, **kwargs)
         self._outputs = None
@@ -205,6 +226,7 @@ class InputStateVariables(InputOutputStateVariables):
 
 
 class StateVariablesContainer(InputStateVariables):
+    """VariablesContainer with states."""
     def __init__(self, n_states, **kwargs):
         super().__init__(n_states, 0, **kwargs)
         self._inputs = None
@@ -222,11 +244,13 @@ class StateVariablesContainer(InputStateVariables):
 
 
 class ParameterContainer(UniqueVariablesContainer):
-    def __init__(self, p_parameters, domain):
+    """"VariablesContainer for parameters"""
+    def __init__(self, p_parameters: int,
+                 domain: 'pymloc.model.domains.RNDomain'):
         super().__init__()
         self._parameters = Parameters(p_parameters, domain)
         self.merge(self.parameters)
 
     @property
-    def parameters(self):
+    def parameters(self) -> Parameters:
         return self._parameters

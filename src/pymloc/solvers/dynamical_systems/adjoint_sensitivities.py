@@ -64,9 +64,9 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         gamma_check_f = z_gamma @ small_new_gammas[rank:, :].T @ t2f.T
         return gamma_check_0, gamma_check_f
 
-    def _get_adjoint_dae_coeffs(self,
-                                localized_bvp: MultipleBoundaryValueProblem
-                                ) -> Tuple[Callable, Callable]:
+    def _get_adjoint_dae_coeffs(
+        self, localized_bvp: MultipleBoundaryValueProblem
+    ) -> Tuple[Callable, Callable]:
         dyn = localized_bvp.dynamical_system
 
         def e_check(t):
@@ -112,11 +112,10 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
         boundary_values = MultipleBoundaryValues(bounds, gamma, z_gamma_new)
         return boundary_values
 
-    def _get_adjoint_bound_coeffs(self,
-                                  localized_bvp: MultipleBoundaryValueProblem,
-                                  e_check, n: int, t_0: float, t_f: float,
-                                  sel: np.ndarray, tau: float
-                                  ) -> Tuple[List[np.ndarray], np.ndarray]:
+    def _get_adjoint_bound_coeffs(
+            self, localized_bvp: MultipleBoundaryValueProblem, e_check, n: int,
+            t_0: float, t_f: float, sel: np.ndarray,
+            tau: float) -> Tuple[List[np.ndarray], np.ndarray]:
         zeros = np.zeros((n, n))
         time = self._time_interval
         gamma_0, gamma_f = self._compute_adjoint_boundary_values(localized_bvp)
@@ -167,8 +166,8 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
 
     def _get_adjoint_sens_dae_coeffs(
             self, tau: float, e_check: Callable[[float], np.ndarray],
-            a_check: Callable[[float], np.ndarray], nf: int,
-            sel_shape: Sequence[int]
+            a_check: Callable[[float],
+                              np.ndarray], nf: int, sel_shape: Sequence[int]
     ) -> Sequence[Callable[[float], np.ndarray]]:
         def e(t):
             e = e_check(t)
@@ -237,12 +236,10 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
                                 rel_tol=self.rel_tol)
         logger.info("Solving adjoint boundary value problem...")
         adjoint_sol_blown_up = adjoint_bvp.solve(time, dynamic_update=True)
-        coll_sol = self._adjoint_collapse_solution(adjoint_sol_blown_up[0],
-                                                   tau)
+        coll_sol = self._adjoint_collapse_solution(adjoint_sol_blown_up, tau)
 
-        adjoint_sol_blown_up[0](1.31)
         coll_sol.dynamic_update = self._collapsed_dynamic_update(
-            adjoint_sol_blown_up[0], tau)
+            adjoint_sol_blown_up, tau)
 
         return coll_sol
 
@@ -281,16 +278,15 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
             coll_solution[..., idx:] = solution[newn:, ..., idx:]
             return TimeSolution(grid, coll_solution)
 
-    def _get_adjoint_flow_problem(self,
-                                  adjoint_bvp: MultipleBoundaryValueProblem
-                                  ) -> LinearFlow:
+    def _get_adjoint_flow_problem(
+            self, adjoint_bvp: MultipleBoundaryValueProblem) -> LinearFlow:
         time = self._bvp_param.boundary_value_problem.time_interval
         flow_problem = LinearFlow(time, adjoint_bvp.dynamical_system)
         return flow_problem
 
-    def _get_adjoint_ivp_problem(self,
-                                 adjoint_bvp: MultipleBoundaryValueProblem
-                                 ) -> InitialValueProblem:
+    def _get_adjoint_ivp_problem(
+            self,
+            adjoint_bvp: MultipleBoundaryValueProblem) -> InitialValueProblem:
         time = self._bvp_param.boundary_value_problem.time_interval
         initial_value = np.zeros(self._nn)
         ivp = InitialValueProblem(initial_value, time,
@@ -318,16 +314,15 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
 
         return xi
 
-    def _adjoint_integrand(self, t: float, y: np.ndarray,
-                           adjoint_solution: TimeSolution,
-                           f_tilde: Callable[[float], np.ndarray]
-                           ) -> np.ndarray:
+    def _adjoint_integrand(
+            self, t: float, y: np.ndarray, adjoint_solution: TimeSolution,
+            f_tilde: Callable[[float], np.ndarray]) -> np.ndarray:
         adj = adjoint_solution(t)
         f_eval = f_tilde(t)
         return unstack(adj.T @ f_eval)
 
-    def _compute_sensitivity(self,
-                             capital_f_theta: Callable[[float], np.ndarray],
+    def _compute_sensitivity(self, capital_f_theta: Callable[[float],
+                                                             np.ndarray],
                              capital_f_tilde: Callable[[float], np.ndarray],
                              localized_bvp: MultipleBoundaryValueProblem,
                              solution: TimeSolution,
@@ -431,8 +426,8 @@ class AdjointSensitivitiesSolver(SensitivitiesSolver):
                                   stepsize,
                                   abs_tol=self.abs_tol,
                                   rel_tol=self.rel_tol)
-        solution, node_solution = localized_bvp.solve(time,
-                                                      dynamic_update=True)
+
+        solution: TimeSolution = localized_bvp.solve(time, dynamic_update=True)
         capital_f_theta, capital_f_tilde, epluse_theta = self._get_capital_fs(
             localized_bvp, solution, parameters)
         adjoint_solution = self._get_adjoint_solution(localized_bvp,

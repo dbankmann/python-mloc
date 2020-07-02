@@ -13,6 +13,7 @@ from .container import InputOutputStateVariables
 from .container import InputStateVariables
 from .container import ParameterContainer
 from .container import StateVariablesContainer
+from .container import VariablesContainer
 from .discrete import Parameters
 from .null_variables import NullVariables
 from .time_function import InputVariables

@@ -10,6 +10,8 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 import logging
+from typing import List
+from typing import Tuple
 
 import numpy as np
 from scipy.integrate import ode
@@ -28,8 +30,11 @@ class DAEFlow(BaseSolver):
 
 
 class ProjectionDAEFlowIntegrator(DAEFlow):
-    def __init__(self, dae_flow_instance, time_interval, stepsize, *args,
-                 **kwargs):
+    """Subclass for computing the flow of a strangeness-free DAE with the help of the
+    flow representation.
+    """
+    def __init__(self, dae_flow_instance: LinearFlow,
+                 time_interval: np.ndarray, stepsize: float, *args, **kwargs):
         super().__init__(dae_flow_instance, *args, **kwargs)
         self._time_interval = time_interval
         self._stepsize = stepsize
@@ -37,23 +42,23 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
         self._nn = dae_flow_instance._nn
 
     @property
-    def _intervals(self):
+    def _intervals(self) -> List[Tuple[float, float]]:
         time_grid = self._time_interval.grid
         return zip(time_grid, time_grid[1:])
 
     @property
-    def stepsize(self):
+    def stepsize(self) -> float:
         return self._stepsize
 
     @property
-    def time_interval(self):
+    def time_interval(self) -> np.ndarray:
         return self._time_interval
 
     @time_interval.setter
     def time_interval(self, value):
         self._time_interval = value
 
-    def _run(self, x0):
+    def _run(self, x0):  # TODO: fix types
         hom_flow = self.get_homogeneous_flows()
         tf = self.time_interval.t_f
         fds = np.zeros((hom_flow.shape[1:]), order='F')
@@ -66,12 +71,13 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
                       self.time_interval) - self.model.flow_dae.f_a(tf)
         return hom + inhom
 
-    def get_homogeneous_flows(self):
+    def get_homogeneous_flows(self) -> np.ndarray:
+        """Computes the homogeneous flow operator for a linear strangeness-free DAE."""
         if self._homogeneous_flows is None:
             self._save_homogeneous_flows()
         return self._homogeneous_flows
 
-    def _save_homogeneous_flows(self):
+    def _save_homogeneous_flows(self) -> None:
         n = self._nn
         time_grid = self.time_interval.grid
         intervals = self._intervals
@@ -84,7 +90,7 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
             flows[:, :, i] = self.homogeneous_flow(t_i, t_ip1)
         self._homogeneous_flows = flows
 
-    def homogeneous_flow(self, t0, tf):
+    def homogeneous_flow(self, t0: float, tf: float) -> np.ndarray:
         n = self._nn
         flow = np.zeros((n, n), order='F')
 
@@ -104,7 +110,8 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
             flow[:, i] = integrator.integrate(tf)
         return flow
 
-    def forward_solve_differential(self, node_values):
+    def forward_solve_differential(self,
+                                   node_values: np.ndarray) -> np.ndarray:
         end_values = np.zeros(node_values.shape)
         for i, ((tm, tp),
                 values) in enumerate(zip(self._intervals, node_values.T)):
@@ -115,7 +122,8 @@ class ProjectionDAEFlowIntegrator(DAEFlow):
 
         return end_values
 
-    def _forward_solve(self, tm, tp, values):
+    def _forward_solve(self, tm: float, tp: float,
+                       values: np.ndarray) -> np.ndarray:
         shape = values.shape
         values2d = np.atleast_2d(values)
         value_arr = np.empty(values2d.shape).T

@@ -11,16 +11,19 @@
 #
 import numpy as np
 
+import pymloc
+
 from .variables import Variables
 
 
 class Parameters(Variables):
-    def __init__(self, dimension, domain):
+    """Parameter variables."""
+    def __init__(self, dimension, domain: 'pymloc.model.domains.RNDomain'):
         self._domain = domain
         super().__init__(dimension)
 
     @property
-    def current_values(self):
+    def current_values(self) -> np.ndarray:
         vals = self._current_values
         if isinstance(vals, float):
             return np.float(vals)

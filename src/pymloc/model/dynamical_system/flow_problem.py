@@ -10,18 +10,23 @@
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
 from .. import Solvable
+from ..variables import Time
 from .representations import LinearFlowRepresentation
 
 
 class LinearFlow(Solvable):
-    def __init__(self, time_interval, flow_dae):
+    """Defines a LinearFlow Solvable, which has the task of computing the flow operator
+    of a differential algebraic equation.
+    """
+    def __init__(self, time_interval: Time,
+                 flow_dae: LinearFlowRepresentation):
         super().__init__()
         if not isinstance(flow_dae, LinearFlowRepresentation):
             raise TypeError(
                 "dae object needs to be in LinearFlowRepresentation")
         self._flow_dae = flow_dae
-        self._nn = flow_dae._nn
+        self._nn: int = flow_dae._nn
 
     @property
-    def flow_dae(self):
+    def flow_dae(self) -> LinearFlowRepresentation:
         return self._flow_dae

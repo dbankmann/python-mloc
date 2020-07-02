@@ -9,6 +9,9 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
+from typing import Callable
+from typing import Optional
+
 import numpy as np
 from pygelda.pygelda import Gelda
 
@@ -19,17 +22,29 @@ from ..base_solver import TimeSolution
 
 
 class PyGELDA(BaseSolver):
-    def __init__(self, model, stepsize, f_columns=1, **kwargs):
+    """Solver for the python interface pygelda of the FORTRAN solver GELDA."""
+    def __init__(self,
+                 model: InitialValueProblem,
+                 stepsize: float,
+                 f_columns: int = 1,
+                 **kwargs):
+        """
+        Parameters
+        ----------
+        f_columns: Number of columns of the inhomogeneity f. If > 1, this corresponds to
+        matrix valued solutions. This structure is necessary for the computation of solutions
+        to the adjoint_sensitivity system in :class:`.adjoint_sensitivities.AdjointSensitivitiesSolver`
+        """
         super().__init__(model, **kwargs)
         self._f_columns = f_columns
 
-        def edif(t, ndif):
+        def edif(t: float, ndif: int) -> np.ndarray:
             return model.dynamical_system.e(t)
 
-        def adif(t, ndif):
+        def adif(t: float, ndif: int) -> np.ndarray:
             return model.dynamical_system.a(t)
 
-        def ith_fdif(i):
+        def ith_fdif(i: int) -> Callable:
             def fdif(t, ndif):
                 return np.atleast_2d(model.dynamical_system.f(t).T).T[:, i]
 
@@ -43,7 +58,20 @@ class PyGELDA(BaseSolver):
         self.x0 = model.initial_value
         self.stepsize = stepsize
 
-    def _run(self, interval=None, x0=None, stepsize=None, n_steps=None):
+    @property
+    def model(self) -> InitialValueProblem:
+        return self._model
+
+    @model.setter
+    def model(self, value):
+        self._model = value
+
+    def _run(  # type: ignore[override] # TODO: fix types and interface
+            self,
+            interval: Optional[np.ndarray] = None,
+            x0: Optional[np.ndarray] = None,
+            stepsize: Optional[float] = None,
+            n_steps: Optional[int] = None):
         if x0 is None:
             x0 = self.x0
         if stepsize is None:

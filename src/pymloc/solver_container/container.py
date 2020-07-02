@@ -9,33 +9,48 @@
 #
 # License: 3-clause BSD, see https://opensource.org/licenses/BSD-3-Clause
 #
-from collections import namedtuple
+from typing import Callable
+from typing import List
+from typing import NamedTuple
+from typing import Optional
+from typing import Type
+
+import pymloc
+
+
+class SolverTuple(NamedTuple):
+    solver: 'pymloc.solvers.BaseSolver'
+    creator_function: Optional[Callable]
 
 
 class SolverContainer:
-    def __init__(self, problem, solver, default, creator_function):
+    """Container class that holds Solver objects."""
+    def __init__(self, problem: Type['pymloc.model.Solvable'],
+                 solver: 'pymloc.solvers.BaseSolver', default: bool,
+                 creator_function: Optional[Callable]):
         self._problem = problem
-        self._solvers = []
-        self._solver_tuple_obj = namedtuple('SolverTuple',
-                                            'solver creator_function')
+        self._solvers: List[SolverTuple] = []
         self.add_solver(solver, default, creator_function)
 
-    def add_solver(self, solver, default=False, creator_function=None):
-        solver_tuple = self._solver_tuple_obj(solver, creator_function)
+    def add_solver(self,
+                   solver: 'pymloc.solvers.BaseSolver',
+                   default: bool = False,
+                   creator_function: Optional[Callable] = None) -> None:
+        solver_tuple = SolverTuple(solver, creator_function)
         self._solvers.append(solver_tuple)
         if default or not hasattr(self, "_default_solver"):
             self.default_solver = solver_tuple
 
     @property
-    def problem(self):
+    def problem(self) -> Type['pymloc.model.Solvable']:
         return self._problem
 
     @property
-    def solvers(self):
+    def solvers(self) -> List[SolverTuple]:
         return self._solvers
 
     @property
-    def default_solver(self):
+    def default_solver(self) -> SolverTuple:
         return self._default_solver
 
     @default_solver.setter

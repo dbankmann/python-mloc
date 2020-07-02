@@ -15,6 +15,7 @@ from . import BaseSolver
 
 
 class NullSolver(BaseSolver):
+    """Dummy solver for the dummy optimization."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

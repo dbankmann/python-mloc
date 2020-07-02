@@ -21,6 +21,13 @@ class LocalNonLinearLeastSquares(Solvable):
 
 
 class NonLinearLeastSquares(OptimizationObject):
+    r"""Implementation of a nonlinear least squares problem of the form
+
+    .. math::
+    {\sum_{k=1}^q{\|f(t_k, \theta)-\xi_k\|^2}}
+
+    for given data points :math:`(t_k, \xi_k)` and the unknown :math:`\theta \in \R^p`.
+    """
     _local_object_class = LocalNonLinearLeastSquares
 
     def __init__(self, objective_obj, ll_vars, hl_vars, loc_vars):
@@ -30,7 +37,7 @@ class NonLinearLeastSquares(OptimizationObject):
 
 class AutomaticLocalNonLinearLeastSquares(AutomaticLocalOptimizationObject,
                                           LocalNonLinearLeastSquares):
-    pass
+    ...
 
 
 local_object_factory.register_localizer(NonLinearLeastSquares,

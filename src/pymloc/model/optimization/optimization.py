@@ -36,18 +36,26 @@ class OptimizationObject(MultiLevelObject, ABC):
         for variable_container in higher_level_variables, lower_level_variables, local_level_variables:
             if not isinstance(variable_container, VariablesContainer):
                 raise TypeError(variable_container)
-        self._objective_object = objective_obj
-        self._constraint_object = constraint_obj
+        self.objective_object = objective_obj
+        self.constraint_object = constraint_obj
         super().__init__(lower_level_variables, higher_level_variables,
                          local_level_variables)
 
     @property
-    def objective_object(self):
+    def objective_object(self) -> Objective:
         return self._objective_object
 
+    @objective_object.setter
+    def objective_object(self, value):
+        self._objective_object = value
+
     @property
-    def constraint_object(self):
+    def constraint_object(self) -> Constraint:
         return self._constraint_object
+
+    @constraint_object.setter
+    def constraint_object(self, value):
+        self._constraint_object = value
 
     def get_sensitivities(self):
         raise NotImplementedError

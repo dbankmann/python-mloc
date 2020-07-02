@@ -73,3 +73,12 @@ docs/_build
 
 # Mypy Cache
 .mypy_cache/
+
+#autosummary docs
+_autosummary/
+
+#monkeytype
+monkeytype.sqlite3
+
+#rtox.cfg
+.rtox.cfg

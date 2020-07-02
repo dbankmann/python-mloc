@@ -13,6 +13,7 @@ from .container import VariablesContainer
 
 
 class NullVariables(VariablesContainer):
+    """Dummy variables."""
     def __init__(self):
         super().__init__()
         self._associated_problem = None
