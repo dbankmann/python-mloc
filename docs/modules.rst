@@ -1,23 +1,21 @@
 =====
-API
+API Documentation
 =====
 
-.. toctree::
+.. toctree:: API Documentation
 
-  self
-  API
-  pymloc
+
+ The modules are divided into 3 subpackages. :mod:`pymloc.model`, :mod:`pymloc.solvers`, and :mod:`pymloc.solver_container`.
 
 .. currentmodule:: pymloc
 
-.. automodule:: pymloc
+bla
 
-.. autosummary:: API
-                 :toctree: _autosummary
-   :recursive:
 
-   pymloc.model
-   pymloc.solvers
-   pymloc.solver_container
+.. autosummary::
+    :toctree: _autosummary
+    :recursive:
 
-blabla
+    pymloc.model
+    pymloc.solvers
+    pymloc.solver_container

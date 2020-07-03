@@ -82,3 +82,6 @@ monkeytype.sqlite3
 
 #rtox.cfg
 .rtox.cfg
+
+#ipython notebookks
+.ipynb_checkpoints

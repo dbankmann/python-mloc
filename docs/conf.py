@@ -7,6 +7,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
+    'nbsphinx',
+    'sphinxcontrib.bibtex',
     'sphinx.ext.mathjax',
     'sphinx.ext.inheritance_diagram',
 ]
@@ -55,3 +57,8 @@ autodoc_default_options = {
 }
 
 mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+
+latex_docclass = {
+    'howto': 'scrbook',
+    'manual': 'scrbook',
+}

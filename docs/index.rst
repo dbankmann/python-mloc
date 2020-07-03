@@ -1,10 +1,10 @@
 .. toctree::
 
-    self
+    readme
     modules
+    examples
+    zreferences
 
 
 
 .. include:: readme.rst
-
-.. include:: modules.rst

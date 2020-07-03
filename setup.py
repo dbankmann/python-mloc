@@ -16,10 +16,8 @@ from setuptools import setup
 
 
 def read(*names, **kwargs):
-    with io.open(
-        join(dirname(__file__), *names),
-        encoding=kwargs.get('encoding', 'utf8')
-    ) as fh:
+    with io.open(join(dirname(__file__), *names),
+                 encoding=kwargs.get('encoding', 'utf8')) as fh:
         return fh.read()
 
 
@@ -28,10 +26,10 @@ setup(
     version='0.0.1',
     license='BSD-3-Clause',
     description='Library for computing solutions to multilevel optimal control problems with differential-algebraic equations',
-    long_description='%s\n%s' % (
-        re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
-        re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))
-    ),
+    long_description='%s\n%s' %
+    (re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub(
+        '', read('README.rst')),
+     re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))),
     author='Daniel Bankmann',
     author_email='bankmann@math.tu-berlin.de',
     url='https://gitlab.tubit.tu-berlin.de/bankmann91/python-mloc',
@@ -49,10 +47,6 @@ setup(
         'Operating System :: POSIX',
         'Operating System :: Microsoft :: Windows',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
@@ -65,14 +59,17 @@ setup(
         'Private :: Do Not Upload',
     ],
     project_urls={
-        'Documentation': 'https://python-mloc.readthedocs.io/',
-        'Changelog': 'https://python-mloc.readthedocs.io/en/latest/changelog.html',
-        'Issue Tracker': 'https://gitlab.tubit.tu-berlin.de/bankmann91/python-mloc/issues',
+        'Documentation':
+        'https://python-mloc.readthedocs.io/',
+        'Changelog':
+        'https://python-mloc.readthedocs.io/en/latest/changelog.html',
+        'Issue Tracker':
+        'https://gitlab.tubit.tu-berlin.de/bankmann91/python-mloc/issues',
     },
     keywords=[
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
+    python_requires='>=3.7',
     install_requires=[
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
     ],
@@ -84,9 +81,7 @@ setup(
     setup_requires=[
         'pytest-runner',
     ],
-    entry_points={
-        'console_scripts': [
-            'pymloc = pymloc.cli:main',
-        ]
-    },
+    entry_points={'console_scripts': [
+        'pymloc = pymloc.cli:main',
+    ]},
 )

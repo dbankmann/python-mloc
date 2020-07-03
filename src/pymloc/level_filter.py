@@ -16,13 +16,15 @@ from .solvers.base_solver import solver_level
 
 class LevelFilter(logging.Filter):
     """Adds indentation to every logger according to the current solver hierarchy."""
+    max_level = 4
+
     def filter(self, record):
         level = solver_level.level
 
         indents = level * '\t'
         record.msg = record.msg.replace('\n', '\n' + indents)
         record.level_indent = indents
-        return level < 4
+        return level < LevelFilter.max_level
 
 
 rootlogger = logging.getLogger()
