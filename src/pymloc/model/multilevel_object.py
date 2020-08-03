@@ -61,7 +61,6 @@ class MultiLevelObject(ABC):
         higher_level_variables: Container for all variables of higher level
         current_level_variables: Container for all variables of the current level
         """
-
     @property
     def local_object_class(self) -> Any:
         return self._local_object_class
@@ -102,6 +101,7 @@ class MultiLevelObject(ABC):
         level. Updates/computes lower level variables if necessary."""
         id_vars = id(loc_vars)
         if self._localize_id is None or id_vars != self._localize_id:
+            self._localize_id = id_vars
             logger.info("Updating lower level variables...")
             kwargs = self._get_ll_solver_args()
             self._lower_level_variables.update_values(**kwargs)
@@ -121,9 +121,8 @@ class MultiLevelObject(ABC):
     def localize_method(self, method: ParameterCallable) -> np.ndarray:
         ...
 
-    def localize_method(
-        self, method: Optional[Callable]
-    ) -> Optional[Union[np.ndarray, TimeCallable]]:
+    def localize_method(self, method: Optional[Callable]
+                        ) -> Optional[Union[np.ndarray, TimeCallable]]:
         """Localizes given method, by inserting the fixed value of current
         level variables."""
 
