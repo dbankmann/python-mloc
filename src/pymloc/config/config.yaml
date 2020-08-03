@@ -16,6 +16,9 @@ disable_existing_loggers: True
 formatters:
     console:
         class: colorlog.ColoredFormatter
+        format: "%(log_color)s%(level_indent)s%(message)s"
+    console_debug:
+        class: colorlog.ColoredFormatter
         format: "%(log_color)s%(level_indent)s%(message)s (%(filename)s:%(lineno)s)"
 handlers:
     console:
@@ -23,7 +26,11 @@ handlers:
         level: INFO
         formatter: console
         stream: ext://sys.stdout
-
+    console_debug:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: console_debug
+        stream: ext://sys.stdout
 
 root:
     level: INFO
