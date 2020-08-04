@@ -21,11 +21,20 @@ def read(*names, **kwargs):
         return fh.read()
 
 
+try:
+    from setuptools_conda import dist_conda
+    cmdclass = {'dist_conda': dist_conda}
+except ImportError:
+    cmdclass = {}
+
 setup(
+    use_scm_version=True,
+    cmdclass=cmdclass,
     name='pymloc',
     version='0.0.1',
     license='BSD-3-Clause',
-    description='Library for computing solutions to multilevel optimal control problems with differential-algebraic equations',
+    description="""Library for computing solutions to multilevel optimal control
+    problems with differential-algebraic equations""",
     long_description='%s\n%s' %
     (re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub(
         '', read('README.rst')),
