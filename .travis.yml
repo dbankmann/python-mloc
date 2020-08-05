@@ -39,9 +39,9 @@ install:
   - virtualenv --version
   - easy_install --version
   - pip --version
-  - travis_wait 30 tox --version
+  - tox --version
 script:
-  - tox -v
+  - travis_wait 30 tox -v
 after_failure:
   - cat .tox/log/*
   - cat .tox/*/log/*
