@@ -39,7 +39,7 @@ install:
   - virtualenv --version
   - easy_install --version
   - pip --version
-  - tox --version
+  - travis_wait 30 tox --version
 script:
   - tox -v
 after_failure:
