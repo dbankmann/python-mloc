@@ -44,7 +44,7 @@ Installation
 
 You can also install the in-development version with::
 
-    pip install git+ssh://git@gitlab.tubit.tu-berlin.de/bankmann91/python-mloc.git@master
+    pip install git+ssh://git@github.com/dbankmann/python-mloc.git@master
 
 Documentation
 =============
