@@ -9,7 +9,6 @@ API Documentation
 
 .. currentmodule:: pymloc
 
-bla
 
 
 .. autosummary::

@@ -85,3 +85,6 @@ monkeytype.sqlite3
 
 #ipython notebookks
 .ipynb_checkpoints
+.ropeproject
+conda_build
+conda_packages

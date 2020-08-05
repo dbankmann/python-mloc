@@ -12,6 +12,8 @@ As upper level, nonlinear least squares problems are available.
 Purpose
 =======
 
+This software is research code and as such contains proof-of-concept code for illustrating research results. There is absolutely no guarantee for correctness of the results.
+
 The purpose of this software package is to provide an interface for general multilevel optimization and optimal control problems.
 One main goal of this package was to maintain a certain level of abstraction. Implementation of additional features  as new optimization problems or different system classes as, e.g. parameter dependent partial differential equations, parameter dependent partial differential-algebraic equations, or parameter dependent port-Hamiltonian systems should be easily doable without touching the general structure of the code too much.
 This, however, should also increase maintainability of the code.
@@ -38,7 +40,7 @@ Installation
 
 ::
 
-    pip install pymloc
+   conda install -c dbankmann pymloc
 
 You can also install the in-development version with::
 
