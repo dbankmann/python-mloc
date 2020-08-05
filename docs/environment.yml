@@ -9,3 +9,4 @@ dependencies:
   - pymloc
   - sphinx>=1.3
   - nbsphinx
+  - sphinxcontrib-bibtex
