@@ -1,1 +1,2 @@
 sphinx-py3doc-enhanced-theme
+sphinxcontrib.bibtex
