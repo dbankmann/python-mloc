@@ -32,9 +32,9 @@ Overview
     :alt: Coverage Status
     :target: https://coveralls.io/r/dbankmann/python-mloc
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/dbankmann/python-mloc/v0.0.1.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/dbankmann/python-mloc/v0.1.0.svg
     :alt: Commits since latest release
-    :target: https://github.com/dbankmann/python-mloc/compare/v0.0.1...master
+    :target: https://github.com/dbankmann/python-mloc/compare/v0.1.0...master
 
 
 
