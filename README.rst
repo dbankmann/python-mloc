@@ -1,25 +1,15 @@
-.. image:: https://coveralls.io/repos/github/dbankmann/python-mloc/badge.svg?branch=master
-        :target: https://coveralls.io/github/dbankmann/python-mloc?branch=master
-.. image:: https://readthedocs.org/projects/python-mloc/badge/?version=latest
-        :target: https://python-mloc.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
 ========
 Overview
 ========
 
 .. start-badges
 
-.. list-table::
-    :stub-columns: 1
+|docs|
+|travis|
+|coveralls|
+|commits-since|
+|anaconda|
 
-    * - docs
-      - |docs|
-    * - tests
-      - | |travis|
-        | |coveralls|
-    * - package
-      - | |commits-since|
 .. |docs| image:: https://readthedocs.org/projects/python-mloc/badge/?style=flat
     :target: https://readthedocs.org/projects/python-mloc
     :alt: Documentation Status
@@ -35,6 +25,8 @@ Overview
 .. |commits-since| image:: https://img.shields.io/github/commits-since/dbankmann/python-mloc/v0.1.0.svg
     :alt: Commits since latest release
     :target: https://github.com/dbankmann/python-mloc/compare/v0.1.0...master
+
+.. |anaconda| image:: https://anaconda.org/dbankmann/pymloc/badges/installer/conda.svg
 
 
 
