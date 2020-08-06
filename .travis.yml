@@ -45,7 +45,7 @@ install:
   - pip --version
   - tox --version
 script:
-  - travis-wait-enhanced --interval=5m --timeout=30m -- tox -v
+  - travis-wait-enhanced --interval=5m --timeout=120m -- tox -v
 after_failure:
   - cat .tox/log/*
   - cat .tox/*/log/*
