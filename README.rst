@@ -115,3 +115,7 @@ Note, to combine the coverage data from all the tox environments run:
       - ::
 
             PYTEST_ADDOPTS=--cov-append tox
+
+New conda builds can be obtained by installing `conda-build` and `cbillington/setuptools-conda` and running
+
+        python setup.py dist_conda
