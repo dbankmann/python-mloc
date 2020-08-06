@@ -1,3 +1,9 @@
+.. image:: https://coveralls.io/repos/github/dbankmann/python-mloc/badge.svg?branch=master
+        :target: https://coveralls.io/github/dbankmann/python-mloc?branch=master
+.. image:: https://readthedocs.org/projects/python-mloc/badge/?version=latest
+        :target: https://python-mloc.readthedocs.io/en/latest/?badge=latest
+        :alt: Documentation Status
+
 ========
 Overview
 ========
@@ -30,10 +36,14 @@ After initialization of all optimization problems and mapping variable container
 The localized optimizations are *solvable* objects, which are linked to available solvers through a generic interface.
 
 
+License
+========
 
+The code is licensed under
 
+Free software: BSD 3-Clause License
 
-* Free software: BSD 3-Clause License
+The whole package however uses libraries published under GPL3 and thus the whole code is licensed under GPL3.
 
 Installation
 ============
@@ -49,8 +59,12 @@ You can also install the in-development version with::
 Documentation
 =============
 
+Available at `ReadTheDocs <https://python-mloc.readthedocs.io/en/latest/>`.
 
-localhost
+Can locally obtained by running::
+
+        tox -e docs
+
 
 Development
 ===========
