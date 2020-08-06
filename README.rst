@@ -9,6 +9,7 @@ Overview
 |coveralls|
 |commits-since|
 |anaconda|
+|zenodo|
 
 .. |docs| image:: https://readthedocs.org/projects/python-mloc/badge/?style=flat
     :target: https://readthedocs.org/projects/python-mloc
@@ -28,6 +29,8 @@ Overview
 
 .. |anaconda| image:: https://anaconda.org/dbankmann/pymloc/badges/installer/conda.svg
 
+.. |zenodo| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3971868.svg
+   :target: https://doi.org/10.5281/zenodo.3971868
 
 
 .. end-badges
