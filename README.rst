@@ -7,9 +7,11 @@ Overview
 |docs|
 |travis|
 |coveralls|
+|scrutinizer|
 |commits-since|
 |anaconda|
 |zenodo|
+
 
 .. |docs| image:: https://readthedocs.org/projects/python-mloc/badge/?style=flat
     :target: https://readthedocs.org/projects/python-mloc
@@ -31,6 +33,9 @@ Overview
 
 .. |zenodo| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3971868.svg
    :target: https://doi.org/10.5281/zenodo.3971868
+
+.. |scrutinizer| image:: https://scrutinizer-ci.com/g/dbankmann/python-mloc/badges/quality-score.png?b=master
+   :target: https://scrutinizer-ci.com/g/dbankmann/python-mloc
 
 
 .. end-badges
