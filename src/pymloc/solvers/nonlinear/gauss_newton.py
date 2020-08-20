@@ -72,9 +72,10 @@ class GaussNewton(BaseSolver):
         smin = svals[0]
         smax = svals[-1]
         condJ = smax / smin
-        tmp2 = condJ**2 * smax
+
+        tmp2 = (condJ**2 + 2 * eta) * smax
         resnorm = np.linalg.norm(res)
-        tmp3 = condJ**2 * resnorm
+        tmp3 = (condJ**2 + eta * condJ + 1) * resnorm
         atol = tmp1 / (tmp2 + tmp3)
         self._lower_abs_tolerance = atol
         logger.info("Current ||r||_2: {}".format(resnorm))
