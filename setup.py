@@ -31,7 +31,7 @@ setup(
     use_scm_version=True,
     cmdclass=cmdclass,
     name='pymloc',
-    version='0.1.0',
+    version='0.1.1',
     license='BSD-3-Clause',
     description="""Library for computing solutions to multilevel optimal control
     problems with differential-algebraic equations""",
