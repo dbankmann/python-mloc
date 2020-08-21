@@ -63,7 +63,7 @@ Optimizations problems can automatically be turned into *local optimizations* by
 Additionally, optimization objects may possess a sensitivity method, which allows to compute sensitivities with respect to higher level variables.
 
 
-At the time of handing in this thesis, there are two concrete implementations of optimization problems. First, parameter dependent optimal control problems for strangeness-free differential-algebraic control systems, and, second, nonlinear least squares problems.
+At the moment, there are two concrete implementations of optimization problems. First, parameter dependent optimal control problems for strangeness-free differential-algebraic control systems, and, second, nonlinear least squares problems.
 
 The general solution procedure of a multilevel optimal control problem is as follows.
 After initialization of all optimization problems and mapping variable containers appropriately, the lowermost optimization is turned into a local optimization by fixing higher level variables. A solution is then iteratively passed to the next optimizations, which are localized and solved again, until the uppermost optimization is reached.
@@ -124,6 +124,6 @@ Note, to combine the coverage data from all the tox environments run:
 
             PYTEST_ADDOPTS=--cov-append tox
 
-New conda builds can be obtained by installing `conda-build` and `cbillington/setuptools-conda` and running
+New conda builds can be obtained by installing `conda-build` and `cbillington/setuptools-conda` and running::
 
         python setup.py dist_conda
