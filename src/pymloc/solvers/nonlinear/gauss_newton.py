@@ -35,7 +35,7 @@ class GaussNewton(BaseSolver):
         self._jac = sensitivity_fun
         self._variables = nllq.variables
         self._upper_eta = 1.
-        self.save_intermediate = False  #TODO: Generalize to BaseSolver
+        self.save_intermediate = False  # TODO: Generalize to BaseSolver
         self._intermediates = {
             'iteration': [],
             'x': [],
