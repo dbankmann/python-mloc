@@ -12,7 +12,7 @@
 """
 isort:skip_file
 """
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 # Enable 64 bit on startup
 import jax.config
